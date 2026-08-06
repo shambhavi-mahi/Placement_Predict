@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Home — PlacementPredict{% endblock %}
+
+{% block content %}
+
+<!-- ── Page Header ──────────────────────────────────────────── -->
+<div class="page-header">
+  <h2>Dashboard Overview</h2>
+  <p>Real-time insights from the student placement dataset</p>
+</div>
+
+<!-- ── Hero Card ─────────────────────────────────────────────── -->
+<div class="hero">
+  <div class="hero-content">
+    <div class="hero-eyebrow">ML Pipeline · Ready to Explore</div>
+    <h2>Predict Student <span>Placement Outcomes</span></h2>
+    <p>
+      A comprehensive machine learning dashboard for analysing, visualising,
+      and modelling student placement data. From raw CSV to trained model —
+      all in one place.
+    </p>
+    <div class="hero-actions">
+      <a href="{{ url_for('load_page') }}" class="btn btn-primary">
+        📂 Load Dataset
+      </a>
+      <a href="{{ url_for('eda_page') }}" class="btn btn-ghost">
+        📊 Explore Data
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ── KPI Grid ───────────────────────────────────────────────── -->
+{% if stats %}
+<div class="kpi-grid">
+
+  <div class="kpi-card">
+    <div class="kpi-icon blue">📋</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Total Records</div>
+      <div class="kpi-value">{{ stats.rows }}</div>
+      <div class="kpi-sub">student entries</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon azure">🗂️</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Features</div>
+      <div class="kpi-value">{{ stats.cols }}</div>
+      <div class="kpi-sub">total columns</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon green">✅</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Placed</div>
+      <div class="kpi-value">{{ stats.placed_pct }}%</div>
+      <div class="kpi-sub">placement rate</div>
+    </div>
+    <span class="kpi-badge badge-green">↑ Positive</span>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon gray">⚠️</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Not Placed</div>
+      <div class="kpi-value">{{ stats.not_placed_pct }}%</div>
+      <div class="kpi-sub">of total students</div>
+    </div>
+    <span class="kpi-badge badge-red">Target</span>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon orange">🔍</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Anomaly Rate</div>
+      <div class="kpi-value">{{ stats.anomaly_rate }}%</div>
+      <div class="kpi-sub">flagged records</div>
+    </div>
+    <span class="kpi-badge badge-blue">IQR</span>
+  </div>
+
+</div>
+{% endif %}
+
+<!-- ── Quick Action Cards ─────────────────────────────────────── -->
+<div class="action-grid">
+
+  <a href="{{ url_for('load_page') }}" class="action-card">
+    <div class="ac-icon">📂</div>
+    <h3>Load Data</h3>
+    <p>Import and preview the raw CSV dataset. Inspect the first rows and schema.</p>
+    <span class="ac-arrow">→</span>
+  </a>
+
+  <a href="{{ url_for('eda_page') }}" class="action-card">
+    <div class="ac-icon">📊</div>
+    <h3>Exploratory Analysis</h3>
+    <p>Visualise distributions, correlations, and placement patterns across 11 charts.</p>
+    <span class="ac-arrow">→</span>
+  </a>
+
+  <a href="{{ url_for('feature_engg_page') }}" class="action-card">
+    <div class="ac-icon">⚙️</div>
+    <h3>Feature Engineering</h3>
+    <p>Transform, encode and scale features for optimal model performance.</p>
+    <span class="ac-arrow">→</span>
+  </a>
+
+</div>
+
+<!-- ── Dataset Columns ────────────────────────────────────────── -->
+{% if stats and stats.columns %}
+<div class="card">
+  <h2>🗂️ Dataset Columns <span style="font-size:0.8rem;font-weight:400;color:var(--slate-gray);margin-left:8px;">({{ stats.cols }} total)</span></h2>
+  <div class="columns-wrap">
+    {% for col in stats.columns %}
+      {% if col in ['PlacementStatus', 'IsAnomaly'] %}
+        <span class="col-tag target-col">{{ col }}</span>
+      {% else %}
+        <span class="col-tag">{{ col }}</span>
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

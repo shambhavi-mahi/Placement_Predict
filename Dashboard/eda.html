@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}EDA — PlacementPredict{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <h2>Exploratory Data Analysis</h2>
+  <p>Visual insights into distributions, correlations, and placement patterns</p>
+</div>
+
+{% if plots %}
+<div class="plots-grid">
+  {% for plot in plots %}
+  <div class="plot-card">
+    <img src="{{ url_for('static', filename='Plot/' + plot) }}" alt="{{ plot }}">
+    <div class="plot-card-caption">
+      {{ plot.replace('_', ' ').replace('.png', '').title() }}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card">
+  <div class="coming-soon">
+    <div class="cs-icon">📊</div>
+    <h3>No Plots Generated Yet</h3>
+    <p>Run the EDA pipeline first to generate visualisations. Plots will appear here automatically once saved to <code>Dashboard/Plot/</code>.</p>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

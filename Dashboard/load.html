@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Load Data — PlacementPredict{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <h2>Load Dataset</h2>
+  <p>Browse all student records with pagination</p>
+</div>
+
+{% if table %}
+
+<!-- ── Dataset Info Strip ──────────────────────────────────────── -->
+<div class="kpi-grid" style="grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); margin-bottom:22px;">
+  <div class="kpi-card">
+    <div class="kpi-icon blue">📋</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Total Rows</div>
+      <div class="kpi-value" style="font-size:1.5rem;">{{ info.rows }}</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon azure">🗂️</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Columns</div>
+      <div class="kpi-value" style="font-size:1.5rem;">{{ info.cols }}</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon green">📄</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Current Page</div>
+      <div class="kpi-value" style="font-size:1.5rem;">{{ pagination.page }} / {{ pagination.total_pages }}</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon {% if info.missing == 0 %}green{% else %}orange{% endif %}">
+      {% if info.missing == 0 %}✅{% else %}⚠️{% endif %}
+    </div>
+    <div class="kpi-body">
+      <div class="kpi-label">Missing Values</div>
+      <div class="kpi-value" style="font-size:1.5rem;">{{ info.missing }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Data Table Card ──────────────────────────────────────────── -->
+<div class="card" style="padding:0; overflow:hidden;">
+
+  <!-- Table Header Bar -->
+  <div style="display:flex; align-items:center; justify-content:space-between;
+              padding:18px 24px; border-bottom:1px solid var(--light-gray);
+              background:linear-gradient(135deg,rgba(65,105,225,0.04),rgba(0,127,255,0.04));">
+    <h2 style="margin:0; font-size:1rem;">
+      📋 Student Records
+      <span style="font-size:0.78rem; font-weight:400; color:var(--slate-gray); margin-left:8px;">
+        Showing rows {{ pagination.start_row }}–{{ pagination.end_row }}
+        of {{ pagination.total_rows | int | string | replace(',','') | int  }}
+      </span>
+    </h2>
+    <span style="font-size:0.78rem; color:var(--slate-gray);">
+      50 rows / page · {{ pagination.total_pages }} pages total
+    </span>
+  </div>
+
+  <!-- Scrollable Table -->
+  <div class="table-wrap" style="max-height:62vh; overflow:auto; border-radius:0;">
+    {{ table | safe }}
+  </div>
+
+  <!-- ── Pagination Controls ─────────────────────────────────── -->
+  <div class="pagination-bar">
+
+    <!-- Prev -->
+    {% if pagination.has_prev %}
+      <a class="page-btn" href="{{ url_for('load_page', page=pagination.page - 1) }}">‹ Prev</a>
+    {% else %}
+      <span class="page-btn disabled">‹ Prev</span>
+    {% endif %}
+
+    <!-- First page + ellipsis -->
+    {% if pagination.show_first %}
+      <a class="page-btn" href="{{ url_for('load_page', page=1) }}">1</a>
+      <span class="page-ellipsis">…</span>
+    {% endif %}
+
+    <!-- Numbered buttons -->
+    {% for p in pagination.page_range %}
+      {% if p == pagination.page %}
+        <span class="page-btn active">{{ p }}</span>
+      {% else %}
+        <a class="page-btn" href="{{ url_for('load_page', page=p) }}">{{ p }}</a>
+      {% endif %}
+    {% endfor %}
+
+    <!-- Last page + ellipsis -->
+    {% if pagination.show_last %}
+      <span class="page-ellipsis">…</span>
+      <a class="page-btn" href="{{ url_for('load_page', page=pagination.total_pages) }}">{{ pagination.total_pages }}</a>
+    {% endif %}
+
+    <!-- Next -->
+    {% if pagination.has_next %}
+      <a class="page-btn" href="{{ url_for('load_page', page=pagination.page + 1) }}">Next ›</a>
+    {% else %}
+      <span class="page-btn disabled">Next ›</span>
+    {% endif %}
+
+    <!-- Jump to page -->
+    <form method="get" action="{{ url_for('load_page') }}" class="jump-form">
+      <label style="font-size:0.78rem; color:var(--slate-gray);">Go to</label>
+      <input type="number" name="page" min="1" max="{{ pagination.total_pages }}"
+             placeholder="{{ pagination.page }}" class="jump-input">
+      <button type="submit" class="page-btn" style="cursor:pointer;">Go</button>
+    </form>
+
+  </div>
+</div>
+
+<!-- ── Column Types Card ──────────────────────────────────────── -->
+<div class="card" style="margin-top:22px;">
+  <h2>🗃️ Column Data Types</h2>
+  <div class="columns-wrap">
+    {% for col in info.columns %}
+      <span class="col-tag" title="{{ info.dtypes[col] }}">
+        {{ col }}
+        <span style="font-size:0.65rem; opacity:0.65; margin-left:4px;">{{ info.dtypes[col] }}</span>
+      </span>
+    {% endfor %}
+  </div>
+</div>
+
+{% else %}
+<div class="card">
+  <div class="coming-soon">
+    <div class="cs-icon">📂</div>
+    <h3>Dataset Not Found</h3>
+    <p>Ensure <code>Data/placement_predict_50k Dataset (2).csv</code> exists in the project root.</p>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

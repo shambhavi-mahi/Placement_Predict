@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Feature Engineering — PlacementPredict{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <h2>Feature Engineering</h2>
+  <p>Transform, encode, and scale features for the ML pipeline</p>
+</div>
+
+<div class="card">
+  <div class="coming-soon">
+    <div class="cs-icon">⚙️</div>
+    <h3>Coming Soon</h3>
+    <p>
+      The Feature Engineering module will include encoding of categorical
+      variables, SGPA aggregation, scaling, and feature importance analysis.
+    </p>
+  </div>
+</div>
+
+<!-- Pipeline Steps Preview -->
+<div class="action-grid">
+
+  <div class="action-card" style="pointer-events:none;opacity:0.6;">
+    <div class="ac-icon">🔢</div>
+    <h3>Encoding</h3>
+    <p>Label encode / one-hot encode categorical columns like Stream, CollegeTier, Specialisation.</p>
+  </div>
+
+  <div class="action-card" style="pointer-events:none;opacity:0.6;">
+    <div class="ac-icon">📐</div>
+    <h3>Scaling</h3>
+    <p>StandardScaler / MinMaxScaler on numeric features for gradient-based models.</p>
+  </div>
+
+  <div class="action-card" style="pointer-events:none;opacity:0.6;">
+    <div class="ac-icon">🧬</div>
+    <h3>Feature Selection</h3>
+    <p>Correlation-based filtering, importance ranking, and VIF multicollinearity check.</p>
+  </div>
+
+</div>
+
+{% endblock %}
