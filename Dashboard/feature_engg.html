@@ -9,38 +9,187 @@
   <p>Transform, encode, and scale features for the ML pipeline</p>
 </div>
 
+<!-- ── Pipeline Step Tabs ──────────────────────────────────────── -->
+<div class="fe-tabs">
+  <button class="fe-tab active" onclick="showTab('minmax', this)">📐 Min-Max Scaling</button>
+  <button class="fe-tab" onclick="showTab('encoding', this)" style="opacity:0.5;cursor:not-allowed;" disabled>🔢 Encoding <span class="fe-coming">Soon</span></button>
+  <button class="fe-tab" onclick="showTab('selection', this)" style="opacity:0.5;cursor:not-allowed;" disabled>🧬 Feature Selection <span class="fe-coming">Soon</span></button>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- TAB: Min-Max Scaling                                         -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div id="tab-minmax">
+
+{% if scaling_stats %}
+
+<!-- ── Info strip ─────────────────────────────────────────────── -->
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:22px;">
+
+  <div class="kpi-card">
+    <div class="kpi-icon blue">📊</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Total Records</div>
+      <div class="kpi-value" style="font-size:1.45rem;">{{ total_rows }}</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon azure">🔢</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Numeric Columns Scaled</div>
+      <div class="kpi-value" style="font-size:1.45rem;">{{ scaling_stats | length }}</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon green">✅</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Output Range</div>
+      <div class="kpi-value" style="font-size:1.45rem;">0 → 1</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon orange">⚙️</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Formula</div>
+      <div class="kpi-value" style="font-size:1rem;letter-spacing:0;">(x − min) / (max − min)</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Formula explainer ──────────────────────────────────────── -->
+<div class="card" style="background:linear-gradient(135deg,var(--dark-navy),#253060);color:var(--white);margin-bottom:22px;">
+  <h2 style="color:var(--white);">📐 Min-Max Normalization</h2>
+  <p style="opacity:0.8;font-size:0.9rem;max-width:600px;line-height:1.7;margin-bottom:16px;">
+    Each numeric feature is rescaled to the range <strong>[0, 1]</strong> using the column's
+    observed minimum and maximum. Categorical columns, the target, and the student ID
+    are left untouched.
+  </p>
+  <div class="formula-box">
+    <span class="formula-var">x<sub>scaled</sub></span>
+    <span class="formula-eq">=</span>
+    <span class="formula-frac">
+      <span class="frac-num">x − x<sub>min</sub></span>
+      <span class="frac-line"></span>
+      <span class="frac-den">x<sub>max</sub> − x<sub>min</sub></span>
+    </span>
+  </div>
+</div>
+
+<!-- ── Scaling Parameters Table ───────────────────────────────── -->
+<div class="card" style="padding:0;overflow:hidden;margin-bottom:22px;">
+  <div class="table-header-bar">
+    <h2 style="margin:0;font-size:1rem;">📋 Scaling Parameters — All {{ scaling_stats | length }} Numeric Columns</h2>
+    <a href="{{ url_for('download_scaled') }}" class="btn btn-primary" style="font-size:0.78rem;padding:8px 16px;">
+      ⬇ Download Scaled CSV
+    </a>
+  </div>
+  <div class="table-wrap" style="max-height:420px;overflow:auto;border-radius:0;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Column</th>
+          <th>Min (original)</th>
+          <th>Max (original)</th>
+          <th>Range</th>
+          <th>Mean (original)</th>
+          <th>Std (original)</th>
+          <th>Mean (scaled)</th>
+          <th>Std (scaled)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in scaling_stats %}
+        <tr>
+          <td><strong style="color:var(--royal-blue);">{{ row.column }}</strong></td>
+          <td>{{ row.min }}</td>
+          <td>{{ row.max }}</td>
+          <td>
+            <span class="range-pill">{{ row.range }}</span>
+          </td>
+          <td>{{ row.mean }}</td>
+          <td>{{ row.std }}</td>
+          <td>
+            <span class="scaled-val">{{ row.scaled_mean }}</span>
+          </td>
+          <td>
+            <span class="scaled-val">{{ row.scaled_std }}</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── Before / After Visual ──────────────────────────────────── -->
+<div class="card" style="margin-bottom:22px;">
+  <h2>🔄 Before vs After Scaling</h2>
+  <p style="color:var(--slate-gray);font-size:0.85rem;margin-bottom:18px;">
+    Bar chart showing each column's original range (blue) compared to the scaled range [0,1] (green).
+  </p>
+  <div class="before-after-grid">
+    {% for row in scaling_stats %}
+    <div class="ba-card">
+      <div class="ba-label">{{ row.column }}</div>
+      <div class="ba-row">
+        <span class="ba-tag original">Original</span>
+        <div class="ba-bar-wrap">
+          <div class="ba-bar original-bar" style="width:100%;">
+            <span class="ba-bar-text">{{ row.min }} → {{ row.max }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="ba-row" style="margin-top:6px;">
+        <span class="ba-tag scaled">Scaled</span>
+        <div class="ba-bar-wrap">
+          <div class="ba-bar scaled-bar" style="width:100%;">
+            <span class="ba-bar-text">0.0 → 1.0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ── Scaled Data Preview ────────────────────────────────────── -->
+<div class="card" style="padding:0;overflow:hidden;">
+  <div class="table-header-bar">
+    <h2 style="margin:0;font-size:1rem;">🔍 Scaled Data Preview
+      <span style="font-size:0.75rem;font-weight:400;color:var(--slate-gray);margin-left:8px;">First 8 rows · Numeric columns only</span>
+    </h2>
+  </div>
+  <div class="table-wrap" style="overflow:auto;border-radius:0;">
+    {{ scaled_preview | safe }}
+  </div>
+</div>
+
+{% else %}
 <div class="card">
   <div class="coming-soon">
-    <div class="cs-icon">⚙️</div>
-    <h3>Coming Soon</h3>
-    <p>
-      The Feature Engineering module will include encoding of categorical
-      variables, SGPA aggregation, scaling, and feature importance analysis.
-    </p>
+    <div class="cs-icon">📂</div>
+    <h3>Dataset Not Found</h3>
+    <p>Ensure the CSV exists at <code>Data/placement_predict_50k Dataset (2).csv</code>.</p>
   </div>
 </div>
+{% endif %}
 
-<!-- Pipeline Steps Preview -->
-<div class="action-grid">
+</div><!-- end tab-minmax -->
 
-  <div class="action-card" style="pointer-events:none;opacity:0.6;">
-    <div class="ac-icon">🔢</div>
-    <h3>Encoding</h3>
-    <p>Label encode / one-hot encode categorical columns like Stream, CollegeTier, Specialisation.</p>
-  </div>
+{% endblock %}
 
-  <div class="action-card" style="pointer-events:none;opacity:0.6;">
-    <div class="ac-icon">📐</div>
-    <h3>Scaling</h3>
-    <p>StandardScaler / MinMaxScaler on numeric features for gradient-based models.</p>
-  </div>
 
-  <div class="action-card" style="pointer-events:none;opacity:0.6;">
-    <div class="ac-icon">🧬</div>
-    <h3>Feature Selection</h3>
-    <p>Correlation-based filtering, importance ranking, and VIF multicollinearity check.</p>
-  </div>
-
-</div>
-
+{% block scripts %}
+<script>
+function showTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('.fe-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).style.display = 'block';
+  btn.classList.add('active');
+}
+</script>
 {% endblock %}
