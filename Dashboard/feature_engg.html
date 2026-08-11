@@ -6,68 +6,49 @@
 
 <div class="page-header">
   <h2>Feature Engineering</h2>
-  <p>Transform, encode, and scale features for the ML pipeline</p>
+  <p>Compare Min-Max, Standard, and Robust scaling side-by-side</p>
 </div>
 
-<!-- ── Pipeline Step Tabs ──────────────────────────────────────── -->
+<!-- ── Pipeline Step Tabs ─────────────────────────────────────── -->
 <div class="fe-tabs">
-  <button class="fe-tab active" onclick="showTab('minmax', this)">📐 Min-Max Scaling</button>
-  <button class="fe-tab" onclick="showTab('encoding', this)" style="opacity:0.5;cursor:not-allowed;" disabled>🔢 Encoding <span class="fe-coming">Soon</span></button>
-  <button class="fe-tab" onclick="showTab('selection', this)" style="opacity:0.5;cursor:not-allowed;" disabled>🧬 Feature Selection <span class="fe-coming">Soon</span></button>
+  <button class="fe-tab active" id="btn-minmax" onclick="showTab('minmax', this)">📐 Min-Max Scaling</button>
+  <button class="fe-tab"        id="btn-standard" onclick="showTab('standard', this)">📊 Standard Scaler</button>
+  <button class="fe-tab"        id="btn-robust"   onclick="showTab('robust', this)">🛡️ Robust Scaler</button>
+  <button class="fe-tab" style="opacity:0.5;cursor:not-allowed;" disabled>🔢 Encoding <span class="fe-coming">Soon</span></button>
+  <button class="fe-tab" style="opacity:0.5;cursor:not-allowed;" disabled>🧬 Feature Selection <span class="fe-coming">Soon</span></button>
 </div>
 
-<!-- ════════════════════════════════════════════════════════════ -->
-<!-- TAB: Min-Max Scaling                                         -->
-<!-- ════════════════════════════════════════════════════════════ -->
+
+{# ═══════════════════════════════════════════════════════════════ #}
+{# TAB 1 — Min-Max Scaling                                        #}
+{# ═══════════════════════════════════════════════════════════════ #}
 <div id="tab-minmax">
 
-{% if scaling_stats %}
-
-<!-- ── Info strip ─────────────────────────────────────────────── -->
+{% if minmax_stats %}
+<!-- KPI strip -->
 <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:22px;">
-
   <div class="kpi-card">
     <div class="kpi-icon blue">📊</div>
-    <div class="kpi-body">
-      <div class="kpi-label">Total Records</div>
-      <div class="kpi-value" style="font-size:1.45rem;">{{ total_rows }}</div>
-    </div>
+    <div class="kpi-body"><div class="kpi-label">Total Records</div><div class="kpi-value" style="font-size:1.45rem;">{{ total_rows }}</div></div>
   </div>
-
   <div class="kpi-card">
     <div class="kpi-icon azure">🔢</div>
-    <div class="kpi-body">
-      <div class="kpi-label">Numeric Columns Scaled</div>
-      <div class="kpi-value" style="font-size:1.45rem;">{{ scaling_stats | length }}</div>
-    </div>
+    <div class="kpi-body"><div class="kpi-label">Columns Scaled</div><div class="kpi-value" style="font-size:1.45rem;">{{ minmax_stats | length }}</div></div>
   </div>
-
   <div class="kpi-card">
     <div class="kpi-icon green">✅</div>
-    <div class="kpi-body">
-      <div class="kpi-label">Output Range</div>
-      <div class="kpi-value" style="font-size:1.45rem;">0 → 1</div>
-    </div>
+    <div class="kpi-body"><div class="kpi-label">Output Range</div><div class="kpi-value" style="font-size:1.45rem;">0 → 1</div></div>
   </div>
-
   <div class="kpi-card">
     <div class="kpi-icon orange">⚙️</div>
-    <div class="kpi-body">
-      <div class="kpi-label">Formula</div>
-      <div class="kpi-value" style="font-size:1rem;letter-spacing:0;">(x − min) / (max − min)</div>
-    </div>
+    <div class="kpi-body"><div class="kpi-label">Sensitive to Outliers</div><div class="kpi-value" style="font-size:1.1rem;">Yes</div></div>
   </div>
-
 </div>
 
-<!-- ── Formula explainer ──────────────────────────────────────── -->
-<div class="card" style="background:linear-gradient(135deg,var(--dark-navy),#253060);color:var(--white);margin-bottom:22px;">
-  <h2 style="color:var(--white);">📐 Min-Max Normalization</h2>
-  <p style="opacity:0.8;font-size:0.9rem;max-width:600px;line-height:1.7;margin-bottom:16px;">
-    Each numeric feature is rescaled to the range <strong>[0, 1]</strong> using the column's
-    observed minimum and maximum. Categorical columns, the target, and the student ID
-    are left untouched.
-  </p>
+<!-- Formula card -->
+<div class="scaler-formula-card minmax-card">
+  <h2>📐 Min-Max Normalization</h2>
+  <p>Rescales every numeric feature to <strong>[0, 1]</strong> using the column's observed min and max. Sensitive to outliers — one extreme value can compress all others.</p>
   <div class="formula-box">
     <span class="formula-var">x<sub>scaled</sub></span>
     <span class="formula-eq">=</span>
@@ -79,45 +60,27 @@
   </div>
 </div>
 
-<!-- ── Scaling Parameters Table ───────────────────────────────── -->
+<!-- Parameters table -->
 <div class="card" style="padding:0;overflow:hidden;margin-bottom:22px;">
   <div class="table-header-bar">
-    <h2 style="margin:0;font-size:1rem;">📋 Scaling Parameters — All {{ scaling_stats | length }} Numeric Columns</h2>
-    <a href="{{ url_for('download_scaled') }}" class="btn btn-primary" style="font-size:0.78rem;padding:8px 16px;">
-      ⬇ Download Scaled CSV
-    </a>
+    <h2 style="margin:0;font-size:1rem;">📋 Scaling Parameters — {{ minmax_stats | length }} Columns</h2>
+    <a href="{{ url_for('download_scaled') }}" class="btn btn-primary" style="font-size:0.78rem;padding:8px 16px;">⬇ Download CSV</a>
   </div>
-  <div class="table-wrap" style="max-height:420px;overflow:auto;border-radius:0;">
+  <div class="table-wrap" style="max-height:400px;overflow:auto;border-radius:0;">
     <table class="data-table">
-      <thead>
-        <tr>
-          <th>Column</th>
-          <th>Min (original)</th>
-          <th>Max (original)</th>
-          <th>Range</th>
-          <th>Mean (original)</th>
-          <th>Std (original)</th>
-          <th>Mean (scaled)</th>
-          <th>Std (scaled)</th>
-        </tr>
-      </thead>
+      <thead><tr>
+        <th>Column</th><th>Min</th><th>Max</th><th>Range</th>
+        <th>Mean (orig)</th><th>Std (orig)</th><th>Mean (scaled)</th><th>Std (scaled)</th>
+      </tr></thead>
       <tbody>
-        {% for row in scaling_stats %}
+        {% for r in minmax_stats %}
         <tr>
-          <td><strong style="color:var(--royal-blue);">{{ row.column }}</strong></td>
-          <td>{{ row.min }}</td>
-          <td>{{ row.max }}</td>
-          <td>
-            <span class="range-pill">{{ row.range }}</span>
-          </td>
-          <td>{{ row.mean }}</td>
-          <td>{{ row.std }}</td>
-          <td>
-            <span class="scaled-val">{{ row.scaled_mean }}</span>
-          </td>
-          <td>
-            <span class="scaled-val">{{ row.scaled_std }}</span>
-          </td>
+          <td><strong style="color:var(--royal-blue);">{{ r.column }}</strong></td>
+          <td>{{ r.min }}</td><td>{{ r.max }}</td>
+          <td><span class="range-pill">{{ r.range }}</span></td>
+          <td>{{ r.mean }}</td><td>{{ r.std }}</td>
+          <td><span class="scaled-val">{{ r.scaled_mean }}</span></td>
+          <td><span class="scaled-val">{{ r.scaled_std }}</span></td>
         </tr>
         {% endfor %}
       </tbody>
@@ -125,60 +88,257 @@
   </div>
 </div>
 
-<!-- ── Before / After Visual ──────────────────────────────────── -->
+<!-- Before / After -->
 <div class="card" style="margin-bottom:22px;">
-  <h2>🔄 Before vs After Scaling</h2>
-  <p style="color:var(--slate-gray);font-size:0.85rem;margin-bottom:18px;">
-    Bar chart showing each column's original range (blue) compared to the scaled range [0,1] (green).
-  </p>
+  <h2>🔄 Before vs After</h2>
+  <p style="color:var(--slate-gray);font-size:0.85rem;margin-bottom:18px;">Royal Blue = original range · Emerald = scaled [0, 1]</p>
   <div class="before-after-grid">
-    {% for row in scaling_stats %}
+    {% for r in minmax_stats %}
     <div class="ba-card">
-      <div class="ba-label">{{ row.column }}</div>
+      <div class="ba-label">{{ r.column }}</div>
       <div class="ba-row">
         <span class="ba-tag original">Original</span>
-        <div class="ba-bar-wrap">
-          <div class="ba-bar original-bar" style="width:100%;">
-            <span class="ba-bar-text">{{ row.min }} → {{ row.max }}</span>
-          </div>
-        </div>
+        <div class="ba-bar-wrap"><div class="ba-bar original-bar" style="width:100%;"><span class="ba-bar-text">{{ r.min }} → {{ r.max }}</span></div></div>
       </div>
       <div class="ba-row" style="margin-top:6px;">
         <span class="ba-tag scaled">Scaled</span>
-        <div class="ba-bar-wrap">
-          <div class="ba-bar scaled-bar" style="width:100%;">
-            <span class="ba-bar-text">0.0 → 1.0</span>
-          </div>
-        </div>
+        <div class="ba-bar-wrap"><div class="ba-bar scaled-bar" style="width:100%;"><span class="ba-bar-text">0.0 → 1.0</span></div></div>
       </div>
     </div>
     {% endfor %}
   </div>
 </div>
 
-<!-- ── Scaled Data Preview ────────────────────────────────────── -->
+<!-- Preview -->
 <div class="card" style="padding:0;overflow:hidden;">
   <div class="table-header-bar">
-    <h2 style="margin:0;font-size:1rem;">🔍 Scaled Data Preview
-      <span style="font-size:0.75rem;font-weight:400;color:var(--slate-gray);margin-left:8px;">First 8 rows · Numeric columns only</span>
-    </h2>
+    <h2 style="margin:0;font-size:1rem;">🔍 Scaled Preview <span style="font-size:0.75rem;font-weight:400;color:var(--slate-gray);margin-left:8px;">First 8 rows · Numeric cols only</span></h2>
   </div>
-  <div class="table-wrap" style="overflow:auto;border-radius:0;">
-    {{ scaled_preview | safe }}
-  </div>
+  <div class="table-wrap" style="overflow:auto;border-radius:0;">{{ minmax_preview | safe }}</div>
 </div>
 
 {% else %}
-<div class="card">
-  <div class="coming-soon">
-    <div class="cs-icon">📂</div>
-    <h3>Dataset Not Found</h3>
-    <p>Ensure the CSV exists at <code>Data/placement_predict_50k Dataset (2).csv</code>.</p>
+<div class="card"><div class="coming-soon"><div class="cs-icon">📂</div><h3>Dataset Not Found</h3></div></div>
+{% endif %}
+</div><!-- /tab-minmax -->
+
+
+{# ═══════════════════════════════════════════════════════════════ #}
+{# TAB 2 — Standard Scaler                                        #}
+{# ═══════════════════════════════════════════════════════════════ #}
+<div id="tab-standard" style="display:none;">
+
+{% if std_stats %}
+<!-- KPI strip -->
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:22px;">
+  <div class="kpi-card">
+    <div class="kpi-icon blue">📊</div>
+    <div class="kpi-body"><div class="kpi-label">Total Records</div><div class="kpi-value" style="font-size:1.45rem;">{{ total_rows }}</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon azure">🔢</div>
+    <div class="kpi-body"><div class="kpi-label">Columns Scaled</div><div class="kpi-value" style="font-size:1.45rem;">{{ std_stats | length }}</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon green">〰️</div>
+    <div class="kpi-body"><div class="kpi-label">Output Mean</div><div class="kpi-value" style="font-size:1.45rem;">≈ 0</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon orange">📏</div>
+    <div class="kpi-body"><div class="kpi-label">Output Std Dev</div><div class="kpi-value" style="font-size:1.45rem;">≈ 1</div></div>
   </div>
 </div>
-{% endif %}
 
-</div><!-- end tab-minmax -->
+<!-- Formula card -->
+<div class="scaler-formula-card standard-card">
+  <h2>📊 Standard Scaler (Z-Score)</h2>
+  <p>Centres each feature to <strong>mean = 0</strong> and scales to <strong>std = 1</strong>. Best for algorithms that assume normally distributed data (logistic regression, SVM, PCA). Sensitive to outliers.</p>
+  <div class="formula-box">
+    <span class="formula-var">x<sub>scaled</sub></span>
+    <span class="formula-eq">=</span>
+    <span class="formula-frac">
+      <span class="frac-num">x − μ</span>
+      <span class="frac-line"></span>
+      <span class="frac-den">σ</span>
+    </span>
+  </div>
+</div>
+
+<!-- Parameters table -->
+<div class="card" style="padding:0;overflow:hidden;margin-bottom:22px;">
+  <div class="table-header-bar">
+    <h2 style="margin:0;font-size:1rem;">📋 Scaling Parameters — {{ std_stats | length }} Columns</h2>
+    <a href="{{ url_for('download_standard') }}" class="btn btn-primary" style="font-size:0.78rem;padding:8px 16px;">⬇ Download CSV</a>
+  </div>
+  <div class="table-wrap" style="max-height:400px;overflow:auto;border-radius:0;">
+    <table class="data-table">
+      <thead><tr>
+        <th>Column</th><th>Mean (μ)</th><th>Std (σ)</th>
+        <th>Min (orig)</th><th>Max (orig)</th>
+        <th>Mean (scaled)</th><th>Std (scaled)</th><th>Min (scaled)</th><th>Max (scaled)</th>
+      </tr></thead>
+      <tbody>
+        {% for r in std_stats %}
+        <tr>
+          <td><strong style="color:var(--royal-blue);">{{ r.column }}</strong></td>
+          <td><span class="range-pill">{{ r.mean }}</span></td>
+          <td><span class="range-pill">{{ r.std }}</span></td>
+          <td>{{ r.min }}</td><td>{{ r.max }}</td>
+          <td><span class="scaled-val">{{ r.scaled_mean }}</span></td>
+          <td><span class="scaled-val">{{ r.scaled_std }}</span></td>
+          <td>{{ r.scaled_min }}</td><td>{{ r.scaled_max }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Before / After -->
+<div class="card" style="margin-bottom:22px;">
+  <h2>🔄 Before vs After</h2>
+  <p style="color:var(--slate-gray);font-size:0.85rem;margin-bottom:18px;">Showing original mean ± 1σ (blue) vs scaled output mean ≈ 0 ± 1 (green)</p>
+  <div class="before-after-grid">
+    {% for r in std_stats %}
+    <div class="ba-card">
+      <div class="ba-label">{{ r.column }}</div>
+      <div class="ba-row">
+        <span class="ba-tag original">μ orig</span>
+        <div class="ba-bar-wrap"><div class="ba-bar original-bar" style="width:100%;"><span class="ba-bar-text">μ={{ r.mean }}, σ={{ r.std }}</span></div></div>
+      </div>
+      <div class="ba-row" style="margin-top:6px;">
+        <span class="ba-tag scaled">μ scaled</span>
+        <div class="ba-bar-wrap"><div class="ba-bar scaled-bar" style="width:100%;"><span class="ba-bar-text">μ≈{{ r.scaled_mean }}, σ≈{{ r.scaled_std }}</span></div></div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Preview -->
+<div class="card" style="padding:0;overflow:hidden;">
+  <div class="table-header-bar">
+    <h2 style="margin:0;font-size:1rem;">🔍 Scaled Preview <span style="font-size:0.75rem;font-weight:400;color:var(--slate-gray);margin-left:8px;">First 8 rows · Numeric cols only</span></h2>
+  </div>
+  <div class="table-wrap" style="overflow:auto;border-radius:0;">{{ std_preview | safe }}</div>
+</div>
+
+{% else %}
+<div class="card"><div class="coming-soon"><div class="cs-icon">📂</div><h3>Dataset Not Found</h3></div></div>
+{% endif %}
+</div><!-- /tab-standard -->
+
+
+{# ═══════════════════════════════════════════════════════════════ #}
+{# TAB 3 — Robust Scaler                                          #}
+{# ═══════════════════════════════════════════════════════════════ #}
+<div id="tab-robust" style="display:none;">
+
+{% if robust_stats %}
+<!-- KPI strip -->
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:22px;">
+  <div class="kpi-card">
+    <div class="kpi-icon blue">📊</div>
+    <div class="kpi-body"><div class="kpi-label">Total Records</div><div class="kpi-value" style="font-size:1.45rem;">{{ total_rows }}</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon azure">🔢</div>
+    <div class="kpi-body"><div class="kpi-label">Columns Scaled</div><div class="kpi-value" style="font-size:1.45rem;">{{ robust_stats | length }}</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon green">🛡️</div>
+    <div class="kpi-body"><div class="kpi-label">Outlier Robust</div><div class="kpi-value" style="font-size:1.1rem;">Yes (IQR)</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon orange">📦</div>
+    <div class="kpi-body"><div class="kpi-label">Centre Used</div><div class="kpi-value" style="font-size:1.1rem;">Median</div></div>
+  </div>
+</div>
+
+<!-- Formula card -->
+<div class="scaler-formula-card robust-card">
+  <h2>🛡️ Robust Scaler</h2>
+  <p>Uses <strong>median</strong> as centre and <strong>IQR (Q3 − Q1)</strong> as scale. Outliers have much less influence compared to Min-Max or Standard scaling. Ideal when the dataset contains extreme values.</p>
+  <div class="formula-box">
+    <span class="formula-var">x<sub>scaled</sub></span>
+    <span class="formula-eq">=</span>
+    <span class="formula-frac">
+      <span class="frac-num">x − median</span>
+      <span class="frac-line"></span>
+      <span class="frac-den">IQR (Q3 − Q1)</span>
+    </span>
+  </div>
+</div>
+
+<!-- Parameters table -->
+<div class="card" style="padding:0;overflow:hidden;margin-bottom:22px;">
+  <div class="table-header-bar">
+    <h2 style="margin:0;font-size:1rem;">📋 Scaling Parameters — {{ robust_stats | length }} Columns</h2>
+    <a href="{{ url_for('download_robust') }}" class="btn btn-primary" style="font-size:0.78rem;padding:8px 16px;">⬇ Download CSV</a>
+  </div>
+  <div class="table-wrap" style="max-height:400px;overflow:auto;border-radius:0;">
+    <table class="data-table">
+      <thead><tr>
+        <th>Column</th><th>Median</th><th>Q1</th><th>Q3</th><th>IQR</th>
+        <th>Outliers</th><th>Scaled Mean</th><th>Scaled Std</th><th>Scaled Median</th>
+      </tr></thead>
+      <tbody>
+        {% for r in robust_stats %}
+        <tr>
+          <td><strong style="color:var(--royal-blue);">{{ r.column }}</strong></td>
+          <td><span class="range-pill">{{ r.median }}</span></td>
+          <td>{{ r.q1 }}</td><td>{{ r.q3 }}</td>
+          <td><span class="range-pill">{{ r.iqr }}</span></td>
+          <td>
+            {% if r.outliers > 0 %}
+              <span style="background:rgba(231,76,60,0.1);color:#C0392B;border:1px solid rgba(231,76,60,0.25);border-radius:6px;padding:2px 8px;font-size:0.78rem;font-weight:600;">{{ r.outliers }}</span>
+            {% else %}
+              <span class="scaled-val">0</span>
+            {% endif %}
+          </td>
+          <td><span class="scaled-val">{{ r.scaled_mean }}</span></td>
+          <td><span class="scaled-val">{{ r.scaled_std }}</span></td>
+          <td><span class="scaled-val">{{ r.scaled_median }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Before / After -->
+<div class="card" style="margin-bottom:22px;">
+  <h2>🔄 Before vs After</h2>
+  <p style="color:var(--slate-gray);font-size:0.85rem;margin-bottom:18px;">Blue = original median & IQR · Green = scaled output (median ≈ 0, IQR ≈ 1)</p>
+  <div class="before-after-grid">
+    {% for r in robust_stats %}
+    <div class="ba-card">
+      <div class="ba-label">{{ r.column }}</div>
+      <div class="ba-row">
+        <span class="ba-tag original">Original</span>
+        <div class="ba-bar-wrap"><div class="ba-bar original-bar" style="width:100%;"><span class="ba-bar-text">Median={{ r.median }}, IQR={{ r.iqr }}</span></div></div>
+      </div>
+      <div class="ba-row" style="margin-top:6px;">
+        <span class="ba-tag scaled">Scaled</span>
+        <div class="ba-bar-wrap"><div class="ba-bar scaled-bar" style="width:100%;"><span class="ba-bar-text">Median≈{{ r.scaled_median }}, Std≈{{ r.scaled_std }}</span></div></div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Preview -->
+<div class="card" style="padding:0;overflow:hidden;">
+  <div class="table-header-bar">
+    <h2 style="margin:0;font-size:1rem;">🔍 Scaled Preview <span style="font-size:0.75rem;font-weight:400;color:var(--slate-gray);margin-left:8px;">First 8 rows · Numeric cols only</span></h2>
+  </div>
+  <div class="table-wrap" style="overflow:auto;border-radius:0;">{{ robust_preview | safe }}</div>
+</div>
+
+{% else %}
+<div class="card"><div class="coming-soon"><div class="cs-icon">📂</div><h3>Dataset Not Found</h3></div></div>
+{% endif %}
+</div><!-- /tab-robust -->
 
 {% endblock %}
 
@@ -186,8 +346,15 @@
 {% block scripts %}
 <script>
 function showTab(name, btn) {
-  document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
-  document.querySelectorAll('.fe-tab').forEach(t => t.classList.remove('active'));
+  // hide all tab panels
+  ['minmax','standard','robust'].forEach(function(t) {
+    document.getElementById('tab-' + t).style.display = 'none';
+  });
+  // remove active from all tab buttons
+  document.querySelectorAll('.fe-tab').forEach(function(b) {
+    b.classList.remove('active');
+  });
+  // show selected tab and activate button
   document.getElementById('tab-' + name).style.display = 'block';
   btn.classList.add('active');
 }

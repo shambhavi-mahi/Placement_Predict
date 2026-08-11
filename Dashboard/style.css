@@ -1037,3 +1037,53 @@ tr:hover td { background: rgba(65,105,225,0.06); }
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* ── Scaler Formula Cards (per-tab colour variants) ─────────── */
+.scaler-formula-card {
+  border-radius: var(--radius);
+  padding: 28px 32px;
+  color: var(--white);
+  margin-bottom: 22px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 6px 28px rgba(0,0,0,0.22);
+}
+
+.scaler-formula-card::before {
+  content: "";
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 220px; height: 220px;
+  border-radius: 50%;
+  opacity: 0.18;
+  background: radial-gradient(circle, #fff 0%, transparent 70%);
+}
+
+.scaler-formula-card h2 {
+  color: var(--white);
+  font-size: 1.15rem;
+  margin-bottom: 10px;
+}
+
+.scaler-formula-card p {
+  opacity: 0.82;
+  font-size: 0.88rem;
+  max-width: 580px;
+  line-height: 1.7;
+  margin-bottom: 18px;
+}
+
+/* Min-Max: navy → royal blue */
+.minmax-card {
+  background: linear-gradient(135deg, var(--dark-navy) 0%, var(--royal-blue) 100%);
+}
+
+/* Standard: deep indigo → azure */
+.standard-card {
+  background: linear-gradient(135deg, #1A1060 0%, #3A28B0 50%, var(--azure-blue) 100%);
+}
+
+/* Robust: dark teal → emerald */
+.robust-card {
+  background: linear-gradient(135deg, #0A2E2A 0%, #1A6B5A 50%, var(--emerald) 100%);
+}
