@@ -213,21 +213,21 @@ def feature_engg_page():
 
     # ── Min-Max ───────────────────────────────────────────────
     mm_df,  minmax_stats,  num_cols = _apply_minmax(df)
-    minmax_preview = mm_df[preview_cols + num_cols].head(8).to_html(
+    minmax_preview = mm_df[preview_cols + num_cols].head(10).to_html(
         classes="data-table", border=0, index=False,
         float_format=lambda x: f"{x:.4f}"
     )
 
     # ── Standard Scaler ────────────────────────────────────────
     st_df,  std_stats, _ = _apply_standard(df)
-    std_preview = st_df[preview_cols + num_cols].head(8).to_html(
+    std_preview = st_df[preview_cols + num_cols].head(10).to_html(
         classes="data-table", border=0, index=False,
         float_format=lambda x: f"{x:.4f}"
     )
 
     # ── Robust Scaler ──────────────────────────────────────────
     rb_df, robust_stats, _ = _apply_robust(df)
-    robust_preview = rb_df[preview_cols + num_cols].head(8).to_html(
+    robust_preview = rb_df[preview_cols + num_cols].head(10).to_html(
         classes="data-table", border=0, index=False,
         float_format=lambda x: f"{x:.4f}"
     )
