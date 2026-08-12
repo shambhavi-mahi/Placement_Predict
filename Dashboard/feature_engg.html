@@ -14,7 +14,7 @@
   <button class="fe-tab active" id="btn-minmax" onclick="showTab('minmax', this)">📐 Min-Max Scaling</button>
   <button class="fe-tab"        id="btn-standard" onclick="showTab('standard', this)">📊 Standard Scaler</button>
   <button class="fe-tab"        id="btn-robust"   onclick="showTab('robust', this)">🛡️ Robust Scaler</button>
-  <button class="fe-tab" style="opacity:0.5;cursor:not-allowed;" disabled>🔢 Encoding <span class="fe-coming">Soon</span></button>
+  <button class="fe-tab"        id="btn-encoding" onclick="showTab('encoding', this)">🔢 Encoding</button>
   <button class="fe-tab" style="opacity:0.5;cursor:not-allowed;" disabled>🧬 Feature Selection <span class="fe-coming">Soon</span></button>
 </div>
 
@@ -340,6 +340,89 @@
 {% endif %}
 </div><!-- /tab-robust -->
 
+{# ═══════════════════════════════════════════════════════════════ #}
+{# TAB 4 — Encoding                                               #}
+{# ═══════════════════════════════════════════════════════════════ #}
+<div id="tab-encoding" style="display:none;">
+
+{% if enc_preview %}
+<!-- KPI strip -->
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:22px;">
+  <div class="kpi-card">
+    <div class="kpi-icon blue">📊</div>
+    <div class="kpi-body"><div class="kpi-label">Total Records</div><div class="kpi-value" style="font-size:1.45rem;">{{ total_rows }}</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon azure">🔢</div>
+    <div class="kpi-body"><div class="kpi-label">Nominal Cols</div><div class="kpi-value" style="font-size:1.45rem;">{{ nominal_stats | length }}</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon green">📈</div>
+    <div class="kpi-body"><div class="kpi-label">Ordinal Cols</div><div class="kpi-value" style="font-size:1.45rem;">{{ ordinal_stats | length }}</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon orange">⚙️</div>
+    <div class="kpi-body"><div class="kpi-label">Method</div><div class="kpi-value" style="font-size:1.1rem;">OHE & Mapping</div></div>
+  </div>
+</div>
+
+<!-- Ordinal Parameters table -->
+<div class="card" style="padding:0;overflow:hidden;margin-bottom:22px;">
+  <div class="table-header-bar">
+    <h2 style="margin:0;font-size:1rem;">📋 Ordinal Mapping (Integer Encoding)</h2>
+  </div>
+  <div class="table-wrap" style="max-height:400px;overflow:auto;border-radius:0;">
+    <table class="data-table">
+      <thead><tr>
+        <th>Column</th><th>Mapping (Higher = Better)</th><th>Unique Levels</th>
+      </tr></thead>
+      <tbody>
+        {% for r in ordinal_stats %}
+        <tr>
+          <td><strong style="color:var(--royal-blue);">{{ r.column }}</strong></td>
+          <td><span class="range-pill">{{ r.mapping }}</span></td>
+          <td>{{ r.unique_values }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Nominal Parameters table -->
+<div class="card" style="padding:0;overflow:hidden;margin-bottom:22px;">
+  <div class="table-header-bar">
+    <h2 style="margin:0;font-size:1rem;">📋 Nominal Encoding (One-Hot / Dummy)</h2>
+    <a href="{{ url_for('download_encoded') }}" class="btn btn-primary" style="font-size:0.78rem;padding:8px 16px;">⬇ Download CSV</a>
+  </div>
+  <div class="table-wrap" style="max-height:400px;overflow:auto;border-radius:0;">
+    <table class="data-table">
+      <thead><tr>
+        <th>Column</th><th>Unique Categories</th><th>New Features Created</th>
+      </tr></thead>
+      <tbody>
+        {% for r in nominal_stats %}
+        <tr>
+          <td><strong style="color:var(--royal-blue);">{{ r.column }}</strong></td>
+          <td>{{ r.unique_count }}</td>
+          <td><span class="scaled-val">{{ r.new_columns }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Preview -->
+<div class="card" style="padding:0;overflow:hidden;">
+  <div class="table-header-bar">
+    <h2 style="margin:0;font-size:1rem;">🔍 Encoded Data Preview <span style="font-size:0.75rem;font-weight:400;color:var(--slate-gray);margin-left:8px;">First 10 rows · Encoded columns only (showing first 12)</span></h2>
+  </div>
+  <div class="table-wrap" style="overflow:auto;border-radius:0;">{{ enc_preview | safe }}</div>
+</div>
+{% endif %}
+</div><!-- /tab-encoding -->
+
 {% endblock %}
 
 
@@ -347,7 +430,7 @@
 <script>
 function showTab(name, btn) {
   // hide all tab panels
-  ['minmax','standard','robust'].forEach(function(t) {
+  ['minmax','standard','robust', 'encoding'].forEach(function(t) {
     document.getElementById('tab-' + t).style.display = 'none';
   });
   // remove active from all tab buttons

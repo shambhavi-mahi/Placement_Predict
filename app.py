@@ -104,6 +104,49 @@ def _apply_robust(df):
     return scaled_df, stats, num_cols
 
 
+def _apply_encoding(df):
+    """Return (encoded_df, ordinal_stats, nominal_stats, new_cols) using manual encoding."""
+    encoded_df = df.copy()
+    
+    # Ordinal mapping
+    ordinal_map = {
+        'CollegeTier': {'Tier3': 1, 'Tier2': 2, 'Tier1': 3},
+        'CGPA_Tier': {'Low': 1, 'Mid': 2, 'High': 3}
+    }
+    
+    ordinal_stats = []
+    for col, mapping in ordinal_map.items():
+        if col in encoded_df.columns:
+            encoded_df[col] = encoded_df[col].map(mapping)
+            ordinal_stats.append({
+                "column": col,
+                "mapping": " | ".join([f"{k} → {v}" for k, v in mapping.items()]),
+                "unique_values": len(mapping)
+            })
+            
+    # Nominal encoding (One-Hot)
+    nominal_cols = [c for c in config.CATEGORICAL_COLS if c not in ordinal_map and c in encoded_df.columns]
+    nominal_stats = []
+    
+    for col in nominal_cols:
+        unique_vals = list(df[col].dropna().unique())
+        nominal_stats.append({
+            "column": col,
+            "unique_count": len(unique_vals),
+            "new_columns": f"{col}_..."
+        })
+        
+    encoded_df = pd.get_dummies(encoded_df, columns=nominal_cols, drop_first=True)
+    
+    # Ensure boolean columns are integers 0/1
+    for col in encoded_df.columns:
+        if encoded_df[col].dtype == 'bool':
+            encoded_df[col] = encoded_df[col].astype(int)
+            
+    new_cols = list(encoded_df.columns)
+    return encoded_df, ordinal_stats, nominal_stats, new_cols
+
+
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
@@ -207,6 +250,7 @@ def feature_engg_page():
                                minmax_stats=None, minmax_preview=None,
                                std_stats=None,    std_preview=None,
                                robust_stats=None, robust_preview=None,
+                               ordinal_stats=None, nominal_stats=None, enc_preview=None,
                                num_cols=None, total_rows=None)
 
     preview_cols = ([config.ID_COL] if config.ID_COL in df.columns else [])
@@ -232,11 +276,22 @@ def feature_engg_page():
         float_format=lambda x: f"{x:.4f}"
     )
 
+    # ── Encoding ───────────────────────────────────────────────
+    enc_df, ordinal_stats, nominal_stats, enc_cols = _apply_encoding(df)
+    
+    # We want to preview the original ID, target, and newly encoded columns
+    # We'll just show the first 12 columns so it doesn't overflow massively
+    preview_enc_cols = [c for c in enc_cols if c not in config.TARGET_COLS][:12]
+    enc_preview = enc_df[preview_enc_cols].head(10).to_html(
+        classes="data-table", border=0, index=False
+    )
+
     return render_template(
         "feature_engg.html",
         minmax_stats=minmax_stats,   minmax_preview=minmax_preview,
         std_stats=std_stats,         std_preview=std_preview,
         robust_stats=robust_stats,   robust_preview=robust_preview,
+        ordinal_stats=ordinal_stats, nominal_stats=nominal_stats, enc_preview=enc_preview,
         num_cols=num_cols,
         total_rows=f"{len(df):,}",
     )
@@ -280,6 +335,15 @@ def download_robust():
         return "Dataset not found", 404
     scaled_df, _, _ = _apply_robust(df)
     return _csv_response(scaled_df, "placement_robust_scaled.csv")
+
+
+@app.route("/download-encoded")
+def download_encoded():
+    df = _safe_load_csv()
+    if df is None:
+        return "Dataset not found", 404
+    enc_df, _, _, _ = _apply_encoding(df)
+    return _csv_response(enc_df, "placement_encoded.csv")
 
 
 # ---------------------------------------------------------------------------
