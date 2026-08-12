@@ -1,31 +1,103 @@
 {% extends "base.html" %}
 
-{% block title %}EDA — PlacementPredict{% endblock %}
+{% block title %}EDA (Stats) — PlacementPredict{% endblock %}
 
 {% block content %}
 
 <div class="page-header">
-  <h2>Exploratory Data Analysis</h2>
-  <p>Visual insights into distributions, correlations, and placement patterns</p>
+  <h2>Exploratory Data Analysis (Stats)</h2>
+  <p>Descriptive statistics, missing values, and data sampling</p>
 </div>
 
-{% if plots %}
-<div class="plots-grid">
-  {% for plot in plots %}
-  <div class="plot-card">
-    <img src="{{ url_for('static', filename='Plot/' + plot) }}" alt="{{ plot }}">
-    <div class="plot-card-caption">
-      {{ plot.replace('_', ' ').replace('.png', '').title() }}
-    </div>
+{% if stats %}
+
+<!-- KPI strip for Missing Values & Sample -->
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:22px;">
+  <div class="kpi-card">
+    <div class="kpi-icon blue">📊</div>
+    <div class="kpi-body"><div class="kpi-label">Total Numeric Features</div><div class="kpi-value" style="font-size:1.45rem;">{{ stats | length }}</div></div>
   </div>
-  {% endfor %}
+  <div class="kpi-card">
+    <div class="kpi-icon {% if total_missing > 0 %}orange{% else %}green{% endif %}">⚠️</div>
+    <div class="kpi-body"><div class="kpi-label">Total Missing Values</div><div class="kpi-value" style="font-size:1.45rem;">{{ total_missing }}</div></div>
+  </div>
 </div>
+
+<!-- Descriptive Statistics table -->
+<div class="card" style="padding:0;overflow:hidden;margin-bottom:22px;">
+  <div class="table-header-bar">
+    <h2 style="margin:0;font-size:1rem;">📋 Descriptive Statistics (Numeric Features)</h2>
+  </div>
+  <div class="table-wrap" style="max-height:450px;overflow:auto;border-radius:0;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Column</th>
+          <th>Count</th>
+          <th>Mean</th>
+          <th>Std</th>
+          <th>Min</th>
+          <th>Q1 (25%)</th>
+          <th>Median (50%)</th>
+          <th>Q3 (75%)</th>
+          <th>Max</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in stats %}
+        <tr>
+          <td><strong style="color:var(--royal-blue);">{{ r.column }}</strong></td>
+          <td>{{ r.count }}</td>
+          <td><span class="range-pill">{{ r.mean }}</span></td>
+          <td><span class="range-pill">{{ r.std }}</span></td>
+          <td>{{ r.min }}</td>
+          <td>{{ r.q1 }}</td>
+          <td><span class="scaled-val">{{ r.median }}</span></td>
+          <td>{{ r.q3 }}</td>
+          <td>{{ r.max }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Missing Values table -->
+{% if missing %}
+<div class="card" style="padding:0;overflow:hidden;margin-bottom:22px;">
+  <div class="table-header-bar">
+    <h2 style="margin:0;font-size:1rem;">⚠️ Missing Values Breakdown</h2>
+  </div>
+  <div class="table-wrap" style="max-height:300px;overflow:auto;border-radius:0;">
+    <table class="data-table">
+      <thead><tr><th>Column</th><th>Missing Count</th></tr></thead>
+      <tbody>
+        {% for m in missing %}
+        <tr>
+          <td><strong style="color:var(--royal-blue);">{{ m.column }}</strong></td>
+          <td><span style="background:rgba(231,76,60,0.1);color:#C0392B;padding:2px 8px;border-radius:6px;font-weight:600;">{{ m.missing }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Random Data Sample -->
+<div class="card" style="padding:0;overflow:hidden;margin-bottom:22px;">
+  <div class="table-header-bar">
+    <h2 style="margin:0;font-size:1rem;">🎲 Random Data Sample <span style="font-size:0.75rem;font-weight:400;color:var(--slate-gray);margin-left:8px;">10 random rows from dataset</span></h2>
+  </div>
+  <div class="table-wrap" style="overflow:auto;border-radius:0;">{{ sample | safe }}</div>
+</div>
+
 {% else %}
 <div class="card">
   <div class="coming-soon">
-    <div class="cs-icon">📊</div>
-    <h3>No Plots Generated Yet</h3>
-    <p>Run the EDA pipeline first to generate visualisations. Plots will appear here automatically once saved to <code>Dashboard/Plot/</code>.</p>
+    <div class="cs-icon">📂</div>
+    <h3>Dataset Not Found</h3>
+    <p>Ensure the CSV exists at <code>Data/placement_predict_50k Dataset (2).csv</code>.</p>
   </div>
 </div>
 {% endif %}

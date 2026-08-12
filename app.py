@@ -232,6 +232,41 @@ def load_page():
 
 @app.route("/eda")
 def eda_page():
+    df = _safe_load_csv()
+    if df is None:
+        return render_template("eda.html", stats=None, missing=None, sample=None, total_missing=0)
+        
+    num_cols = _get_numeric_cols(df)
+    
+    # Descriptive Stats
+    stats_df = df[num_cols].describe().T
+    stats = []
+    for col in stats_df.index:
+        stats.append({
+            "column": col,
+            "count": int(stats_df.loc[col, "count"]),
+            "mean": round(stats_df.loc[col, "mean"], 4),
+            "std": round(stats_df.loc[col, "std"], 4),
+            "min": round(stats_df.loc[col, "min"], 4),
+            "q1": round(stats_df.loc[col, "25%"], 4),
+            "median": round(stats_df.loc[col, "50%"], 4),
+            "q3": round(stats_df.loc[col, "75%"], 4),
+            "max": round(stats_df.loc[col, "max"], 4)
+        })
+        
+    # Missing Values
+    missing = df.isnull().sum().to_dict()
+    missing_list = [{"column": k, "missing": v} for k, v in missing.items() if v > 0]
+    total_missing = sum(missing.values())
+    
+    # Random Sample
+    sample_html = df.sample(10).to_html(classes="data-table", border=0, index=False)
+    
+    return render_template("eda.html", stats=stats, missing=missing_list, sample=sample_html, total_missing=total_missing)
+
+
+@app.route("/graphs")
+def graphs_page():
     # Collect all generated plot filenames that exist on disk
     plots = []
     if os.path.isdir(config.PLOTS_DIR):
@@ -239,7 +274,7 @@ def eda_page():
             f for f in os.listdir(config.PLOTS_DIR)
             if f.lower().endswith(".png")
         )
-    return render_template("eda.html", plots=plots)
+    return render_template("graphs.html", plots=plots)
 
 
 @app.route("/feature-engineering")
