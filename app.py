@@ -1,9 +1,18 @@
 import os
-import pandas as pd
-from flask import Flask, render_template, request, send_file
 import io
+import numpy as np
+import pandas as pd
+from flask import Flask, render_template, request, send_file, jsonify
 
 import config
+
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 app = Flask(
     __name__,
@@ -379,6 +388,178 @@ def download_encoded():
         return "Dataset not found", 404
     enc_df, _, _, _ = _apply_encoding(df)
     return _csv_response(enc_df, "placement_encoded.csv")
+
+
+# ---------------------------------------------------------------------------
+# Regression helpers
+# ---------------------------------------------------------------------------
+REGRESSION_TARGET = "Salary Package"
+_REG_EXCLUDE = ["StudentID", "PlacementStatus", "Salary Package", "IsAnomaly", "CGPA_Tier"]
+
+def _build_reg_preprocessor(X):
+    """Build a ColumnTransformer that StandardScales numerics and OHE categoricals."""
+    num_cols = X.select_dtypes(include="number").columns.tolist()
+    cat_cols = X.select_dtypes(include=["object", "string"]).columns.tolist()
+    num_pipe = Pipeline([("imp", SimpleImputer(strategy="median")), ("sc", StandardScaler())])
+    try:
+        ohe = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
+    except TypeError:
+        ohe = OneHotEncoder(handle_unknown="ignore", sparse=False)
+    cat_pipe = Pipeline([("imp", SimpleImputer(strategy="most_frequent")), ("enc", ohe)])
+    transformers = []
+    if num_cols:
+        transformers.append(("num", num_pipe, num_cols))
+    if cat_cols:
+        transformers.append(("cat", cat_pipe, cat_cols))
+    return ColumnTransformer(transformers, remainder="drop"), num_cols, cat_cols
+
+
+def _batch_gradient_descent(X, y, lr=0.01, epochs=2000):
+    """Pure-numpy Batch Gradient Descent. Returns (theta, cost_history)."""
+    m, n = X.shape
+    theta = np.zeros(n)
+    history = []
+    for _ in range(epochs):
+        err = X @ theta - y
+        history.append(float(np.mean(err ** 2)))
+        theta -= (2 * lr / m) * (X.T @ err)
+    return theta, history
+
+
+def _run_regression(df):
+    """Train all three linear regression variants and return a results dict."""
+    reg_df = df[df[REGRESSION_TARGET].notna()].copy()
+    reg_df[REGRESSION_TARGET] = pd.to_numeric(reg_df[REGRESSION_TARGET], errors="coerce")
+    reg_df = reg_df[reg_df[REGRESSION_TARGET] > 0].dropna(subset=[REGRESSION_TARGET])
+
+    drop_cols = [c for c in _REG_EXCLUDE if c in reg_df.columns]
+    X = reg_df.drop(columns=drop_cols)
+    y = reg_df[REGRESSION_TARGET].to_numpy()
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    preprocessor, num_cols, cat_cols = _build_reg_preprocessor(X_train)
+    X_tr = preprocessor.fit_transform(X_train)
+    X_te = preprocessor.transform(X_test)
+
+    # ── 1. Sklearn Linear Regression ─────────────────────────────
+    sk_model = LinearRegression()
+    sk_model.fit(X_tr, y_train)
+    y_pred_sk = sk_model.predict(X_te)
+    sk_metrics = {
+        "mse":  round(float(mean_squared_error(y_test, y_pred_sk)), 4),
+        "rmse": round(float(np.sqrt(mean_squared_error(y_test, y_pred_sk))), 4),
+        "mae":  round(float(mean_absolute_error(y_test, y_pred_sk)), 4),
+        "r2":   round(float(r2_score(y_test, y_pred_sk)), 4),
+    }
+
+    # ── 2. Normal Equation ────────────────────────────────────────
+    X_ne = np.c_[np.ones(X_tr.shape[0]), X_tr]
+    X_ne_test = np.c_[np.ones(X_te.shape[0]), X_te]
+    try:
+        theta_ne = np.linalg.solve(X_ne.T @ X_ne, X_ne.T @ y_train)
+    except np.linalg.LinAlgError:
+        theta_ne = np.linalg.pinv(X_ne) @ y_train
+    y_pred_ne = X_ne_test @ theta_ne
+    ne_metrics = {
+        "mse":  round(float(mean_squared_error(y_test, y_pred_ne)), 4),
+        "rmse": round(float(np.sqrt(mean_squared_error(y_test, y_pred_ne))), 4),
+        "mae":  round(float(mean_absolute_error(y_test, y_pred_ne)), 4),
+        "r2":   round(float(r2_score(y_test, y_pred_ne)), 4),
+    }
+
+    # ── 3. Batch Gradient Descent ────────────────────────────────
+    X_gd = np.c_[np.ones(X_tr.shape[0]), X_tr]
+    X_gd_test = np.c_[np.ones(X_te.shape[0]), X_te]
+    theta_gd, cost_history = _batch_gradient_descent(X_gd, y_train, lr=0.01, epochs=2000)
+    y_pred_gd = X_gd_test @ theta_gd
+    gd_metrics = {
+        "mse":  round(float(mean_squared_error(y_test, y_pred_gd)), 4),
+        "rmse": round(float(np.sqrt(mean_squared_error(y_test, y_pred_gd))), 4),
+        "mae":  round(float(mean_absolute_error(y_test, y_pred_gd)), 4),
+        "r2":   round(float(r2_score(y_test, y_pred_gd)), 4),
+    }
+
+    # ── Actuals vs Predicted (first 30 test rows) ─────────────────
+    actual_vs_pred = [
+        {"actual": round(float(a), 2), "predicted": round(float(p), 2), "residual": round(float(a - p), 2)}
+        for a, p in zip(y_test[:30], y_pred_sk[:30])
+    ]
+
+    # ── Top-10 coefficients by absolute weight ────────────────────
+    try:
+        feat_names = preprocessor.get_feature_names_out()
+    except Exception:
+        feat_names = [f"f{i}" for i in range(X_tr.shape[1])]
+    coeff_df = pd.DataFrame({"feature": feat_names, "coeff": sk_model.coef_})
+    coeff_df["abs"] = coeff_df["coeff"].abs()
+    top10 = coeff_df.nlargest(10, "abs")[["feature", "coeff"]].to_dict("records")
+    for row in top10:
+        row["coeff"] = round(float(row["coeff"]), 4)
+
+    # ── GD cost curve (every 50 epochs) ──────────────────────────
+    cost_curve = [{"epoch": i + 1, "cost": round(c, 2)} for i, c in enumerate(cost_history) if i % 50 == 0]
+
+    return {
+        "train_rows": len(X_train),
+        "test_rows": len(X_test),
+        "total_rows": len(reg_df),
+        "num_features": X_tr.shape[1],
+        "sklearn": sk_metrics,
+        "normal_eq": ne_metrics,
+        "grad_desc": gd_metrics,
+        "actual_vs_pred": actual_vs_pred,
+        "top_coefficients": top10,
+        "cost_curve": cost_curve,
+        "intercept": round(float(sk_model.intercept_), 4),
+        # Keep preprocessor + model for the predict endpoint
+        "_preprocessor": preprocessor,
+        "_sk_model": sk_model,
+        "_X_cols": list(X.columns),
+    }
+
+
+# Store fitted model in-memory so /predict-salary can reuse it
+_reg_cache = {}
+
+
+@app.route("/regression")
+def regression_page():
+    df = _safe_load_csv()
+    if df is None:
+        return render_template("regression.html", result=None)
+    result = _run_regression(df)
+    _reg_cache["preprocessor"] = result.pop("_preprocessor")
+    _reg_cache["sk_model"] = result.pop("_sk_model")
+    _reg_cache["X_cols"] = result.pop("_X_cols")
+    return render_template("regression.html", result=result)
+
+
+@app.route("/predict-salary", methods=["POST"])
+def predict_salary():
+    """AJAX endpoint — accepts JSON with student features, returns predicted salary."""
+    if "sk_model" not in _reg_cache:
+        return jsonify({"error": "Model not trained yet. Visit /regression first."}), 400
+    data = request.get_json(force=True)
+    df_full = _safe_load_csv()
+    if df_full is None:
+        return jsonify({"error": "Dataset unavailable."}), 500
+
+    drop_cols = [c for c in _REG_EXCLUDE if c in df_full.columns]
+    X_ref = df_full.drop(columns=drop_cols)
+
+    row = {}
+    for col in _reg_cache["X_cols"]:
+        if col in data and data[col] != "":
+            row[col] = data[col]
+        elif X_ref[col].dtype == "object":
+            row[col] = X_ref[col].mode().iloc[0]
+        else:
+            row[col] = float(X_ref[col].median())
+    new_df = pd.DataFrame([row])[_reg_cache["X_cols"]]
+    X_proc = _reg_cache["preprocessor"].transform(new_df)
+    salary = float(_reg_cache["sk_model"].predict(X_proc)[0])
+    return jsonify({"predicted_salary": round(salary, 2)})
 
 
 # ---------------------------------------------------------------------------

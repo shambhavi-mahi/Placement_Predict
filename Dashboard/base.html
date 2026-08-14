@@ -88,6 +88,16 @@
       Feature Engg
     </a>
 
+    <a href="{{ url_for('regression_page') }}" class="menu-btn {% if request.endpoint == 'regression_page' %}active{% endif %}">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="3" y1="20" x2="21" y2="4"/>
+        <circle cx="6" cy="17" r="2"/>
+        <circle cx="12" cy="11" r="2"/>
+        <circle cx="18" cy="5" r="2"/>
+      </svg>
+      Regression
+    </a>
+
     <span class="sidebar-section-label" style="margin-top:auto;">Info</span>
     <div style="padding:10px 12px; font-size:0.72rem; color:rgba(255,255,255,0.35); line-height:1.6;">
       PlacementPredict v1.0<br>Flask · Pandas · Seaborn
