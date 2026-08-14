@@ -1,18 +1,11 @@
 import os
-import io
+import math
 import numpy as np
 import pandas as pd
 from flask import Flask, render_template, request, send_file, jsonify
+import io
 
 import config
-
-from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
-from sklearn.impute import SimpleImputer
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 app = Flask(
     __name__,
@@ -391,289 +384,194 @@ def download_encoded():
 
 
 # ---------------------------------------------------------------------------
-# Regression helpers
+# Regression Helpers
 # ---------------------------------------------------------------------------
-REGRESSION_TARGET = "Salary Package"
-_REG_EXCLUDE = ["StudentID", "PlacementStatus", "Salary Package", "IsAnomaly", "CGPA_Tier"]
-
-# ─── 4 features used for Multi-Linear Regression (matches user code) ────────
 MLR_FEATURES = ["CGPA", "AptitudeTestScore", "CodingTestScore", "MockInterviewScore"]
+SLR_FEATURE  = "CGPA"
+TARGET_COL   = "Salary Package"
 
 
-def _build_reg_preprocessor(X):
-    """Build a ColumnTransformer that StandardScales numerics and OHE categoricals."""
-    num_cols = X.select_dtypes(include="number").columns.tolist()
-    cat_cols = X.select_dtypes(include=["object", "string"]).columns.tolist()
-    num_pipe = Pipeline([("imp", SimpleImputer(strategy="median")), ("sc", StandardScaler())])
-    try:
-        ohe = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
-    except TypeError:
-        ohe = OneHotEncoder(handle_unknown="ignore", sparse=False)
-    cat_pipe = Pipeline([("imp", SimpleImputer(strategy="most_frequent")), ("enc", ohe)])
-    transformers = []
-    if num_cols:
-        transformers.append(("num", num_pipe, num_cols))
-    if cat_cols:
-        transformers.append(("cat", cat_pipe, cat_cols))
-    return ColumnTransformer(transformers, remainder="drop"), num_cols, cat_cols
+def _run_multilinear_regression(df):
+    """Manual Normal-Equation MLR. Returns dict with coefs, metrics, etc."""
+    data = df[MLR_FEATURES + [TARGET_COL]].dropna().copy()
+    for col in MLR_FEATURES:
+        data[col] = pd.to_numeric(data[col], errors="coerce")
+    data[TARGET_COL] = pd.to_numeric(data[TARGET_COL], errors="coerce")
+    data = data.dropna()
+
+    n = len(data)
+    X_raw = data[MLR_FEATURES].values.astype(float)
+    y     = data[TARGET_COL].values.astype(float)
+
+    # 80/20 split (deterministic: first 80% train)
+    split  = int(0.8 * n)
+    X_train, X_test = X_raw[:split], X_raw[split:]
+    y_train, y_test = y[:split],     y[split:]
+
+    # Standardise using train stats
+    mu  = X_train.mean(axis=0)
+    sig = X_train.std(axis=0) + 1e-9
+    X_tr_s = (X_train - mu) / sig
+    X_te_s = (X_test  - mu) / sig
+
+    # Normal equation: theta = (X^T X)^-1 X^T y
+    ones   = np.ones((X_tr_s.shape[0], 1))
+    X_b    = np.hstack([ones, X_tr_s])
+    theta  = np.linalg.lstsq(X_b, y_train, rcond=None)[0]
+    intercept = theta[0]
+    coefs     = theta[1:]
+
+    # Predict on test
+    ones_te = np.ones((X_te_s.shape[0], 1))
+    X_b_te  = np.hstack([ones_te, X_te_s])
+    y_pred  = X_b_te @ theta
+
+    mse  = float(np.mean((y_test - y_pred) ** 2))
+    rmse = math.sqrt(mse)
+    mae  = float(np.mean(np.abs(y_test - y_pred)))
+    ss_res = float(np.sum((y_test - y_pred) ** 2))
+    ss_tot = float(np.sum((y_test - y_test.mean()) ** 2))
+    r2   = 1 - ss_res / ss_tot if ss_tot != 0 else 0.0
+
+    # Sample predictions (first 10 test rows)
+    sample = []
+    for i in range(min(10, len(y_test))):
+        sample.append({"actual": round(float(y_test[i]), 2), "predicted": round(float(y_pred[i]), 2)})
+
+    return {
+        "intercept":  round(intercept, 4),
+        "coefs":      {f: round(float(c), 4) for f, c in zip(MLR_FEATURES, coefs)},
+        "mse":        round(mse, 4),
+        "rmse":       round(rmse, 4),
+        "mae":        round(mae, 4),
+        "r2":         round(r2, 4),
+        "n_train":    split,
+        "n_test":     n - split,
+        "sample":     sample,
+        # keep normalisation params for prediction
+        "_mu":  mu.tolist(),
+        "_sig": sig.tolist(),
+        "_theta": theta.tolist(),
+    }
 
 
-def _batch_gradient_descent(X, y, lr=0.01, epochs=2000):
-    """Pure-numpy Batch Gradient Descent. Returns (theta, cost_history)."""
-    m, n = X.shape
-    theta = np.zeros(n)
-    history = []
-    for _ in range(epochs):
-        err = X @ theta - y
-        history.append(float(np.mean(err ** 2)))
-        theta -= (2 * lr / m) * (X.T @ err)
-    return theta, history
+def _run_simple_regression(df, alpha=0.01, epochs=1000):
+    """Gradient-Descent Simple Linear Regression (CGPA → Salary Package)."""
+    data = df[[SLR_FEATURE, TARGET_COL]].dropna().copy()
+    data[SLR_FEATURE]  = pd.to_numeric(data[SLR_FEATURE],  errors="coerce")
+    data[TARGET_COL]   = pd.to_numeric(data[TARGET_COL],   errors="coerce")
+    data = data.dropna()
 
+    n = len(data)
+    split = int(0.8 * n)
+    X_all = data[SLR_FEATURE].values.astype(float)
+    y_all = data[TARGET_COL].values.astype(float)
+    X_train, X_test = X_all[:split], X_all[split:]
+    y_train, y_test = y_all[:split], y_all[split:]
 
-def _simple_gd(X_1d, y, lr=0.01, epochs=1000):
-    """
-    Simple (univariate) Gradient Descent — matches user's code exactly.
-    X_1d: 1-D numpy array.
-    Returns (theta0, theta1, cost_history).
-    """
-    m = len(X_1d)
+    # Normalise
+    X_mu, X_sig = X_train.mean(), X_train.std() + 1e-9
+    Xn_train = (X_train - X_mu) / X_sig
+    Xn_test  = (X_test  - X_mu) / X_sig
+
     theta0, theta1 = 0.0, 0.0
-    history = []
+    m = len(Xn_train)
+    cost_history = []
     for _ in range(epochs):
-        y_pred = theta0 + theta1 * X_1d
-        err = y_pred - y
-        history.append(float(np.mean(err ** 2)))
-        theta0 -= (2 / m) * lr * np.sum(err)
-        theta1 -= (2 / m) * lr * np.sum(err * X_1d)
-    return theta0, theta1, history
+        y_pred_tr = theta0 + theta1 * Xn_train
+        error     = y_pred_tr - y_train
+        cost_history.append(float(np.mean(error ** 2)))
+        theta0 -= alpha * (2 / m) * np.sum(error)
+        theta1 -= alpha * (2 / m) * np.sum(error * Xn_train)
 
+    y_pred_te = theta0 + theta1 * Xn_test
+    mse  = float(np.mean((y_test - y_pred_te) ** 2))
+    rmse = math.sqrt(mse)
+    mae  = float(np.mean(np.abs(y_test - y_pred_te)))
+    ss_res = float(np.sum((y_test - y_pred_te) ** 2))
+    ss_tot = float(np.sum((y_test - y_test.mean()) ** 2))
+    r2   = 1 - ss_res / ss_tot if ss_tot != 0 else 0.0
 
-def _run_multilinear(df):
-    """
-    Multilinear regression with the 4 explicit features from the user's code.
-    Also runs a simple 1-feature GD (CGPA → Salary) to mirror both snippets.
-    """
-    feat_cols = [c for c in MLR_FEATURES if c in df.columns]
-    data = df[feat_cols + [REGRESSION_TARGET]].dropna()
-    X_df = data[feat_cols]
-    y_arr = data[REGRESSION_TARGET].to_numpy()
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X_df, y_arr, test_size=0.20, random_state=42
-    )
-
-    # ── Sklearn Multi-Linear Regression ──────────────────────────────
-    mlr = LinearRegression()
-    mlr.fit(X_train, y_train)
-    y_pred = mlr.predict(X_test)
-
-    mlr_metrics = {
-        "mse":  round(float(mean_squared_error(y_test, y_pred)), 4),
-        "rmse": round(float(np.sqrt(mean_squared_error(y_test, y_pred))), 4),
-        "mae":  round(float(mean_absolute_error(y_test, y_pred)), 4),
-        "r2":   round(float(r2_score(y_test, y_pred)), 4),
-    }
-
-    coefficients = [
-        {"feature": feat, "coeff": round(float(c), 6)}
-        for feat, c in zip(feat_cols, mlr.coef_)
-    ]
-    intercept = round(float(mlr.intercept_), 4)
-
-    # Actual vs predicted (first 30 test rows)
-    avp = [
-        {"actual": round(float(a), 2), "predicted": round(float(p), 2),
-         "residual": round(float(a - p), 2)}
-        for a, p in zip(y_test[:30], y_pred[:30])
-    ]
-
-    # ── Simple GD: CGPA only → Salary ────────────────────────────────
-    cgpa_arr = data["CGPA"].to_numpy() if "CGPA" in feat_cols else np.array([])
-    simple_theta0, simple_theta1, simple_cost = 0.0, 0.0, []
-    if len(cgpa_arr) > 0:
-        simple_theta0, simple_theta1, simple_cost = _simple_gd(cgpa_arr, y_arr, lr=0.01, epochs=1000)
-
-    # cost every 50 epochs for the chart
-    cost_curve = [{"epoch": i + 1, "cost": round(c, 2)}
-                  for i, c in enumerate(simple_cost) if i % 50 == 0]
-
-    # Sample CGPA line: predict over [6, 6.5 … 9]
-    cgpa_range = [round(v * 0.5, 1) for v in range(12, 19)]  # 6.0–9.0
-    regression_line = [{"cgpa": x, "salary": round(simple_theta0 + simple_theta1 * x, 2)}
-                       for x in cgpa_range]
-
-    # Sample prediction: CGPA = 7.8
-    pred_cgpa78 = round(simple_theta0 + simple_theta1 * 7.8, 2)
+    # Scatter: sample 200 test points for the chart
+    idx = np.linspace(0, len(Xn_test) - 1, min(200, len(Xn_test)), dtype=int)
+    scatter_x = (Xn_test[idx] * X_sig + X_mu).tolist()
+    scatter_y = y_test[idx].tolist()
+    # Regression line: 30 points across training CGPA range
+    line_x_norm = np.linspace(Xn_test.min(), Xn_test.max(), 30)
+    line_x_real = (line_x_norm * X_sig + X_mu).tolist()
+    line_y      = (theta0 + theta1 * line_x_norm).tolist()
 
     return {
-        "features": feat_cols,
-        "train_rows": len(X_train),
-        "test_rows": len(X_test),
-        "intercept": intercept,
-        "coefficients": coefficients,
-        "metrics": mlr_metrics,
-        "avp": avp,
-        "simple_theta0": round(simple_theta0, 6),
-        "simple_theta1": round(simple_theta1, 6),
-        "simple_pred_cgpa78": pred_cgpa78,
-        "cost_curve": cost_curve,
-        "regression_line": regression_line,
-        # keep model for AJAX predict
-        "_mlr": mlr,
-        "_feat_cols": feat_cols,
+        "intercept": round(float(theta0), 4),
+        "slope":     round(float(theta1), 4),
+        "mse":       round(mse, 4),
+        "rmse":      round(rmse, 4),
+        "mae":       round(mae, 4),
+        "r2":        round(r2, 4),
+        "n_train":   split,
+        "n_test":    n - split,
+        "epochs":    epochs,
+        "alpha":     alpha,
+        "cost_history": [round(c, 4) for c in cost_history[::20]],  # every 20th
+        "scatter_x":    [round(v, 3) for v in scatter_x],
+        "scatter_y":    [round(v, 3) for v in scatter_y],
+        "line_x":       [round(v, 3) for v in line_x_real],
+        "line_y":       [round(v, 3) for v in line_y],
+        # for prediction
+        "_theta0": theta0,
+        "_theta1": theta1,
+        "_X_mu":   X_mu,
+        "_X_sig":  X_sig,
     }
 
 
-def _run_regression(df):
-    """Train all three linear regression variants and return a results dict."""
-    reg_df = df[df[REGRESSION_TARGET].notna()].copy()
-    reg_df[REGRESSION_TARGET] = pd.to_numeric(reg_df[REGRESSION_TARGET], errors="coerce")
-    reg_df = reg_df[reg_df[REGRESSION_TARGET] > 0].dropna(subset=[REGRESSION_TARGET])
-
-    drop_cols = [c for c in _REG_EXCLUDE if c in reg_df.columns]
-    X = reg_df.drop(columns=drop_cols)
-    y = reg_df[REGRESSION_TARGET].to_numpy()
-
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    preprocessor, num_cols, cat_cols = _build_reg_preprocessor(X_train)
-    X_tr = preprocessor.fit_transform(X_train)
-    X_te = preprocessor.transform(X_test)
-
-    # ── 1. Sklearn Linear Regression ─────────────────────────────
-    sk_model = LinearRegression()
-    sk_model.fit(X_tr, y_train)
-    y_pred_sk = sk_model.predict(X_te)
-    sk_metrics = {
-        "mse":  round(float(mean_squared_error(y_test, y_pred_sk)), 4),
-        "rmse": round(float(np.sqrt(mean_squared_error(y_test, y_pred_sk))), 4),
-        "mae":  round(float(mean_absolute_error(y_test, y_pred_sk)), 4),
-        "r2":   round(float(r2_score(y_test, y_pred_sk)), 4),
-    }
-
-    # ── 2. Normal Equation ────────────────────────────────────────
-    X_ne = np.c_[np.ones(X_tr.shape[0]), X_tr]
-    X_ne_test = np.c_[np.ones(X_te.shape[0]), X_te]
-    try:
-        theta_ne = np.linalg.solve(X_ne.T @ X_ne, X_ne.T @ y_train)
-    except np.linalg.LinAlgError:
-        theta_ne = np.linalg.pinv(X_ne) @ y_train
-    y_pred_ne = X_ne_test @ theta_ne
-    ne_metrics = {
-        "mse":  round(float(mean_squared_error(y_test, y_pred_ne)), 4),
-        "rmse": round(float(np.sqrt(mean_squared_error(y_test, y_pred_ne))), 4),
-        "mae":  round(float(mean_absolute_error(y_test, y_pred_ne)), 4),
-        "r2":   round(float(r2_score(y_test, y_pred_ne)), 4),
-    }
-
-    # ── 3. Batch Gradient Descent ────────────────────────────────
-    X_gd = np.c_[np.ones(X_tr.shape[0]), X_tr]
-    X_gd_test = np.c_[np.ones(X_te.shape[0]), X_te]
-    theta_gd, cost_history = _batch_gradient_descent(X_gd, y_train, lr=0.01, epochs=2000)
-    y_pred_gd = X_gd_test @ theta_gd
-    gd_metrics = {
-        "mse":  round(float(mean_squared_error(y_test, y_pred_gd)), 4),
-        "rmse": round(float(np.sqrt(mean_squared_error(y_test, y_pred_gd))), 4),
-        "mae":  round(float(mean_absolute_error(y_test, y_pred_gd)), 4),
-        "r2":   round(float(r2_score(y_test, y_pred_gd)), 4),
-    }
-
-    # ── Actuals vs Predicted (first 30 test rows) ─────────────────
-    actual_vs_pred = [
-        {"actual": round(float(a), 2), "predicted": round(float(p), 2), "residual": round(float(a - p), 2)}
-        for a, p in zip(y_test[:30], y_pred_sk[:30])
-    ]
-
-    # ── Top-10 coefficients by absolute weight ────────────────────
-    try:
-        feat_names = preprocessor.get_feature_names_out()
-    except Exception:
-        feat_names = [f"f{i}" for i in range(X_tr.shape[1])]
-    coeff_df = pd.DataFrame({"feature": feat_names, "coeff": sk_model.coef_})
-    coeff_df["abs"] = coeff_df["coeff"].abs()
-    top10 = coeff_df.nlargest(10, "abs")[["feature", "coeff"]].to_dict("records")
-    for row in top10:
-        row["coeff"] = round(float(row["coeff"]), 4)
-
-    # ── GD cost curve (every 50 epochs) ──────────────────────────
-    cost_curve = [{"epoch": i + 1, "cost": round(c, 2)} for i, c in enumerate(cost_history) if i % 50 == 0]
-
-    return {
-        "train_rows": len(X_train),
-        "test_rows": len(X_test),
-        "total_rows": len(reg_df),
-        "num_features": X_tr.shape[1],
-        "sklearn": sk_metrics,
-        "normal_eq": ne_metrics,
-        "grad_desc": gd_metrics,
-        "actual_vs_pred": actual_vs_pred,
-        "top_coefficients": top10,
-        "cost_curve": cost_curve,
-        "intercept": round(float(sk_model.intercept_), 4),
-        "_preprocessor": preprocessor,
-        "_sk_model": sk_model,
-        "_X_cols": list(X.columns),
-    }
+# Cache so we don't recompute on every request
+_regression_cache = {}
 
 
-# Store fitted models in-memory
-_reg_cache = {}
+def _get_regression_data():
+    if "mlr" not in _regression_cache:
+        df = _safe_load_csv()
+        if df is None:
+            return None, None
+        _regression_cache["mlr"] = _run_multilinear_regression(df)
+        _regression_cache["slr"] = _run_simple_regression(df)
+    return _regression_cache["mlr"], _regression_cache["slr"]
 
 
 @app.route("/regression")
 def regression_page():
-    df = _safe_load_csv()
-    if df is None:
-        return render_template("regression.html", result=None, mlr=None)
-    result = _run_regression(df)
-    _reg_cache["preprocessor"] = result.pop("_preprocessor")
-    _reg_cache["sk_model"]     = result.pop("_sk_model")
-    _reg_cache["X_cols"]       = result.pop("_X_cols")
-    mlr = _run_multilinear(df)
-    _reg_cache["mlr"]       = mlr.pop("_mlr")
-    _reg_cache["feat_cols"] = mlr.pop("_feat_cols")
-    return render_template("regression.html", result=result, mlr=mlr)
+    mlr, slr = _get_regression_data()
+    return render_template("regression.html", mlr=mlr, slr=slr)
 
 
 @app.route("/predict-salary", methods=["POST"])
 def predict_salary():
-    """AJAX endpoint — full-feature model."""
-    if "sk_model" not in _reg_cache:
-        return jsonify({"error": "Model not trained yet. Visit /regression first."}), 400
-    data = request.get_json(force=True)
-    df_full = _safe_load_csv()
-    if df_full is None:
-        return jsonify({"error": "Dataset unavailable."}), 500
-    drop_cols = [c for c in _REG_EXCLUDE if c in df_full.columns]
-    X_ref = df_full.drop(columns=drop_cols)
-    row = {}
-    for col in _reg_cache["X_cols"]:
-        if col in data and data[col] != "":
-            row[col] = data[col]
-        elif X_ref[col].dtype == "object":
-            row[col] = X_ref[col].mode().iloc[0]
+    mlr, slr = _get_regression_data()
+    if mlr is None:
+        return jsonify({"error": "Dataset not loaded"}), 500
+
+    try:
+        model_type = request.form.get("model", "mlr")
+
+        if model_type == "mlr":
+            theta = np.array(mlr["_theta"])
+            mu    = np.array(mlr["_mu"])
+            sig   = np.array(mlr["_sig"])
+            vals  = [float(request.form.get(f, 0)) for f in MLR_FEATURES]
+            x_norm = (np.array(vals) - mu) / sig
+            x_b    = np.array([1.0] + x_norm.tolist())
+            pred   = float(x_b @ theta)
         else:
-            row[col] = float(X_ref[col].median())
-    new_df = pd.DataFrame([row])[_reg_cache["X_cols"]]
-    X_proc = _reg_cache["preprocessor"].transform(new_df)
-    salary = float(_reg_cache["sk_model"].predict(X_proc)[0])
-    return jsonify({"predicted_salary": round(salary, 2)})
+            theta0 = slr["_theta0"]; theta1 = slr["_theta1"]
+            X_mu   = slr["_X_mu"];   X_sig  = slr["_X_sig"]
+            cgpa   = float(request.form.get("CGPA", 0))
+            x_norm = (cgpa - X_mu) / X_sig
+            pred   = theta0 + theta1 * x_norm
 
-
-@app.route("/predict-salary-multi", methods=["POST"])
-def predict_salary_multi():
-    """AJAX endpoint — 4-feature multi-linear model."""
-    if "mlr" not in _reg_cache:
-        return jsonify({"error": "Model not trained yet. Visit /regression first."}), 400
-    data = request.get_json(force=True)
-    row = [[
-        float(data.get("CGPA", 7.5)),
-        float(data.get("AptitudeTestScore", 80)),
-        float(data.get("CodingTestScore", 85)),
-        float(data.get("MockInterviewScore", 75)),
-    ]]
-    salary = float(_reg_cache["mlr"].predict(row)[0])
-    return jsonify({"predicted_salary": round(salary, 2)})
+        return jsonify({"predicted_salary": round(pred, 2)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 # ---------------------------------------------------------------------------

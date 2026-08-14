@@ -91,9 +91,7 @@
     <a href="{{ url_for('regression_page') }}" class="menu-btn {% if request.endpoint == 'regression_page' %}active{% endif %}">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <line x1="3" y1="20" x2="21" y2="4"/>
-        <circle cx="6" cy="17" r="2"/>
-        <circle cx="12" cy="11" r="2"/>
-        <circle cx="18" cy="5" r="2"/>
+        <polyline points="15 4 21 4 21 10"/>
       </svg>
       Regression
     </a>
