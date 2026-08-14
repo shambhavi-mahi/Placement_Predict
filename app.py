@@ -396,6 +396,10 @@ def download_encoded():
 REGRESSION_TARGET = "Salary Package"
 _REG_EXCLUDE = ["StudentID", "PlacementStatus", "Salary Package", "IsAnomaly", "CGPA_Tier"]
 
+# ─── 4 features used for Multi-Linear Regression (matches user code) ────────
+MLR_FEATURES = ["CGPA", "AptitudeTestScore", "CodingTestScore", "MockInterviewScore"]
+
+
 def _build_reg_preprocessor(X):
     """Build a ColumnTransformer that StandardScales numerics and OHE categoricals."""
     num_cols = X.select_dtypes(include="number").columns.tolist()
@@ -424,6 +428,100 @@ def _batch_gradient_descent(X, y, lr=0.01, epochs=2000):
         history.append(float(np.mean(err ** 2)))
         theta -= (2 * lr / m) * (X.T @ err)
     return theta, history
+
+
+def _simple_gd(X_1d, y, lr=0.01, epochs=1000):
+    """
+    Simple (univariate) Gradient Descent — matches user's code exactly.
+    X_1d: 1-D numpy array.
+    Returns (theta0, theta1, cost_history).
+    """
+    m = len(X_1d)
+    theta0, theta1 = 0.0, 0.0
+    history = []
+    for _ in range(epochs):
+        y_pred = theta0 + theta1 * X_1d
+        err = y_pred - y
+        history.append(float(np.mean(err ** 2)))
+        theta0 -= (2 / m) * lr * np.sum(err)
+        theta1 -= (2 / m) * lr * np.sum(err * X_1d)
+    return theta0, theta1, history
+
+
+def _run_multilinear(df):
+    """
+    Multilinear regression with the 4 explicit features from the user's code.
+    Also runs a simple 1-feature GD (CGPA → Salary) to mirror both snippets.
+    """
+    feat_cols = [c for c in MLR_FEATURES if c in df.columns]
+    data = df[feat_cols + [REGRESSION_TARGET]].dropna()
+    X_df = data[feat_cols]
+    y_arr = data[REGRESSION_TARGET].to_numpy()
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X_df, y_arr, test_size=0.20, random_state=42
+    )
+
+    # ── Sklearn Multi-Linear Regression ──────────────────────────────
+    mlr = LinearRegression()
+    mlr.fit(X_train, y_train)
+    y_pred = mlr.predict(X_test)
+
+    mlr_metrics = {
+        "mse":  round(float(mean_squared_error(y_test, y_pred)), 4),
+        "rmse": round(float(np.sqrt(mean_squared_error(y_test, y_pred))), 4),
+        "mae":  round(float(mean_absolute_error(y_test, y_pred)), 4),
+        "r2":   round(float(r2_score(y_test, y_pred)), 4),
+    }
+
+    coefficients = [
+        {"feature": feat, "coeff": round(float(c), 6)}
+        for feat, c in zip(feat_cols, mlr.coef_)
+    ]
+    intercept = round(float(mlr.intercept_), 4)
+
+    # Actual vs predicted (first 30 test rows)
+    avp = [
+        {"actual": round(float(a), 2), "predicted": round(float(p), 2),
+         "residual": round(float(a - p), 2)}
+        for a, p in zip(y_test[:30], y_pred[:30])
+    ]
+
+    # ── Simple GD: CGPA only → Salary ────────────────────────────────
+    cgpa_arr = data["CGPA"].to_numpy() if "CGPA" in feat_cols else np.array([])
+    simple_theta0, simple_theta1, simple_cost = 0.0, 0.0, []
+    if len(cgpa_arr) > 0:
+        simple_theta0, simple_theta1, simple_cost = _simple_gd(cgpa_arr, y_arr, lr=0.01, epochs=1000)
+
+    # cost every 50 epochs for the chart
+    cost_curve = [{"epoch": i + 1, "cost": round(c, 2)}
+                  for i, c in enumerate(simple_cost) if i % 50 == 0]
+
+    # Sample CGPA line: predict over [6, 6.5 … 9]
+    cgpa_range = [round(v * 0.5, 1) for v in range(12, 19)]  # 6.0–9.0
+    regression_line = [{"cgpa": x, "salary": round(simple_theta0 + simple_theta1 * x, 2)}
+                       for x in cgpa_range]
+
+    # Sample prediction: CGPA = 7.8
+    pred_cgpa78 = round(simple_theta0 + simple_theta1 * 7.8, 2)
+
+    return {
+        "features": feat_cols,
+        "train_rows": len(X_train),
+        "test_rows": len(X_test),
+        "intercept": intercept,
+        "coefficients": coefficients,
+        "metrics": mlr_metrics,
+        "avp": avp,
+        "simple_theta0": round(simple_theta0, 6),
+        "simple_theta1": round(simple_theta1, 6),
+        "simple_pred_cgpa78": pred_cgpa78,
+        "cost_curve": cost_curve,
+        "regression_line": regression_line,
+        # keep model for AJAX predict
+        "_mlr": mlr,
+        "_feat_cols": feat_cols,
+    }
 
 
 def _run_regression(df):
@@ -512,14 +610,13 @@ def _run_regression(df):
         "top_coefficients": top10,
         "cost_curve": cost_curve,
         "intercept": round(float(sk_model.intercept_), 4),
-        # Keep preprocessor + model for the predict endpoint
         "_preprocessor": preprocessor,
         "_sk_model": sk_model,
         "_X_cols": list(X.columns),
     }
 
 
-# Store fitted model in-memory so /predict-salary can reuse it
+# Store fitted models in-memory
 _reg_cache = {}
 
 
@@ -527,27 +624,28 @@ _reg_cache = {}
 def regression_page():
     df = _safe_load_csv()
     if df is None:
-        return render_template("regression.html", result=None)
+        return render_template("regression.html", result=None, mlr=None)
     result = _run_regression(df)
     _reg_cache["preprocessor"] = result.pop("_preprocessor")
-    _reg_cache["sk_model"] = result.pop("_sk_model")
-    _reg_cache["X_cols"] = result.pop("_X_cols")
-    return render_template("regression.html", result=result)
+    _reg_cache["sk_model"]     = result.pop("_sk_model")
+    _reg_cache["X_cols"]       = result.pop("_X_cols")
+    mlr = _run_multilinear(df)
+    _reg_cache["mlr"]       = mlr.pop("_mlr")
+    _reg_cache["feat_cols"] = mlr.pop("_feat_cols")
+    return render_template("regression.html", result=result, mlr=mlr)
 
 
 @app.route("/predict-salary", methods=["POST"])
 def predict_salary():
-    """AJAX endpoint — accepts JSON with student features, returns predicted salary."""
+    """AJAX endpoint — full-feature model."""
     if "sk_model" not in _reg_cache:
         return jsonify({"error": "Model not trained yet. Visit /regression first."}), 400
     data = request.get_json(force=True)
     df_full = _safe_load_csv()
     if df_full is None:
         return jsonify({"error": "Dataset unavailable."}), 500
-
     drop_cols = [c for c in _REG_EXCLUDE if c in df_full.columns]
     X_ref = df_full.drop(columns=drop_cols)
-
     row = {}
     for col in _reg_cache["X_cols"]:
         if col in data and data[col] != "":
@@ -559,6 +657,22 @@ def predict_salary():
     new_df = pd.DataFrame([row])[_reg_cache["X_cols"]]
     X_proc = _reg_cache["preprocessor"].transform(new_df)
     salary = float(_reg_cache["sk_model"].predict(X_proc)[0])
+    return jsonify({"predicted_salary": round(salary, 2)})
+
+
+@app.route("/predict-salary-multi", methods=["POST"])
+def predict_salary_multi():
+    """AJAX endpoint — 4-feature multi-linear model."""
+    if "mlr" not in _reg_cache:
+        return jsonify({"error": "Model not trained yet. Visit /regression first."}), 400
+    data = request.get_json(force=True)
+    row = [[
+        float(data.get("CGPA", 7.5)),
+        float(data.get("AptitudeTestScore", 80)),
+        float(data.get("CodingTestScore", 85)),
+        float(data.get("MockInterviewScore", 75)),
+    ]]
+    salary = float(_reg_cache["mlr"].predict(row)[0])
     return jsonify({"predicted_salary": round(salary, 2)})
 
 

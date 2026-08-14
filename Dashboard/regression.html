@@ -1,14 +1,218 @@
 {% extends "base.html" %}
 
-{% block title %}Linear Regression — PlacementPredict{% endblock %}
+{% block title %}Regression — PlacementPredict{% endblock %}
 
 {% block content %}
 <div class="page-header">
-  <h2>Linear Regression — Salary Prediction</h2>
-  <p>Three implementations compared: Scikit-learn · Normal Equation · Batch Gradient Descent</p>
+  <h2>Regression — Salary Prediction</h2>
+  <p>Multi-Linear Regression · Simple GD · Normal Equation · Batch Gradient Descent</p>
+</div>
+
+<!-- ── Tabs ── -->
+<div class="fe-tabs" style="margin-bottom:24px;">
+  <button class="fe-tab active" id="btn-mlr" onclick="showRegTab('mlr',this)">📈 Multi-Linear Regression</button>
+  <button class="fe-tab" id="btn-fullreg" onclick="showRegTab('fullreg',this)">🔬 Full-Feature Regression</button>
 </div>
 
 {% if result %}
+
+{# ═══════════════ TAB 1 — MULTI-LINEAR REGRESSION ═══════════════ #}
+<div id="tab-mlr">
+{% if mlr %}
+
+<!-- KPI strip -->
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:24px;">
+  <div class="kpi-card">
+    <div class="kpi-icon blue">📊</div>
+    <div class="kpi-body"><div class="kpi-label">Train Rows</div><div class="kpi-value">{{ "{:,}".format(mlr.train_rows) }}</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon azure">🧪</div>
+    <div class="kpi-body"><div class="kpi-label">Test Rows</div><div class="kpi-value">{{ "{:,}".format(mlr.test_rows) }}</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon green">🏆</div>
+    <div class="kpi-body"><div class="kpi-label">R² Score</div><div class="kpi-value" style="color:var(--emerald);">{{ mlr.metrics.r2 }}</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon orange">📌</div>
+    <div class="kpi-body"><div class="kpi-label">Intercept (β₀)</div><div class="kpi-value" style="font-size:1.1rem;">{{ mlr.intercept }}</div></div>
+  </div>
+</div>
+
+<!-- Formula card -->
+<div class="scaler-formula-card minmax-card" style="margin-bottom:24px;">
+  <h2>📈 Multi-Linear Regression (4 Features)</h2>
+  <p>Uses CGPA, Aptitude Test Score, Coding Test Score, and Mock Interview Score to predict salary — exactly matching the user's code.</p>
+  <code style="background:rgba(255,255,255,0.15);padding:10px 16px;border-radius:8px;display:block;font-size:0.88rem;">
+    Salary = β₀ + β₁·CGPA + β₂·Aptitude + β₃·Coding + β₄·MockInterview
+  </code>
+  <div style="margin-top:14px;display:flex;gap:24px;flex-wrap:wrap;font-size:0.82rem;opacity:0.85;">
+    {% for c in mlr.coefficients %}
+    <span><strong>{{ c.feature }}:</strong> {{ c.coeff }}</span>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Two-col: Metrics + Coefficients -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;">
+
+  <!-- Metrics -->
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div class="table-header-bar"><h2 style="margin:0;font-size:1rem;">📋 Model Performance</h2></div>
+    <div class="table-wrap" style="overflow:auto;border-radius:0;">
+      <table class="data-table">
+        <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>MSE</td><td><span class="range-pill">{{ mlr.metrics.mse }}</span></td></tr>
+          <tr><td>RMSE</td><td><span class="range-pill">{{ mlr.metrics.rmse }}</span></td></tr>
+          <tr><td>MAE</td><td><span class="range-pill">{{ mlr.metrics.mae }}</span></td></tr>
+          <tr><td>R²</td><td><span class="scaled-val">{{ mlr.metrics.r2 }}</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Coefficients -->
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div class="table-header-bar"><h2 style="margin:0;font-size:1rem;">🔢 Feature Coefficients</h2></div>
+    <div class="table-wrap" style="overflow:auto;border-radius:0;">
+      <table class="data-table">
+        <thead><tr><th>Feature</th><th>β Coefficient</th></tr></thead>
+        <tbody>
+          <tr><td>Intercept (β₀)</td><td><strong style="font-family:monospace;">{{ mlr.intercept }}</strong></td></tr>
+          {% for c in mlr.coefficients %}
+          <tr>
+            <td><strong style="color:var(--royal-blue);">{{ c.feature }}</strong></td>
+            <td><span class="{% if c.coeff > 0 %}scaled-val{% else %}range-pill{% endif %}" style="font-family:monospace;">{{ "+" if c.coeff > 0 else "" }}{{ c.coeff }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Actual vs Predicted -->
+<div class="card" style="padding:0;overflow:hidden;margin-bottom:24px;">
+  <div class="table-header-bar">
+    <h2 style="margin:0;font-size:1rem;">🔍 Actual vs Predicted <span style="font-size:0.75rem;font-weight:400;color:var(--slate-gray);margin-left:8px;">First 30 test rows</span></h2>
+  </div>
+  <div class="table-wrap" style="max-height:340px;overflow:auto;border-radius:0;">
+    <table class="data-table">
+      <thead><tr><th>#</th><th>Actual (LPA)</th><th>Predicted (LPA)</th><th>Residual</th></tr></thead>
+      <tbody>
+        {% for r in mlr.avp %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td><strong>{{ r.actual }}</strong></td>
+          <td><span class="scaled-val">{{ r.predicted }}</span></td>
+          <td><span style="color:{% if r.residual < 0 %}#C0392B{% else %}#289E55{% endif %};font-family:monospace;font-weight:600;">{{ "+" if r.residual > 0 else "" }}{{ r.residual }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Simple GD section -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;">
+
+  <!-- Simple GD Results -->
+  <div class="scaler-formula-card robust-card">
+    <h2>📉 Simple GD: CGPA → Salary</h2>
+    <p>Univariate gradient descent (1 feature only) matching the second code snippet. 1,000 epochs at α = 0.01.</p>
+    <code style="background:rgba(255,255,255,0.15);padding:10px 16px;border-radius:8px;display:block;font-size:0.9rem;margin-bottom:14px;">
+      ŷ = θ₀ + θ₁ · CGPA
+    </code>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:0.85rem;">
+      <div style="background:rgba(255,255,255,0.12);padding:10px 14px;border-radius:8px;">
+        <div style="opacity:0.7;font-size:0.72rem;">Intercept (θ₀)</div>
+        <div style="font-weight:700;font-size:1.1rem;">{{ mlr.simple_theta0 }}</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.12);padding:10px 14px;border-radius:8px;">
+        <div style="opacity:0.7;font-size:0.72rem;">Slope (θ₁)</div>
+        <div style="font-weight:700;font-size:1.1rem;">{{ mlr.simple_theta1 }}</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.12);padding:10px 14px;border-radius:8px;grid-column:span 2;">
+        <div style="opacity:0.7;font-size:0.72rem;">Predicted Salary for CGPA = 7.8</div>
+        <div style="font-weight:800;font-size:1.3rem;color:#4ADE80;">{{ mlr.simple_pred_cgpa78 }} LPA</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GD Cost Curve -->
+  <div class="card" style="padding:20px;">
+    <h2 style="margin:0 0 14px;font-size:1rem;">📉 Simple GD Cost vs Epoch (1000)</h2>
+    {% if mlr.cost_curve %}
+    {% set max_c = mlr.cost_curve[0].cost %}
+    {% set min_c = mlr.cost_curve[-1].cost %}
+    {% set rng_c = max_c - min_c if max_c != min_c else 1 %}
+    {% set n = mlr.cost_curve|length %}
+    <div style="height:200px;">
+      <svg viewBox="0 0 400 200" width="100%" height="100%">
+        <line x1="40" y1="5" x2="40" y2="185" stroke="#CBD5E0" stroke-width="1"/>
+        <line x1="40" y1="185" x2="390" y2="185" stroke="#CBD5E0" stroke-width="1"/>
+        <polyline
+          points="{% for pt in mlr.cost_curve %}{{ 40 + (loop.index0/(n-1))*350 }},{{ 5+(1-(pt.cost-min_c)/rng_c)*175 }} {% endfor %}"
+          fill="none" stroke="var(--emerald)" stroke-width="2" stroke-linecap="round"/>
+        <text x="40" y="198" font-size="9" fill="#718096">0</text>
+        <text x="355" y="198" font-size="9" fill="#718096">1000</text>
+      </svg>
+    </div>
+    <div style="font-size:0.78rem;color:var(--slate-gray);margin-top:6px;">Start: {{ mlr.cost_curve[0].cost|int }} → End: {{ mlr.cost_curve[-1].cost|int }}</div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Regression Line Table -->
+<div class="card" style="padding:0;overflow:hidden;margin-bottom:24px;">
+  <div class="table-header-bar"><h2 style="margin:0;font-size:1rem;">📐 Regression Line — CGPA vs Predicted Salary</h2></div>
+  <div class="table-wrap" style="overflow:auto;border-radius:0;">
+    <table class="data-table">
+      <thead><tr>{% for r in mlr.regression_line %}<th>CGPA={{ r.cgpa }}</th>{% endfor %}</tr></thead>
+      <tbody><tr>{% for r in mlr.regression_line %}<td><span class="scaled-val">{{ r.salary }}</span></td>{% endfor %}</tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MLR Salary Predictor -->
+<div class="card" style="margin-bottom:24px;">
+  <h2 style="margin:0 0 20px;font-size:1rem;">🎓 Predict Salary — 4-Feature Model</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px;">
+    <div>
+      <label style="font-size:0.78rem;font-weight:600;color:var(--slate-gray);display:block;margin-bottom:6px;">CGPA</label>
+      <input id="mlr-cgpa" type="number" step="0.01" min="0" max="10" value="8.5" style="width:100%;padding:10px 14px;border:1px solid #CBD5E0;border-radius:8px;font-size:0.9rem;">
+    </div>
+    <div>
+      <label style="font-size:0.78rem;font-weight:600;color:var(--slate-gray);display:block;margin-bottom:6px;">Aptitude Test Score</label>
+      <input id="mlr-aptitude" type="number" step="1" min="0" max="100" value="80" style="width:100%;padding:10px 14px;border:1px solid #CBD5E0;border-radius:8px;font-size:0.9rem;">
+    </div>
+    <div>
+      <label style="font-size:0.78rem;font-weight:600;color:var(--slate-gray);display:block;margin-bottom:6px;">Coding Test Score</label>
+      <input id="mlr-coding" type="number" step="1" min="0" max="100" value="85" style="width:100%;padding:10px 14px;border:1px solid #CBD5E0;border-radius:8px;font-size:0.9rem;">
+    </div>
+    <div>
+      <label style="font-size:0.78rem;font-weight:600;color:var(--slate-gray);display:block;margin-bottom:6px;">Mock Interview Score</label>
+      <input id="mlr-mock" type="number" step="1" min="0" max="100" value="75" style="width:100%;padding:10px 14px;border:1px solid #CBD5E0;border-radius:8px;font-size:0.9rem;">
+    </div>
+    <div style="display:flex;align-items:flex-end;">
+      <button onclick="predictMLR()" style="width:100%;padding:11px 20px;background:var(--emerald);color:#fff;border:none;border-radius:8px;font-weight:600;font-size:0.9rem;cursor:pointer;">▶ Predict (4-Feature)</button>
+    </div>
+  </div>
+  <div id="mlr-result" style="display:none;background:linear-gradient(135deg,#0A2E2A,var(--emerald));color:#fff;border-radius:12px;padding:24px 28px;text-align:center;">
+    <div style="font-size:0.8rem;opacity:0.7;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Predicted Salary (4-Feature MLR)</div>
+    <div id="mlr-value" style="font-size:2.4rem;font-weight:800;color:#4ADE80;">—</div>
+    <div style="font-size:0.8rem;opacity:0.6;margin-top:6px;">LPA · CGPA + Aptitude + Coding + Mock Interview</div>
+  </div>
+  <div id="mlr-error" style="display:none;color:#C0392B;font-size:0.85rem;margin-top:10px;"></div>
+</div>
+
+{% endif %}
+</div><!-- /tab-mlr -->
+
+{# ═══════════════ TAB 2 — FULL-FEATURE REGRESSION ═══════════════ #}
+<div id="tab-fullreg" style="display:none;">
 
 <!-- ── KPI Strip ──────────────────────────────────────────── -->
 <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:24px;">
@@ -239,24 +443,32 @@
   </div>
 </div>
 {% endif %}
+</div><!-- /tab-fullreg -->
 
 {% endblock %}
 
 {% block scripts %}
 <script>
+function showRegTab(name, btn) {
+  ['mlr','fullreg'].forEach(function(t) {
+    document.getElementById('tab-' + t).style.display = 'none';
+  });
+  document.querySelectorAll('.fe-tab').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('tab-' + name).style.display = 'block';
+  btn.classList.add('active');
+}
+
 async function predictSalary() {
   const btn = document.querySelector('[onclick="predictSalary()"]');
   btn.textContent = '⏳ Predicting...';
   btn.disabled = true;
-
   const payload = {
-    CGPA:              parseFloat(document.getElementById('in-cgpa').value) || 7.5,
-    AptitudeTestScore: parseFloat(document.getElementById('in-aptitude').value) || 80,
-    CodingTestScore:   parseFloat(document.getElementById('in-coding').value) || 85,
-    MockInterviewScore:parseFloat(document.getElementById('in-mock').value) || 75,
-    AttendancePercent: parseFloat(document.getElementById('in-attendance').value) || 85
+    CGPA:               parseFloat(document.getElementById('in-cgpa').value) || 7.5,
+    AptitudeTestScore:  parseFloat(document.getElementById('in-aptitude').value) || 80,
+    CodingTestScore:    parseFloat(document.getElementById('in-coding').value) || 85,
+    MockInterviewScore: parseFloat(document.getElementById('in-mock').value) || 75,
+    AttendancePercent:  parseFloat(document.getElementById('in-attendance').value) || 85
   };
-
   try {
     const resp = await fetch('/predict-salary', {
       method: 'POST',
@@ -277,6 +489,39 @@ async function predictSalary() {
     document.getElementById('pred-result').style.display = 'none';
   }
   btn.textContent = '▶ Predict Salary';
+  btn.disabled = false;
+}
+
+async function predictMLR() {
+  const btn = document.querySelector('[onclick="predictMLR()"]');
+  btn.textContent = '⏳ Predicting...';
+  btn.disabled = true;
+  const payload = {
+    CGPA:               parseFloat(document.getElementById('mlr-cgpa').value) || 8.5,
+    AptitudeTestScore:  parseFloat(document.getElementById('mlr-aptitude').value) || 80,
+    CodingTestScore:    parseFloat(document.getElementById('mlr-coding').value) || 85,
+    MockInterviewScore: parseFloat(document.getElementById('mlr-mock').value) || 75,
+  };
+  try {
+    const resp = await fetch('/predict-salary-multi', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await resp.json();
+    if (data.predicted_salary !== undefined) {
+      document.getElementById('mlr-value').textContent = data.predicted_salary.toFixed(2) + ' LPA';
+      document.getElementById('mlr-result').style.display = 'block';
+      document.getElementById('mlr-error').style.display  = 'none';
+    } else {
+      throw new Error(data.error || 'Unknown error');
+    }
+  } catch(e) {
+    document.getElementById('mlr-error').textContent = '❌ ' + e.message;
+    document.getElementById('mlr-error').style.display = 'block';
+    document.getElementById('mlr-result').style.display = 'none';
+  }
+  btn.textContent = '▶ Predict (4-Feature)';
   btn.disabled = false;
 }
 </script>
