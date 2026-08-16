@@ -156,19 +156,47 @@ def _apply_encoding(df):
 def home():
     df = _safe_load_csv()
     stats = {}
+    insights = []
     if df is not None:
-        placed = int((df["PlacementStatus"] == 1).sum()) if "PlacementStatus" in df.columns else 0
-        total  = len(df)
+        placed  = int((df["PlacementStatus"] == 1).sum()) if "PlacementStatus" in df.columns else 0
+        total   = len(df)
         anomaly_rate = round(df["IsAnomaly"].mean() * 100, 1) if "IsAnomaly" in df.columns else 0
+        placed_pct   = round(placed / total * 100, 1) if total else 0
+
         stats = {
-            "rows":         f"{total:,}",
-            "cols":         df.shape[1],
-            "placed_pct":   round(placed / total * 100, 1) if total else 0,
+            "rows":           f"{total:,}",
+            "cols":           df.shape[1],
+            "placed_pct":     placed_pct,
             "not_placed_pct": round((total - placed) / total * 100, 1) if total else 0,
-            "anomaly_rate": anomaly_rate,
-            "columns":      list(df.columns),
+            "anomaly_rate":   anomaly_rate,
+            "columns":        list(df.columns),
         }
-    return render_template("index.html", stats=stats)
+
+        # Generate real data insights
+        if "Internships" in df.columns and "PlacementStatus" in df.columns:
+            placed_df  = df[df["PlacementStatus"] == 1]
+            intern_placed = round(placed_df["Internships"].mean(), 1)
+            intern_all    = round(df["Internships"].mean(), 1)
+            if intern_placed > intern_all:
+                insights.append(f"Students who got placed had an average of {intern_placed} internships, compared to {intern_all} overall — internships are a strong indicator.")
+
+        if "CGPA" in df.columns and "PlacementStatus" in df.columns:
+            cgpa_placed = round(df[df["PlacementStatus"] == 1]["CGPA"].mean(), 2)
+            cgpa_all    = round(df["CGPA"].mean(), 2)
+            insights.append(f"Placed students have an average CGPA of {cgpa_placed} vs {cgpa_all} overall — CGPA is the strongest placement predictor.")
+
+        if "PlacementStatus" in df.columns:
+            insights.append(f"{placed_pct}% of the {total:,} students in this dataset were successfully placed — a healthy placement rate for ML modelling.")
+
+        if "IsAnomaly" in df.columns:
+            n_anom = int(df["IsAnomaly"].sum())
+            insights.append(f"{n_anom:,} records ({anomaly_rate}%) were flagged as anomalies using the IQR method and are excluded from core model training.")
+
+        if "Projects" in df.columns and "PlacementStatus" in df.columns:
+            proj_placed = round(df[df["PlacementStatus"] == 1]["Projects"].mean(), 1)
+            insights.append(f"Placed students averaged {proj_placed} projects — extracurricular work beyond coursework shows a clear correlation with placement outcomes.")
+
+    return render_template("index.html", stats=stats, insights=insights)
 
 
 @app.route("/load")

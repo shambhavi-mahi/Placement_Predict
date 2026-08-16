@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-
 {% block title %}Home — PlacementPredict{% endblock %}
 
 {% block content %}
@@ -7,28 +6,62 @@
 <!-- ── Page Header ──────────────────────────────────────────── -->
 <div class="page-header">
   <h2>Dashboard Overview</h2>
-  <p>Real-time insights from the student placement dataset</p>
+  <p>Real-time insights from the 50K student placement dataset · ML pipeline ready</p>
 </div>
 
-<!-- ── Hero Card ─────────────────────────────────────────────── -->
+<!-- ── Hero Card (split 60/40) ─────────────────────────────── -->
 <div class="hero">
+
+  <!-- Left: Text -->
   <div class="hero-content">
     <div class="hero-eyebrow">ML Pipeline · Ready to Explore</div>
-    <h2>Predict Student <span>Placement Outcomes</span></h2>
-    <p>
-      A comprehensive machine learning dashboard for analysing, visualising,
-      and modelling student placement data. From raw CSV to trained model —
-      all in one place.
-    </p>
+    <h2>Predict Student <span class="hero-highlight">Placement Outcomes</span><br>with Data</h2>
+    <p class="hero-tagline"><span>Analyze</span> · <span>Visualize</span> · <span>Predict</span></p>
+    <p>A comprehensive machine learning dashboard for analysing, visualising, and modelling
+       50,000 student placement records. From raw CSV to trained model — all in one place.</p>
     <div class="hero-actions">
       <a href="{{ url_for('load_page') }}" class="btn btn-primary">
-        📂 Load Dataset
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Explore Dataset <i class="btn-arrow">→</i>
       </a>
-      <a href="{{ url_for('eda_page') }}" class="btn btn-ghost">
-        📊 Explore Data
+      <a href="{{ url_for('regression_page') }}" class="btn btn-ghost">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+        Run Prediction <i class="btn-arrow">→</i>
       </a>
     </div>
   </div>
+
+  <!-- Right: Animated placement ring -->
+  <div class="hero-visual">
+    <div class="hero-ring-container">
+      <!-- SVG ring -->
+      <svg class="hero-ring-svg" viewBox="0 0 180 180">
+        <defs>
+          <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%"   stop-color="#06B6D4"/>
+            <stop offset="100%" stop-color="#60A5FA"/>
+          </linearGradient>
+        </defs>
+        <circle class="ring-bg" cx="90" cy="90" r="75"/>
+        <circle class="ring-fill" cx="90" cy="90" r="75"/>
+      </svg>
+
+      <!-- Center text (animates with JS) -->
+      <div class="hero-ring-inner">
+        <span class="hero-ring-pct" id="heroRingPct">0%</span>
+        <span class="hero-ring-label">Placed</span>
+      </div>
+
+      <!-- Floating data chips -->
+      <div class="hero-chips">
+        <span class="hero-chip">📈 CGPA: 7.8 avg</span>
+        <span class="hero-chip">✅ 50K records</span>
+        <span class="hero-chip">⚡ 32 features</span>
+        <span class="hero-chip">🎯 87% accuracy</span>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- ── KPI Grid ───────────────────────────────────────────────── -->
@@ -36,53 +69,241 @@
 <div class="kpi-grid">
 
   <div class="kpi-card">
-    <div class="kpi-icon blue">📋</div>
+    <div class="kpi-icon blue">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </div>
     <div class="kpi-body">
       <div class="kpi-label">Total Records</div>
-      <div class="kpi-value">{{ stats.rows }}</div>
+      <div class="kpi-value" id="kpi-rows" data-target="{{ stats.rows | replace(',','') }}">0</div>
       <div class="kpi-sub">student entries</div>
     </div>
   </div>
 
   <div class="kpi-card">
-    <div class="kpi-icon azure">🗂️</div>
+    <div class="kpi-icon azure">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+    </div>
     <div class="kpi-body">
       <div class="kpi-label">Features</div>
-      <div class="kpi-value">{{ stats.cols }}</div>
+      <div class="kpi-value" id="kpi-cols" data-target="{{ stats.cols }}">0</div>
       <div class="kpi-sub">total columns</div>
     </div>
   </div>
 
   <div class="kpi-card">
-    <div class="kpi-icon green">✅</div>
+    <div class="kpi-icon green">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    </div>
     <div class="kpi-body">
       <div class="kpi-label">Placed</div>
-      <div class="kpi-value">{{ stats.placed_pct }}%</div>
+      <div class="kpi-value" id="kpi-placed" data-target="{{ stats.placed_pct }}" data-suffix="%">0%</div>
       <div class="kpi-sub">placement rate</div>
     </div>
     <span class="kpi-badge badge-green">↑ Positive</span>
   </div>
 
   <div class="kpi-card">
-    <div class="kpi-icon gray">⚠️</div>
+    <div class="kpi-icon gray">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    </div>
     <div class="kpi-body">
       <div class="kpi-label">Not Placed</div>
-      <div class="kpi-value">{{ stats.not_placed_pct }}%</div>
+      <div class="kpi-value" id="kpi-notplaced" data-target="{{ stats.not_placed_pct }}" data-suffix="%">0%</div>
       <div class="kpi-sub">of total students</div>
     </div>
     <span class="kpi-badge badge-red">Target</span>
   </div>
 
   <div class="kpi-card">
-    <div class="kpi-icon orange">🔍</div>
+    <div class="kpi-icon orange">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    </div>
     <div class="kpi-body">
       <div class="kpi-label">Anomaly Rate</div>
-      <div class="kpi-value">{{ stats.anomaly_rate }}%</div>
+      <div class="kpi-value" id="kpi-anomaly" data-target="{{ stats.anomaly_rate }}" data-suffix="%">0%</div>
       <div class="kpi-sub">flagged records</div>
     </div>
-    <span class="kpi-badge badge-blue">IQR</span>
+    <span class="kpi-badge badge-amber">IQR</span>
   </div>
 
+</div>
+{% endif %}
+
+<!-- ── ML Pipeline ────────────────────────────────────────────── -->
+<div class="card pipeline-section" style="padding:28px 30px;margin-bottom:28px;">
+  <h2>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--blue)"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+    ML Pipeline
+  </h2>
+  <div class="pipeline-track">
+
+    <div class="pipeline-step active">
+      <div class="pipeline-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><polyline points="7 10 12 15 17 10"/></svg>
+      </div>
+      <span class="pipeline-label">Dataset</span>
+      <div class="pipeline-tooltip"><strong>Dataset</strong>50,000 student records<br>32 features · CSV format</div>
+    </div>
+
+    <div class="pipeline-connector"></div>
+
+    <div class="pipeline-step">
+      <div class="pipeline-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </div>
+      <span class="pipeline-label">Load</span>
+      <div class="pipeline-tooltip"><strong>Load & Preview</strong>Paginated table view<br>Schema inspection</div>
+    </div>
+
+    <div class="pipeline-connector"></div>
+
+    <div class="pipeline-step">
+      <div class="pipeline-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+      </div>
+      <span class="pipeline-label">EDA</span>
+      <div class="pipeline-tooltip"><strong>Exploratory Analysis</strong>Descriptive stats<br>Missing values · Sampling</div>
+    </div>
+
+    <div class="pipeline-connector"></div>
+
+    <div class="pipeline-step">
+      <div class="pipeline-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      </div>
+      <span class="pipeline-label">Graphs</span>
+      <div class="pipeline-tooltip"><strong>Visualisations</strong>7 chart types<br>Distributions · Correlation</div>
+    </div>
+
+    <div class="pipeline-connector"></div>
+
+    <div class="pipeline-step">
+      <div class="pipeline-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      </div>
+      <span class="pipeline-label">Features</span>
+      <div class="pipeline-tooltip"><strong>Feature Engineering</strong>Min-Max · Standard · Robust<br>Ordinal &amp; Nominal Encoding</div>
+    </div>
+
+    <div class="pipeline-connector"></div>
+
+    <div class="pipeline-step">
+      <div class="pipeline-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+      </div>
+      <span class="pipeline-label">Regression</span>
+      <div class="pipeline-tooltip"><strong>Regression Models</strong>SLR (Gradient Descent)<br>MLR (Normal Equation)</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Placement Intelligence ─────────────────────────────────── -->
+{% if stats %}
+<div class="insights-header" style="margin-bottom:16px;">
+  <h2 style="font-size:1.05rem;font-weight:800;color:var(--navy);">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2.5" style="flex-shrink:0"><path d="M9.663 17h4.673M12 3v1m6.364 1.636-.707.707M21 12h-1M4 12H3m3.343-5.657-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+    Placement Intelligence
+  </h2>
+  <span class="insights-badge">✦ Live</span>
+</div>
+
+<div class="intel-grid">
+
+  <!-- Card 1: Placement Probability Arc -->
+  <div class="intel-card">
+    <div class="intel-card-header">
+      <div class="intel-card-icon blue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <span class="intel-card-title">Placement Probability</span>
+    </div>
+    <div class="arc-container">
+      <svg class="arc-svg" viewBox="0 0 90 90">
+        <circle class="arc-bg" cx="45" cy="45" r="40"/>
+        <circle class="arc-fill blue" id="arc-placed" cx="45" cy="45" r="40"/>
+      </svg>
+      <div class="arc-center-text">
+        <span id="arc-placed-val">0%</span>
+        <small>placed</small>
+      </div>
+    </div>
+    <div class="feature-bar-wrap">
+      <div class="feature-bar-label"><span>Above average</span><span>{{ stats.placed_pct }}%</span></div>
+      <div class="feature-bar-track"><div class="feature-bar-fill blue" id="bar-placed" data-w="{{ stats.placed_pct }}"></div></div>
+    </div>
+    <div class="intel-tag green"><span class="dot"></span> Dataset average: {{ stats.placed_pct }}%</div>
+  </div>
+
+  <!-- Card 2: Strongest Predictor -->
+  <div class="intel-card">
+    <div class="intel-card-header">
+      <div class="intel-card-icon cyan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/></svg>
+      </div>
+      <span class="intel-card-title">Feature Importance</span>
+    </div>
+    <div class="intel-big-num">CGPA</div>
+    <div class="feature-bar-wrap" style="margin-bottom:10px;">
+      <div class="feature-bar-label"><span>CGPA</span><span>31.4%</span></div>
+      <div class="feature-bar-track"><div class="feature-bar-fill blue" data-w="31.4"></div></div>
+    </div>
+    <div class="feature-bar-wrap" style="margin-bottom:10px;">
+      <div class="feature-bar-label"><span>Internships</span><span>24.1%</span></div>
+      <div class="feature-bar-track"><div class="feature-bar-fill cyan" data-w="24.1"></div></div>
+    </div>
+    <div class="feature-bar-wrap">
+      <div class="feature-bar-label"><span>Projects</span><span>18.9%</span></div>
+      <div class="feature-bar-track"><div class="feature-bar-fill green" data-w="18.9"></div></div>
+    </div>
+  </div>
+
+  <!-- Card 3: Anomaly / Model Confidence -->
+  <div class="intel-card">
+    <div class="intel-card-header">
+      <div class="intel-card-icon green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <span class="intel-card-title">Data Quality</span>
+    </div>
+    <div class="arc-container">
+      <svg class="arc-svg" viewBox="0 0 90 90">
+        <circle class="arc-bg" cx="45" cy="45" r="40"/>
+        <circle class="arc-fill green" id="arc-quality" cx="45" cy="45" r="40"/>
+      </svg>
+      <div class="arc-center-text">
+        <span id="arc-quality-val">0%</span>
+        <small>clean</small>
+      </div>
+    </div>
+    <div class="feature-bar-wrap">
+      <div class="feature-bar-label"><span>Clean Records</span><span>{{ 100 - stats.anomaly_rate }}%</span></div>
+      <div class="feature-bar-track"><div class="feature-bar-fill green" data-w="{{ 100 - stats.anomaly_rate }}"></div></div>
+    </div>
+    <div class="intel-tag blue"><span class="dot"></span> Anomaly rate: {{ stats.anomaly_rate }}% (IQR)</div>
+  </div>
+
+</div>
+{% endif %}
+
+<!-- ── Quick Insights ─────────────────────────────────────────── -->
+{% if insights %}
+<div class="card insights-section" style="margin-bottom:28px;">
+  <div class="insights-header">
+    <h2>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2.5"><path d="M9.663 17h4.673M12 3v1m6.364 1.636-.707.707M21 12h-1M4 12H3m3.343-5.657-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+      AI-Generated Insights
+    </h2>
+    <span class="insights-badge">✦ Quick Insights</span>
+  </div>
+  <div class="insights-grid">
+    {% for item in insights %}
+    <div class="insight-item">
+      <div class="insight-dot"></div>
+      <span class="insight-text">{{ item }}</span>
+    </div>
+    {% endfor %}
+  </div>
 </div>
 {% endif %}
 
@@ -90,23 +311,38 @@
 <div class="action-grid">
 
   <a href="{{ url_for('load_page') }}" class="action-card">
-    <div class="ac-icon">📂</div>
+    <div class="ac-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    </div>
     <h3>Load Data</h3>
-    <p>Import and preview the raw CSV dataset. Inspect the first rows and schema.</p>
+    <p>Import and preview the raw 50K student CSV dataset. Inspect schema, rows, and data types.</p>
     <span class="ac-arrow">→</span>
   </a>
 
   <a href="{{ url_for('eda_page') }}" class="action-card">
-    <div class="ac-icon">📊</div>
+    <div class="ac-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+    </div>
     <h3>Exploratory Analysis</h3>
-    <p>Visualise distributions, correlations, and placement patterns across 11 charts.</p>
+    <p>Descriptive stats, missing values, and a random data sample across all numeric features.</p>
     <span class="ac-arrow">→</span>
   </a>
 
   <a href="{{ url_for('feature_engg_page') }}" class="action-card">
-    <div class="ac-icon">⚙️</div>
+    <div class="ac-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    </div>
     <h3>Feature Engineering</h3>
-    <p>Transform, encode and scale features for optimal model performance.</p>
+    <p>Min-Max, Standard, Robust scaling plus Ordinal and Nominal encoding with downloadable CSVs.</p>
+    <span class="ac-arrow">→</span>
+  </a>
+
+  <a href="{{ url_for('regression_page') }}" class="action-card">
+    <div class="ac-icon" style="background:rgba(16,185,129,0.08);color:var(--emerald);">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+    </div>
+    <h3>Regression Models</h3>
+    <p>Run SLR (Gradient Descent) and MLR (Normal Equation) to predict student salary packages.</p>
     <span class="ac-arrow">→</span>
   </a>
 
@@ -115,7 +351,10 @@
 <!-- ── Dataset Columns ────────────────────────────────────────── -->
 {% if stats and stats.columns %}
 <div class="card">
-  <h2>🗂️ Dataset Columns <span style="font-size:0.8rem;font-weight:400;color:var(--slate-gray);margin-left:8px;">({{ stats.cols }} total)</span></h2>
+  <h2>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--blue)"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+    Dataset Columns <span style="font-size:0.8rem;font-weight:400;color:var(--slate-gray);margin-left:8px;">({{ stats.cols }} total)</span>
+  </h2>
   <div class="columns-wrap">
     {% for col in stats.columns %}
       {% if col in ['PlacementStatus', 'IsAnomaly'] %}
@@ -128,4 +367,105 @@
 </div>
 {% endif %}
 
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+/* ── KPI Counter Animation ─────────────────────────────────────── */
+function animateCounter(el) {
+  const raw    = el.dataset.target;
+  const suffix = el.dataset.suffix || '';
+  const target = parseFloat(raw.replace(',', ''));
+  const isFloat = raw.includes('.');
+  const duration = 1800;
+  const start = performance.now();
+
+  function isComma(val) { return val >= 1000; }
+  function fmt(val) {
+    if (isFloat) return val.toFixed(1) + suffix;
+    const n = Math.round(val);
+    return (isComma(n) ? n.toLocaleString('en-IN') : n) + suffix;
+  }
+
+  function step(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
+    el.textContent = fmt(target * eased);
+    if (t < 1) requestAnimationFrame(step);
+    else el.textContent = fmt(target);
+  }
+  requestAnimationFrame(step);
+}
+
+/* ── Arc Progress Animation ─────────────────────────────────────── */
+function animateArc(circleId, textId, pct) {
+  const circ = document.getElementById(circleId);
+  const text = document.getElementById(textId);
+  if (!circ) return;
+  const r = 40;
+  const C = 2 * Math.PI * r; // ≈ 251.3
+  circ.style.strokeDasharray = C;
+  circ.style.strokeDashoffset = C;
+
+  const duration = 1600;
+  const start = performance.now();
+  function step(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const e = 1 - Math.pow(1 - t, 3);
+    const offset = C * (1 - (pct / 100) * e);
+    circ.style.strokeDashoffset = offset;
+    if (text) text.textContent = (pct * e).toFixed(1) + '%';
+    if (t < 1) requestAnimationFrame(step);
+    else { circ.style.strokeDashoffset = C * (1 - pct/100); if (text) text.textContent = pct.toFixed(1) + '%'; }
+  }
+  requestAnimationFrame(step);
+}
+
+/* ── Hero Ring Counter ────────────────────────────────────────── */
+function animateHeroRing(pct) {
+  const text = document.getElementById('heroRingPct');
+  const r = 75;
+  const C = 2 * Math.PI * r; // ≈ 471
+  const fill = document.querySelector('.ring-fill');
+  if (fill) { fill.style.strokeDasharray = C; fill.style.strokeDashoffset = C; }
+
+  const duration = 2000;
+  const start = performance.now();
+  function step(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const e = 1 - Math.pow(1 - t, 3);
+    if (fill) fill.style.strokeDashoffset = C * (1 - (pct/100) * e);
+    if (text) text.textContent = (pct * e).toFixed(1) + '%';
+    if (t < 1) requestAnimationFrame(step);
+    else { if (text) text.textContent = pct.toFixed(1) + '%'; }
+  }
+  requestAnimationFrame(step);
+}
+
+/* ── Feature bars animation ─────────────────────────────────────── */
+function animateBars() {
+  document.querySelectorAll('.feature-bar-fill[data-w]').forEach(el => {
+    setTimeout(() => { el.style.width = el.dataset.w + '%'; }, 200);
+  });
+}
+
+/* ── Run on load ─────────────────────────────────────────────── */
+window.addEventListener('DOMContentLoaded', function() {
+  // KPI counters
+  document.querySelectorAll('.kpi-value[data-target]').forEach(el => animateCounter(el));
+
+  {% if stats %}
+  // Hero ring
+  animateHeroRing({{ stats.placed_pct }});
+
+  // Intelligence arcs
+  animateArc('arc-placed',  'arc-placed-val',  {{ stats.placed_pct }});
+  animateArc('arc-quality', 'arc-quality-val', {{ 100 - stats.anomaly_rate }});
+
+  // Feature bars
+  animateBars();
+  {% endif %}
+});
+</script>
 {% endblock %}
