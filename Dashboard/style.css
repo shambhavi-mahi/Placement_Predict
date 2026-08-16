@@ -1120,3 +1120,60 @@ body {
 .ba-bar-track { background: var(--border); border-radius: 6px; overflow: hidden; height: 22px; }
 .ba-bar-fill { height: 100%; border-radius: 6px; display: flex; align-items: center; padding-left: 8px; transition: width 1.2s cubic-bezier(0.4,0,0.2,1); }
 .ba-bar-text { font-size: 0.67rem; font-weight: 600; color: var(--white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Before / After full card grid (feature_engg.html) ─────── */
+.before-after-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+}
+
+.ba-card {
+  background: #F8FAFC;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  transition: box-shadow var(--transition);
+}
+.ba-card:hover { box-shadow: var(--card-shadow); }
+[data-theme="dark"] .ba-card { background: #1E293B; border-color: #334155; }
+
+.ba-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ba-tag {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 54px;
+  text-align: center;
+}
+.ba-tag.original { background: rgba(37,99,235,0.1);  color: var(--blue); }
+.ba-tag.scaled   { background: rgba(16,185,129,0.1); color: var(--emerald); }
+
+.ba-bar-wrap {
+  flex: 1;
+  border-radius: 6px;
+  overflow: hidden;
+  height: 26px;
+  background: rgba(226,232,240,0.5);
+}
+[data-theme="dark"] .ba-bar-wrap { background: rgba(51,65,85,0.5); }
+
+.ba-bar {
+  height: 100%;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  min-width: 40px;
+}
+.original-bar { background: linear-gradient(90deg, #2563EB, #60A5FA); }
+.scaled-bar   { background: linear-gradient(90deg, #10B981, #34D399); }
+
