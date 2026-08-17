@@ -194,10 +194,9 @@
 {% endif %}
 </div><!-- /tab-mlr -->
 
-{% endblock %}
 
+<!-- SLR/MLR inline scripts within content: moved to scripts block below -->
 
-{% block scripts %}
 <!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
@@ -327,13 +326,10 @@ async function predictMLR() {
     : '💰 Predicted: ' + data.predicted_salary.toFixed(2) + ' LPA';
 }
 </script>
-{% endblock %}
-
 
 {# ══════════════════════════════════════════════════════════════════ #}
-{# INJECTED OUTSIDE blocks — Logistic Regression Tab                  #}
+{# TAB 3 — Logistic Regression                                        #}
 {# ══════════════════════════════════════════════════════════════════ #}
-{% block content %}{{ super() }}
 <div id="tab-logr" style="display:none;">
 {% if logr %}
 
@@ -524,10 +520,20 @@ async function predictMLR() {
 
 {% endif %}
 </div><!-- /tab-logr -->
-{% endblock %}
 
-{% block scripts %}{{ super() }}
+{% endblock %}
+{% block scripts %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
+// ── Tab switching
+function showRegTab(name, btn) {
+  ['slr','mlr','logr'].forEach(t => document.getElementById('tab-'+t).style.display='none');
+  document.querySelectorAll('.fe-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+name).style.display='block';
+  btn.classList.add('active');
+}
+
 {% if logr %}
 const BLUE    = 'rgba(37,99,235,0.8)';
 const EMERALD = 'rgba(16,185,129,0.8)';
