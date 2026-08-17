@@ -561,21 +561,133 @@ def _get_regression_data():
     if "mlr" not in _regression_cache:
         df = _safe_load_csv()
         if df is None:
-            return None, None
-        _regression_cache["mlr"] = _run_multilinear_regression(df)
-        _regression_cache["slr"] = _run_simple_regression(df)
-    return _regression_cache["mlr"], _regression_cache["slr"]
+            return None, None, None
+        _regression_cache["mlr"]  = _run_multilinear_regression(df)
+        _regression_cache["slr"]  = _run_simple_regression(df)
+        _regression_cache["logr"] = _run_logistic_regression(df)
+    return _regression_cache["mlr"], _regression_cache["slr"], _regression_cache["logr"]
+
+
+# ---------------------------------------------------------------------------
+# Logistic Regression (Gradient Descent — from scratch)
+# ---------------------------------------------------------------------------
+LOGR_FEATURES = ["CGPA", "AptitudeTestScore", "CodingTestScore",
+                  "MockInterviewScore", "Internships", "Projects"]
+LOGR_TARGET   = "PlacementStatus"
+
+
+def _sigmoid(z):
+    return 1.0 / (1.0 + np.exp(-np.clip(z, -500, 500)))
+
+
+def _run_logistic_regression(df, alpha=0.1, epochs=500):
+    """Binary Logistic Regression via Gradient Descent (PlacementStatus 0/1)."""
+    cols = LOGR_FEATURES + [LOGR_TARGET]
+    data = df[cols].dropna().copy()
+    for c in LOGR_FEATURES:
+        data[c] = pd.to_numeric(data[c], errors="coerce")
+    data[LOGR_TARGET] = pd.to_numeric(data[LOGR_TARGET], errors="coerce")
+    data = data.dropna()
+
+    n = len(data)
+    split = int(0.8 * n)
+
+    X_raw = data[LOGR_FEATURES].values.astype(float)
+    y     = data[LOGR_TARGET].values.astype(float)
+
+    X_train, X_test = X_raw[:split], X_raw[split:]
+    y_train, y_test = y[:split],     y[split:]
+
+    # Standardise with train stats
+    mu  = X_train.mean(axis=0)
+    sig = X_train.std(axis=0) + 1e-9
+    X_tr = (X_train - mu) / sig
+    X_te = (X_test  - mu) / sig
+
+    # Add bias column
+    ones_tr = np.ones((X_tr.shape[0], 1))
+    ones_te = np.ones((X_te.shape[0], 1))
+    X_tr_b  = np.hstack([ones_tr, X_tr])
+    X_te_b  = np.hstack([ones_te, X_te])
+
+    # Initialise weights
+    m_feat = X_tr_b.shape[1]
+    theta  = np.zeros(m_feat)
+    m      = len(y_train)
+
+    cost_history = []
+    for _ in range(epochs):
+        z    = X_tr_b @ theta
+        h    = _sigmoid(z)
+        err  = h - y_train
+        grad = (1 / m) * (X_tr_b.T @ err)
+        theta -= alpha * grad
+        # Binary cross-entropy cost
+        cost = -(1 / m) * (y_train @ np.log(h + 1e-9) +
+                            (1 - y_train) @ np.log(1 - h + 1e-9))
+        cost_history.append(float(cost))
+
+    # Predictions on test set
+    y_prob = _sigmoid(X_te_b @ theta)
+    y_pred = (y_prob >= 0.5).astype(int)
+
+    # Metrics
+    tp = int(np.sum((y_pred == 1) & (y_test == 1)))
+    tn = int(np.sum((y_pred == 0) & (y_test == 0)))
+    fp = int(np.sum((y_pred == 1) & (y_test == 0)))
+    fn = int(np.sum((y_pred == 0) & (y_test == 1)))
+
+    accuracy  = (tp + tn) / len(y_test)
+    precision = tp / (tp + fp) if (tp + fp) else 0.0
+    recall    = tp / (tp + fn) if (tp + fn) else 0.0
+    f1        = (2 * precision * recall / (precision + recall)
+                 if (precision + recall) else 0.0)
+
+    # Sample probabilities (first 10 test rows)
+    sample = []
+    for i in range(min(10, len(y_test))):
+        sample.append({
+            "actual": int(y_test[i]),
+            "prob":   round(float(y_prob[i]) * 100, 1),
+            "pred":   int(y_pred[i])
+        })
+
+    # Probability distribution for chart (100 bins)
+    hist_placed    = [round(float(p), 3) for p in y_prob[y_test == 1][:300]]
+    hist_notplaced = [round(float(p), 3) for p in y_prob[y_test == 0][:300]]
+
+    return {
+        "accuracy":   round(accuracy  * 100, 2),
+        "precision":  round(precision * 100, 2),
+        "recall":     round(recall    * 100, 2),
+        "f1":         round(f1        * 100, 2),
+        "tp": tp, "tn": tn, "fp": fp, "fn": fn,
+        "n_train": split,
+        "n_test":  n - split,
+        "epochs":  epochs,
+        "alpha":   alpha,
+        "cost_history":   [round(c, 6) for c in cost_history[::10]],
+        "sample":         sample,
+        "hist_placed":    hist_placed,
+        "hist_notplaced": hist_notplaced,
+        "coefs": {f: round(float(w), 4) for f, w in zip(LOGR_FEATURES, theta[1:])},
+        "intercept": round(float(theta[0]), 4),
+        # For live prediction
+        "_theta": theta.tolist(),
+        "_mu":    mu.tolist(),
+        "_sig":   sig.tolist(),
+    }
 
 
 @app.route("/regression")
 def regression_page():
-    mlr, slr = _get_regression_data()
-    return render_template("regression.html", mlr=mlr, slr=slr)
+    mlr, slr, logr = _get_regression_data()
+    return render_template("regression.html", mlr=mlr, slr=slr, logr=logr)
 
 
 @app.route("/predict-salary", methods=["POST"])
 def predict_salary():
-    mlr, slr = _get_regression_data()
+    mlr, slr, logr = _get_regression_data()
     if mlr is None:
         return jsonify({"error": "Dataset not loaded"}), 500
 
@@ -590,14 +702,38 @@ def predict_salary():
             x_norm = (np.array(vals) - mu) / sig
             x_b    = np.array([1.0] + x_norm.tolist())
             pred   = float(x_b @ theta)
+            return jsonify({"predicted_salary": round(pred, 2)})
         else:
             theta0 = slr["_theta0"]; theta1 = slr["_theta1"]
             X_mu   = slr["_X_mu"];   X_sig  = slr["_X_sig"]
             cgpa   = float(request.form.get("CGPA", 0))
             x_norm = (cgpa - X_mu) / X_sig
             pred   = theta0 + theta1 * x_norm
+            return jsonify({"predicted_salary": round(pred, 2)})
 
-        return jsonify({"predicted_salary": round(pred, 2)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/predict-placement", methods=["POST"])
+def predict_placement():
+    mlr, slr, logr = _get_regression_data()
+    if logr is None:
+        return jsonify({"error": "Dataset not loaded"}), 500
+    try:
+        theta = np.array(logr["_theta"])
+        mu    = np.array(logr["_mu"])
+        sig   = np.array(logr["_sig"])
+        vals  = [float(request.form.get(f, 0)) for f in LOGR_FEATURES]
+        x_norm = (np.array(vals) - mu) / sig
+        x_b    = np.array([1.0] + x_norm.tolist())
+        prob   = float(_sigmoid(x_b @ theta))
+        pred   = 1 if prob >= 0.5 else 0
+        return jsonify({
+            "probability": round(prob * 100, 1),
+            "prediction":  pred,
+            "label":       "Placed ✅" if pred == 1 else "Not Placed ❌"
+        })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

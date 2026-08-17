@@ -4,13 +4,14 @@
 {% block content %}
 <div class="page-header">
   <h2>Regression Models</h2>
-  <p>Simple Linear Regression &amp; Multi-Linear Regression · Manual implementation using NumPy</p>
+  <p>Simple Linear · Multi-Linear · Logistic Regression &mdash; all implemented from scratch using NumPy</p>
 </div>
 
 <!-- Tabs -->
 <div class="fe-tabs">
-  <button class="fe-tab active" id="btn-slr" onclick="showRegTab('slr', this)">📈 Simple Linear Regression</button>
-  <button class="fe-tab"        id="btn-mlr" onclick="showRegTab('mlr', this)">📊 Multi-Linear Regression</button>
+  <button class="fe-tab active" id="btn-slr"  onclick="showRegTab('slr', this)">📈 Simple Linear</button>
+  <button class="fe-tab"        id="btn-mlr"  onclick="showRegTab('mlr', this)">📊 Multi-Linear</button>
+  <button class="fe-tab"        id="btn-logr" onclick="showRegTab('logr', this)">🔵 Logistic Regression</button>
 </div>
 
 {# ══════════════════════════════════════════════════════════════════ #}
@@ -202,7 +203,7 @@
 <script>
 // ── Tab switching ──────────────────────────────────────────────────
 function showRegTab(name, btn) {
-  ['slr','mlr'].forEach(t => document.getElementById('tab-'+t).style.display='none');
+  ['slr','mlr','logr'].forEach(t => document.getElementById('tab-'+t).style.display='none');
   document.querySelectorAll('.fe-tab').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-'+name).style.display='block';
   btn.classList.add('active');
@@ -324,6 +325,299 @@ async function predictMLR() {
   el.textContent = data.error
     ? '⚠ ' + data.error
     : '💰 Predicted: ' + data.predicted_salary.toFixed(2) + ' LPA';
+}
+</script>
+{% endblock %}
+
+
+{# ══════════════════════════════════════════════════════════════════ #}
+{# INJECTED OUTSIDE blocks — Logistic Regression Tab                  #}
+{# ══════════════════════════════════════════════════════════════════ #}
+{% block content %}{{ super() }}
+<div id="tab-logr" style="display:none;">
+{% if logr %}
+
+<!-- Formula Card -->
+<div class="scaler-formula-card standard-card" style="margin-bottom:22px;">
+  <h2>Logistic Regression (Gradient Descent)</h2>
+  <p>Binary classifier predicting <strong>PlacementStatus</strong> (Placed / Not Placed) from 6 features.
+     The sigmoid function maps the linear combination to a probability [0,1]. Parameters are
+     learned over <strong>{{ logr.epochs }} epochs</strong> at α = {{ logr.alpha }} using
+     Binary Cross-Entropy loss.</p>
+  <div style="background:rgba(255,255,255,0.12);border-radius:8px;padding:14px 18px;font-family:monospace;font-size:0.88rem;letter-spacing:0.3px;line-height:1.9;">
+    σ(z) = 1 / (1 + e⁻ᶻ) &nbsp;|&nbsp; z = θᵀX &nbsp;|&nbsp;
+    Loss = −(1/m) Σ [y·log(ŷ) + (1−y)·log(1−ŷ)] &nbsp;|&nbsp;
+    θ ← θ − α · ∇L
+  </div>
+</div>
+
+<!-- KPI Strip -->
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:22px;">
+  <div class="kpi-card">
+    <div class="kpi-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+    <div class="kpi-body"><div class="kpi-label">Accuracy</div><div class="kpi-value" style="font-size:1.4rem;">{{ logr.accuracy }}%</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div>
+    <div class="kpi-body"><div class="kpi-label">Precision</div><div class="kpi-value" style="font-size:1.4rem;">{{ logr.precision }}%</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon azure"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/></svg></div>
+    <div class="kpi-body"><div class="kpi-label">Recall</div><div class="kpi-value" style="font-size:1.4rem;">{{ logr.recall }}%</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+    <div class="kpi-body"><div class="kpi-label">F1 Score</div><div class="kpi-value" style="font-size:1.4rem;">{{ logr.f1 }}%</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon gray"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
+    <div class="kpi-body"><div class="kpi-label">Train / Test</div><div class="kpi-value" style="font-size:1.1rem;">{{ logr.n_train }} / {{ logr.n_test }}</div></div>
+  </div>
+</div>
+
+<!-- Charts row: Cost + Confusion Matrix -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:22px;">
+
+  <!-- Cost History -->
+  <div class="card" style="padding:22px;">
+    <h3 style="margin:0 0 14px;font-size:1rem;">📉 Binary Cross-Entropy Loss</h3>
+    <div style="position:relative;height:260px;">
+      <canvas id="logr-cost"></canvas>
+    </div>
+  </div>
+
+  <!-- Confusion Matrix -->
+  <div class="card" style="padding:22px;">
+    <h3 style="margin:0 0 16px;font-size:1rem;">🔲 Confusion Matrix (Test Set)</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:320px;margin:0 auto;">
+      <div style="background:rgba(16,185,129,0.12);border:2px solid rgba(16,185,129,0.3);border-radius:10px;padding:18px;text-align:center;">
+        <div style="font-size:1.6rem;font-weight:800;color:#059669;">{{ logr.tp }}</div>
+        <div style="font-size:0.7rem;font-weight:700;color:var(--slate-gray);margin-top:4px;">TRUE POSITIVE</div>
+        <div style="font-size:0.65rem;color:var(--slate-gray);">Placed → Placed</div>
+      </div>
+      <div style="background:rgba(239,68,68,0.08);border:2px solid rgba(239,68,68,0.2);border-radius:10px;padding:18px;text-align:center;">
+        <div style="font-size:1.6rem;font-weight:800;color:#DC2626;">{{ logr.fp }}</div>
+        <div style="font-size:0.7rem;font-weight:700;color:var(--slate-gray);margin-top:4px;">FALSE POSITIVE</div>
+        <div style="font-size:0.65rem;color:var(--slate-gray);">Not Placed → Placed</div>
+      </div>
+      <div style="background:rgba(245,158,11,0.08);border:2px solid rgba(245,158,11,0.2);border-radius:10px;padding:18px;text-align:center;">
+        <div style="font-size:1.6rem;font-weight:800;color:#D97706;">{{ logr.fn }}</div>
+        <div style="font-size:0.7rem;font-weight:700;color:var(--slate-gray);margin-top:4px;">FALSE NEGATIVE</div>
+        <div style="font-size:0.65rem;color:var(--slate-gray);">Placed → Not Placed</div>
+      </div>
+      <div style="background:rgba(37,99,235,0.08);border:2px solid rgba(37,99,235,0.2);border-radius:10px;padding:18px;text-align:center;">
+        <div style="font-size:1.6rem;font-weight:800;color:var(--blue);">{{ logr.tn }}</div>
+        <div style="font-size:0.7rem;font-weight:700;color:var(--slate-gray);margin-top:4px;">TRUE NEGATIVE</div>
+        <div style="font-size:0.65rem;color:var(--slate-gray);">Not Placed → Not Placed</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Probability Distribution + Coefficients -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:22px;">
+
+  <!-- Probability Distribution -->
+  <div class="card" style="padding:22px;">
+    <h3 style="margin:0 0 14px;font-size:1rem;">📊 Predicted Probability Distribution</h3>
+    <div style="position:relative;height:260px;">
+      <canvas id="logr-dist"></canvas>
+    </div>
+  </div>
+
+  <!-- Coefficients -->
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div class="table-header-bar"><h2 style="margin:0;font-size:1rem;">⚖️ Feature Weights (θ)</h2></div>
+    <div class="table-wrap" style="border-radius:0;">
+      <table class="data-table">
+        <thead><tr><th>Feature</th><th>Coefficient</th><th>Influence</th></tr></thead>
+        <tbody>
+          {% for feat, coef in logr.coefs.items() %}
+          <tr>
+            <td><strong style="color:var(--blue);">{{ feat }}</strong></td>
+            <td><span class="range-pill">{{ coef }}</span></td>
+            <td>
+              <div style="background:var(--border);border-radius:4px;height:6px;width:100%;overflow:hidden;">
+                <div style="height:100%;border-radius:4px;width:{{ [coef | abs * 30, 100] | min }}%;background:{% if coef > 0 %}linear-gradient(90deg,var(--emerald),#34D399){% else %}linear-gradient(90deg,var(--red),#FCA5A5){% endif %};"></div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Sample Predictions Table -->
+<div class="card" style="padding:0;overflow:hidden;margin-bottom:22px;">
+  <div class="table-header-bar">
+    <h2 style="margin:0;font-size:1rem;">🔍 Sample Predictions (First 10 test rows)</h2>
+  </div>
+  <div class="table-wrap" style="border-radius:0;">
+    <table class="data-table">
+      <thead><tr><th>#</th><th>Actual</th><th>Predicted Probability</th><th>Decision</th><th>Result</th></tr></thead>
+      <tbody>
+        {% for row in logr.sample %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>
+            {% if row.actual == 1 %}<span class="scaled-val">Placed</span>
+            {% else %}<span class="range-pill" style="background:rgba(239,68,68,0.08);color:#DC2626;">Not Placed</span>{% endif %}
+          </td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="background:var(--border);border-radius:4px;height:6px;width:80px;overflow:hidden;">
+                <div style="height:100%;width:{{ row.prob }}%;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:4px;"></div>
+              </div>
+              <span style="font-size:0.82rem;font-weight:600;">{{ row.prob }}%</span>
+            </div>
+          </td>
+          <td>{% if row.pred == 1 %}Placed{% else %}Not Placed{% endif %}</td>
+          <td>
+            {% if row.actual == row.pred %}
+              <span style="color:#059669;font-weight:700;">✓ Correct</span>
+            {% else %}
+              <span style="color:#DC2626;font-weight:700;">✗ Wrong</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Live Predictor -->
+<div class="card" style="margin-bottom:22px;">
+  <h3 style="margin:0 0 18px;font-size:1rem;">🎯 Predict Placement (Logistic Regression)</h3>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:18px;">
+    {% set logr_fields = [('logr-cgpa','CGPA','8.5','0.1','0','10'),
+                          ('logr-apt','Aptitude Score','80','1','0','100'),
+                          ('logr-code','Coding Score','85','1','0','100'),
+                          ('logr-mock','Mock Interview','75','1','0','100'),
+                          ('logr-intern','Internships','2','1','0','10'),
+                          ('logr-proj','Projects','3','1','0','20')] %}
+    {% for id,label,val,step,mn,mx in logr_fields %}
+    <div>
+      <label style="display:block;font-size:0.8rem;font-weight:600;color:var(--slate-gray);margin-bottom:6px;">{{ label }}</label>
+      <input id="{{ id }}" type="number" step="{{ step }}" min="{{ mn }}" max="{{ mx }}" value="{{ val }}"
+             style="width:100%;padding:10px 14px;border:1px solid #D1D8E0;border-radius:8px;font-size:0.9rem;font-family:var(--font);">
+    </div>
+    {% endfor %}
+  </div>
+  <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;">
+    <button onclick="predictPlacement()" class="btn btn-primary" style="padding:10px 28px;">Predict Placement →</button>
+    <div id="logr-result" style="display:none;padding:12px 20px;border-radius:10px;font-weight:700;font-size:1.05rem;"></div>
+  </div>
+  <!-- Probability gauge -->
+  <div id="logr-gauge-wrap" style="display:none;margin-top:20px;">
+    <div style="font-size:0.75rem;font-weight:600;color:var(--slate-gray);margin-bottom:6px;">Placement Probability</div>
+    <div style="background:var(--border);border-radius:8px;height:12px;overflow:hidden;max-width:400px;">
+      <div id="logr-gauge-bar" style="height:100%;border-radius:8px;transition:width 0.8s ease;background:linear-gradient(90deg,var(--blue),var(--cyan));width:0%;"></div>
+    </div>
+    <div id="logr-gauge-label" style="font-size:0.8rem;color:var(--slate-gray);margin-top:4px;"></div>
+  </div>
+</div>
+
+{% endif %}
+</div><!-- /tab-logr -->
+{% endblock %}
+
+{% block scripts %}{{ super() }}
+<script>
+{% if logr %}
+const BLUE    = 'rgba(37,99,235,0.8)';
+const EMERALD = 'rgba(16,185,129,0.8)';
+const CYAN    = 'rgba(6,182,212,0.8)';
+
+// Cost history
+const logrCost = {{ logr.cost_history | tojson }};
+new Chart(document.getElementById('logr-cost'), {
+  type: 'line',
+  data: {
+    labels: logrCost.map((_,i) => i * 10),
+    datasets: [{ label:'Cross-Entropy Loss', data: logrCost,
+      borderColor: BLUE, backgroundColor:'rgba(37,99,235,0.06)',
+      borderWidth:2, pointRadius:0, fill:true, tension:0.3 }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false} },
+    scales:{ x:{title:{display:true,text:'Epoch'}},
+             y:{title:{display:true,text:'Loss'}} }
+  }
+});
+
+// Probability distribution (placed vs not-placed)
+function makeBins(arr, bins=20) {
+  const counts = new Array(bins).fill(0);
+  arr.forEach(v => { const b = Math.min(Math.floor(v * bins), bins-1); counts[b]++; });
+  return counts;
+}
+const histPlaced    = {{ logr.hist_placed    | tojson }};
+const histNotPlaced = {{ logr.hist_notplaced | tojson }};
+const binLabels = Array.from({length:20}, (_,i) => ((i+0.5)/20*100).toFixed(0)+'%');
+
+new Chart(document.getElementById('logr-dist'), {
+  type: 'bar',
+  data: {
+    labels: binLabels,
+    datasets: [
+      { label:'Placed',     data: makeBins(histPlaced),    backgroundColor: EMERALD },
+      { label:'Not Placed', data: makeBins(histNotPlaced), backgroundColor: 'rgba(239,68,68,0.7)' }
+    ]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{position:'top', labels:{font:{size:11}}} },
+    scales: {
+      x:{ title:{display:true, text:'Predicted Probability'}, stacked:false },
+      y:{ title:{display:true, text:'Count'} }
+    }
+  }
+});
+{% endif %}
+
+// Live placement predictor
+async function predictPlacement() {
+  const fd = new FormData();
+  fd.append('CGPA',               document.getElementById('logr-cgpa').value);
+  fd.append('AptitudeTestScore',  document.getElementById('logr-apt').value);
+  fd.append('CodingTestScore',    document.getElementById('logr-code').value);
+  fd.append('MockInterviewScore', document.getElementById('logr-mock').value);
+  fd.append('Internships',        document.getElementById('logr-intern').value);
+  fd.append('Projects',           document.getElementById('logr-proj').value);
+
+  const res  = await fetch('/predict-placement', {method:'POST', body:fd});
+  const data = await res.json();
+  const el   = document.getElementById('logr-result');
+  el.style.display = 'block';
+
+  if (data.error) {
+    el.textContent = '⚠ ' + data.error;
+    el.style.background = 'rgba(239,68,68,0.1)';
+    el.style.color = '#DC2626';
+    return;
+  }
+
+  const placed = data.prediction === 1;
+  el.textContent = data.label + '  ·  Probability: ' + data.probability + '%';
+  el.style.background = placed ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.08)';
+  el.style.color       = placed ? '#059669'               : '#DC2626';
+
+  // Gauge
+  const gWrap  = document.getElementById('logr-gauge-wrap');
+  const gBar   = document.getElementById('logr-gauge-bar');
+  const gLabel = document.getElementById('logr-gauge-label');
+  gWrap.style.display = 'block';
+  setTimeout(() => { gBar.style.width = data.probability + '%'; }, 50);
+  gLabel.textContent  = data.probability + '% placement probability  (threshold: 50%)';
+  gBar.style.background = placed
+    ? 'linear-gradient(90deg,#10B981,#34D399)'
+    : 'linear-gradient(90deg,#EF4444,#FCA5A5)';
 }
 </script>
 {% endblock %}
