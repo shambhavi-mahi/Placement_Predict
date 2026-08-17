@@ -4,7 +4,7 @@
 {% block content %}
 <div class="page-header">
   <h2>Regression Models</h2>
-  <p>Simple Linear · Multi-Linear · Logistic Regression &mdash; all implemented from scratch using NumPy</p>
+  <p>Simple Linear &middot; Multi-Linear &middot; Logistic Regression &mdash; models implemented from scratch (NumPy) and with sklearn</p>
 </div>
 
 <!-- Tabs -->
@@ -20,7 +20,6 @@
 <div id="tab-slr">
 {% if slr %}
 
-<!-- Formula Card -->
 <div class="scaler-formula-card minmax-card" style="margin-bottom:22px;">
   <h2>Simple Linear Regression (Gradient Descent)</h2>
   <p>Models a straight-line relationship between <strong>CGPA</strong> and <strong>Salary Package</strong>.
@@ -33,7 +32,6 @@
   </div>
 </div>
 
-<!-- KPIs -->
 <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:22px;">
   <div class="kpi-card"><div class="kpi-icon blue">🎯</div><div class="kpi-body"><div class="kpi-label">Intercept (θ₀)</div><div class="kpi-value" style="font-size:1.3rem;">{{ slr.intercept }}</div></div></div>
   <div class="kpi-card"><div class="kpi-icon azure">📐</div><div class="kpi-body"><div class="kpi-label">Slope (θ₁)</div><div class="kpi-value" style="font-size:1.3rem;">{{ slr.slope }}</div></div></div>
@@ -43,28 +41,17 @@
   <div class="kpi-card"><div class="kpi-icon blue">🗄</div><div class="kpi-body"><div class="kpi-label">Train / Test</div><div class="kpi-value" style="font-size:1.1rem;">{{ slr.n_train }} / {{ slr.n_test }}</div></div></div>
 </div>
 
-<!-- Charts row -->
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:22px;">
-
-  <!-- Scatter + Regression Line -->
   <div class="card" style="padding:22px;">
     <h3 style="margin:0 0 14px;font-size:1rem;">📍 CGPA vs Salary Package (Test Set)</h3>
-    <div style="position:relative;height:280px;">
-      <canvas id="slr-scatter"></canvas>
-    </div>
+    <div style="position:relative;height:280px;"><canvas id="slr-scatter"></canvas></div>
   </div>
-
-  <!-- Cost History -->
   <div class="card" style="padding:22px;">
     <h3 style="margin:0 0 14px;font-size:1rem;">📉 Gradient Descent — Cost History</h3>
-    <div style="position:relative;height:280px;">
-      <canvas id="slr-cost"></canvas>
-    </div>
+    <div style="position:relative;height:280px;"><canvas id="slr-cost"></canvas></div>
   </div>
-
 </div>
 
-<!-- Predict Panel -->
 <div class="card" style="margin-bottom:22px;">
   <h3 style="margin:0 0 18px;font-size:1rem;">🔮 Predict Salary (SLR)</h3>
   <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end;">
@@ -88,7 +75,6 @@
 <div id="tab-mlr" style="display:none;">
 {% if mlr %}
 
-<!-- Formula Card -->
 <div class="scaler-formula-card robust-card" style="margin-bottom:22px;">
   <h2>Multi-Linear Regression (Normal Equation)</h2>
   <p>Predicts <strong>Salary Package</strong> from CGPA, Aptitude, Coding &amp; Mock Interview scores
@@ -98,7 +84,6 @@
   </div>
 </div>
 
-<!-- KPIs -->
 <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:22px;">
   <div class="kpi-card"><div class="kpi-icon blue">🎯</div><div class="kpi-body"><div class="kpi-label">Intercept</div><div class="kpi-value" style="font-size:1.3rem;">{{ mlr.intercept }}</div></div></div>
   <div class="kpi-card"><div class="kpi-icon green">R²</div><div class="kpi-body"><div class="kpi-label">R² Score</div><div class="kpi-value" style="font-size:1.3rem;">{{ mlr.r2 }}</div></div></div>
@@ -107,10 +92,7 @@
   <div class="kpi-card"><div class="kpi-icon gray">🗄</div><div class="kpi-body"><div class="kpi-label">Train / Test</div><div class="kpi-value" style="font-size:1.1rem;">{{ mlr.n_train }} / {{ mlr.n_test }}</div></div></div>
 </div>
 
-<!-- Coefficients Table + Actual vs Predicted -->
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:22px;">
-
-  <!-- Coefficients -->
   <div class="card" style="padding:0;overflow:hidden;">
     <div class="table-header-bar"><h2 style="margin:0;font-size:1rem;">📋 Feature Coefficients</h2></div>
     <div class="table-wrap" style="border-radius:0;">
@@ -127,18 +109,12 @@
       </table>
     </div>
   </div>
-
-  <!-- Actual vs Predicted chart -->
   <div class="card" style="padding:22px;">
     <h3 style="margin:0 0 14px;font-size:1rem;">📍 Actual vs Predicted (Test Sample)</h3>
-    <div style="position:relative;height:280px;">
-      <canvas id="mlr-avp"></canvas>
-    </div>
+    <div style="position:relative;height:280px;"><canvas id="mlr-avp"></canvas></div>
   </div>
-
 </div>
 
-<!-- Predict Panel -->
 <div class="card" style="margin-bottom:22px;">
   <h3 style="margin:0 0 18px;font-size:1rem;">🔮 Predict Salary (MLR)</h3>
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:18px;">
@@ -169,11 +145,8 @@
   </div>
 </div>
 
-<!-- Sample predictions table -->
 <div class="card" style="padding:0;overflow:hidden;">
-  <div class="table-header-bar">
-    <h2 style="margin:0;font-size:1rem;">🔍 Sample Predictions (First 10 test rows)</h2>
-  </div>
+  <div class="table-header-bar"><h2 style="margin:0;font-size:1rem;">🔍 Sample Predictions (First 10 test rows)</h2></div>
   <div class="table-wrap" style="border-radius:0;">
     <table class="data-table">
       <thead><tr><th>#</th><th>Actual Salary (LPA)</th><th>Predicted Salary (LPA)</th><th>Error</th></tr></thead>
@@ -195,166 +168,32 @@
 </div><!-- /tab-mlr -->
 
 
-<!-- SLR/MLR inline scripts within content: moved to scripts block below -->
-
-<!-- Chart.js CDN -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script>
-// ── Tab switching ──────────────────────────────────────────────────
-function showRegTab(name, btn) {
-  ['slr','mlr','logr'].forEach(t => document.getElementById('tab-'+t).style.display='none');
-  document.querySelectorAll('.fe-tab').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-'+name).style.display='block';
-  btn.classList.add('active');
-}
-
-// ── Chart colours ─────────────────────────────────────────────────
-const BLUE   = 'rgba(65,105,225,0.75)';
-const AZURE  = 'rgba(0,127,255,0.85)';
-const EMERALD= 'rgba(46,204,113,0.85)';
-const NAVY   = '#1B2A6B';
-
-// ── SLR Scatter + Line ────────────────────────────────────────────
-{% if slr %}
-const slrScatterX = {{ slr.scatter_x | tojson }};
-const slrScatterY = {{ slr.scatter_y | tojson }};
-const slrLineX    = {{ slr.line_x    | tojson }};
-const slrLineY    = {{ slr.line_y    | tojson }};
-
-new Chart(document.getElementById('slr-scatter'), {
-  type: 'scatter',
-  data: {
-    datasets: [
-      {
-        label: 'Actual Data',
-        data: slrScatterX.map((x,i) => ({x,y:slrScatterY[i]})),
-        backgroundColor: BLUE, pointRadius: 3, pointHoverRadius: 5
-      },
-      {
-        label: 'Regression Line',
-        type: 'line',
-        data: slrLineX.map((x,i) => ({x,y:slrLineY[i]})),
-        borderColor: EMERALD, borderWidth: 2.5,
-        pointRadius: 0, fill: false, tension: 0.1
-      }
-    ]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { position: 'top', labels: { font: { size: 11 } } } },
-    scales: {
-      x: { title: { display: true, text: 'CGPA' } },
-      y: { title: { display: true, text: 'Salary (LPA)' } }
-    }
-  }
-});
-
-// ── SLR Cost History ──────────────────────────────────────────────
-const costHist = {{ slr.cost_history | tojson }};
-new Chart(document.getElementById('slr-cost'), {
-  type: 'line',
-  data: {
-    labels: costHist.map((_,i) => i * 20),
-    datasets: [{
-      label: 'MSE Loss',
-      data: costHist,
-      borderColor: AZURE, backgroundColor: 'rgba(0,127,255,0.08)',
-      borderWidth: 2, pointRadius: 0, fill: true, tension: 0.3
-    }]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { title: { display: true, text: 'Epoch' } },
-      y: { title: { display: true, text: 'MSE' } }
-    }
-  }
-});
-{% endif %}
-
-// ── MLR Actual vs Predicted ───────────────────────────────────────
-{% if mlr %}
-const avpActual    = {{ mlr.sample | map(attribute='actual')    | list | tojson }};
-const avpPredicted = {{ mlr.sample | map(attribute='predicted') | list | tojson }};
-const avpLabels    = avpActual.map((_,i) => 'Row '+(i+1));
-
-new Chart(document.getElementById('mlr-avp'), {
-  type: 'bar',
-  data: {
-    labels: avpLabels,
-    datasets: [
-      { label: 'Actual',    data: avpActual,    backgroundColor: BLUE  },
-      { label: 'Predicted', data: avpPredicted, backgroundColor: EMERALD }
-    ]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { position: 'top', labels: { font: { size: 11 } } } },
-    scales: { y: { title: { display: true, text: 'Salary (LPA)' } } }
-  }
-});
-{% endif %}
-
-// ── Prediction Helpers ────────────────────────────────────────────
-async function predictSLR() {
-  const cgpa = document.getElementById('slr-cgpa').value;
-  const fd = new FormData();
-  fd.append('model','slr'); fd.append('CGPA', cgpa);
-  const res  = await fetch('/predict-salary', {method:'POST', body:fd});
-  const data = await res.json();
-  const el   = document.getElementById('slr-result');
-  el.style.display = 'block';
-  el.textContent = data.error
-    ? '⚠ ' + data.error
-    : '💰 Predicted: ' + data.predicted_salary.toFixed(2) + ' LPA';
-}
-
-async function predictMLR() {
-  const fd = new FormData();
-  fd.append('model','mlr');
-  fd.append('CGPA',                document.getElementById('mlr-cgpa').value);
-  fd.append('AptitudeTestScore',   document.getElementById('mlr-apt').value);
-  fd.append('CodingTestScore',     document.getElementById('mlr-code').value);
-  fd.append('MockInterviewScore',  document.getElementById('mlr-mock').value);
-  const res  = await fetch('/predict-salary', {method:'POST', body:fd});
-  const data = await res.json();
-  const el   = document.getElementById('mlr-result');
-  el.style.display = 'block';
-  el.textContent = data.error
-    ? '⚠ ' + data.error
-    : '💰 Predicted: ' + data.predicted_salary.toFixed(2) + ' LPA';
-}
-</script>
-
 {# ══════════════════════════════════════════════════════════════════ #}
 {# TAB 3 — Logistic Regression                                        #}
 {# ══════════════════════════════════════════════════════════════════ #}
 <div id="tab-logr" style="display:none;">
 {% if logr %}
 
-<!-- Formula Card -->
 <div class="scaler-formula-card standard-card" style="margin-bottom:22px;">
-  <h2>Logistic Regression (Gradient Descent)</h2>
-  <p>Binary classifier predicting <strong>PlacementStatus</strong> (Placed / Not Placed) from 6 features.
-     The sigmoid function maps the linear combination to a probability [0,1]. Parameters are
-     learned over <strong>{{ logr.epochs }} epochs</strong> at α = {{ logr.alpha }} using
-     Binary Cross-Entropy loss.</p>
-  <div style="background:rgba(255,255,255,0.12);border-radius:8px;padding:14px 18px;font-family:monospace;font-size:0.88rem;letter-spacing:0.3px;line-height:1.9;">
-    σ(z) = 1 / (1 + e⁻ᶻ) &nbsp;|&nbsp; z = θᵀX &nbsp;|&nbsp;
-    Loss = −(1/m) Σ [y·log(ŷ) + (1−y)·log(1−ŷ)] &nbsp;|&nbsp;
-    θ ← θ − α · ∇L
+  <h2>Logistic Regression (sklearn — Binary Classification)</h2>
+  <p>Predicts <strong>PlacementStatus</strong> (0/1) from 7 features via <code>sklearn.linear_model.LogisticRegression</code>.
+     Class balance: <strong>{{ logr.placed_pct }}% Placed</strong> | {{ 100 - logr.placed_pct }}% Not Placed.
+     Why not linear regression? It gives values from <strong>{{ logr.lin_range }}</strong> &mdash; outside [0,1].</p>
+  <div style="background:rgba(255,255,255,0.12);border-radius:8px;padding:12px 18px;font-family:monospace;font-size:0.88rem;letter-spacing:0.3px;line-height:2;">
+    &sigma;(z) = 1 / (1 + e<sup>&minus;z</sup>) &nbsp;|&nbsp;
+    z = &theta;<sup>T</sup>X &nbsp;|&nbsp;
+    Loss = &minus;(1/m) &Sigma; [y&middot;log(&ycirc;) + (1&minus;y)&middot;log(1&minus;&ycirc;)] &nbsp;|&nbsp; max_iter = 1000
   </div>
 </div>
 
 <!-- KPI Strip -->
-<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:22px;">
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:22px;">
   <div class="kpi-card">
     <div class="kpi-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
     <div class="kpi-body"><div class="kpi-label">Accuracy</div><div class="kpi-value" style="font-size:1.4rem;">{{ logr.accuracy }}%</div></div>
   </div>
   <div class="kpi-card">
-    <div class="kpi-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div>
+    <div class="kpi-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg></div>
     <div class="kpi-body"><div class="kpi-label">Precision</div><div class="kpi-value" style="font-size:1.4rem;">{{ logr.precision }}%</div></div>
   </div>
   <div class="kpi-card">
@@ -362,69 +201,108 @@ async function predictMLR() {
     <div class="kpi-body"><div class="kpi-label">Recall</div><div class="kpi-value" style="font-size:1.4rem;">{{ logr.recall }}%</div></div>
   </div>
   <div class="kpi-card">
-    <div class="kpi-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+    <div class="kpi-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
     <div class="kpi-body"><div class="kpi-label">F1 Score</div><div class="kpi-value" style="font-size:1.4rem;">{{ logr.f1 }}%</div></div>
   </div>
+  <div class="kpi-card">
+    <div class="kpi-icon gray"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+    <div class="kpi-body"><div class="kpi-label">Log Loss</div><div class="kpi-value" style="font-size:1.3rem;">{{ logr.log_loss }}</div></div>
+  </div>
+  {% if logr.softmax_acc %}
+  <div class="kpi-card">
+    <div class="kpi-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+    <div class="kpi-body"><div class="kpi-label">Softmax 3-class</div><div class="kpi-value" style="font-size:1.3rem;">{{ logr.softmax_acc }}%</div></div>
+  </div>
+  {% endif %}
   <div class="kpi-card">
     <div class="kpi-icon gray"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
     <div class="kpi-body"><div class="kpi-label">Train / Test</div><div class="kpi-value" style="font-size:1.1rem;">{{ logr.n_train }} / {{ logr.n_test }}</div></div>
   </div>
 </div>
 
-<!-- Charts row: Cost + Confusion Matrix -->
+<!-- Confusion Matrix + AUC -->
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:22px;">
-
-  <!-- Cost History -->
   <div class="card" style="padding:22px;">
-    <h3 style="margin:0 0 14px;font-size:1rem;">📉 Binary Cross-Entropy Loss</h3>
-    <div style="position:relative;height:260px;">
-      <canvas id="logr-cost"></canvas>
-    </div>
-  </div>
-
-  <!-- Confusion Matrix -->
-  <div class="card" style="padding:22px;">
-    <h3 style="margin:0 0 16px;font-size:1rem;">🔲 Confusion Matrix (Test Set)</h3>
+    <h3 style="margin:0 0 16px;font-size:1rem;">&#x1F532; Confusion Matrix (Test Set)</h3>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:320px;margin:0 auto;">
-      <div style="background:rgba(16,185,129,0.12);border:2px solid rgba(16,185,129,0.3);border-radius:10px;padding:18px;text-align:center;">
-        <div style="font-size:1.6rem;font-weight:800;color:#059669;">{{ logr.tp }}</div>
-        <div style="font-size:0.7rem;font-weight:700;color:var(--slate-gray);margin-top:4px;">TRUE POSITIVE</div>
-        <div style="font-size:0.65rem;color:var(--slate-gray);">Placed → Placed</div>
+      <div style="background:rgba(16,185,129,0.12);border:2px solid rgba(16,185,129,0.3);border-radius:10px;padding:16px;text-align:center;">
+        <div style="font-size:1.5rem;font-weight:800;color:#059669;">{{ logr.tp }}</div>
+        <div style="font-size:0.68rem;font-weight:700;color:var(--slate-gray);margin-top:4px;">TRUE POSITIVE</div>
+        <div style="font-size:0.62rem;color:var(--slate-gray);">Placed &rarr; Placed</div>
       </div>
-      <div style="background:rgba(239,68,68,0.08);border:2px solid rgba(239,68,68,0.2);border-radius:10px;padding:18px;text-align:center;">
-        <div style="font-size:1.6rem;font-weight:800;color:#DC2626;">{{ logr.fp }}</div>
-        <div style="font-size:0.7rem;font-weight:700;color:var(--slate-gray);margin-top:4px;">FALSE POSITIVE</div>
-        <div style="font-size:0.65rem;color:var(--slate-gray);">Not Placed → Placed</div>
+      <div style="background:rgba(239,68,68,0.08);border:2px solid rgba(239,68,68,0.2);border-radius:10px;padding:16px;text-align:center;">
+        <div style="font-size:1.5rem;font-weight:800;color:#DC2626;">{{ logr.fp }}</div>
+        <div style="font-size:0.68rem;font-weight:700;color:var(--slate-gray);margin-top:4px;">FALSE POSITIVE</div>
+        <div style="font-size:0.62rem;color:var(--slate-gray);">Not Placed &rarr; Placed</div>
       </div>
-      <div style="background:rgba(245,158,11,0.08);border:2px solid rgba(245,158,11,0.2);border-radius:10px;padding:18px;text-align:center;">
-        <div style="font-size:1.6rem;font-weight:800;color:#D97706;">{{ logr.fn }}</div>
-        <div style="font-size:0.7rem;font-weight:700;color:var(--slate-gray);margin-top:4px;">FALSE NEGATIVE</div>
-        <div style="font-size:0.65rem;color:var(--slate-gray);">Placed → Not Placed</div>
+      <div style="background:rgba(245,158,11,0.08);border:2px solid rgba(245,158,11,0.2);border-radius:10px;padding:16px;text-align:center;">
+        <div style="font-size:1.5rem;font-weight:800;color:#D97706;">{{ logr.fn }}</div>
+        <div style="font-size:0.68rem;font-weight:700;color:var(--slate-gray);margin-top:4px;">FALSE NEGATIVE</div>
+        <div style="font-size:0.62rem;color:var(--slate-gray);">Placed &rarr; Not Placed</div>
       </div>
-      <div style="background:rgba(37,99,235,0.08);border:2px solid rgba(37,99,235,0.2);border-radius:10px;padding:18px;text-align:center;">
-        <div style="font-size:1.6rem;font-weight:800;color:var(--blue);">{{ logr.tn }}</div>
-        <div style="font-size:0.7rem;font-weight:700;color:var(--slate-gray);margin-top:4px;">TRUE NEGATIVE</div>
-        <div style="font-size:0.65rem;color:var(--slate-gray);">Not Placed → Not Placed</div>
+      <div style="background:rgba(37,99,235,0.08);border:2px solid rgba(37,99,235,0.2);border-radius:10px;padding:16px;text-align:center;">
+        <div style="font-size:1.5rem;font-weight:800;color:var(--blue);">{{ logr.tn }}</div>
+        <div style="font-size:0.68rem;font-weight:700;color:var(--slate-gray);margin-top:4px;">TRUE NEGATIVE</div>
+        <div style="font-size:0.62rem;color:var(--slate-gray);">Not Placed &rarr; Not Placed</div>
       </div>
     </div>
   </div>
 
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div class="table-header-bar"><h2 style="margin:0;font-size:1rem;">&#x1F3AF; Single-Feature AUC Scores</h2></div>
+    <div class="table-wrap" style="border-radius:0;">
+      <table class="data-table">
+        <thead><tr><th>Feature</th><th>AUC</th><th>Discriminating Power</th></tr></thead>
+        <tbody>
+          {% for feat, auc in logr.auc_scores.items() %}
+          <tr>
+            <td><strong style="color:var(--blue);">{{ feat }}</strong></td>
+            <td><span class="range-pill">{{ auc }}</span></td>
+            <td>
+              <div style="background:var(--border);border-radius:4px;height:6px;width:100%;overflow:hidden;">
+                <div style="height:100%;border-radius:4px;width:{{ ((auc - 0.5) * 200) | round }}%;background:linear-gradient(90deg,var(--blue),var(--cyan));"></div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
 
-<!-- Probability Distribution + Coefficients -->
+<!-- Matplotlib plots 2x2 -->
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:22px;">
-
-  <!-- Probability Distribution -->
-  <div class="card" style="padding:22px;">
-    <h3 style="margin:0 0 14px;font-size:1rem;">📊 Predicted Probability Distribution</h3>
-    <div style="position:relative;height:260px;">
-      <canvas id="logr-dist"></canvas>
+  <div class="card" style="padding:16px;">
+    <h3 style="margin:0 0 12px;font-size:0.95rem;">&#x1F4C8; CGPA vs Placement &mdash; S-curve</h3>
+    <img src="/Dashboard/Plot/Logistic/cgpa_vs_placement_curve.png" style="width:100%;border-radius:8px;" alt="CGPA S-curve">
+  </div>
+  <div class="card" style="padding:16px;">
+    <h3 style="margin:0 0 12px;font-size:0.95rem;">&#x1F522; Sigmoid Function &sigma;(z)</h3>
+    <img src="/Dashboard/Plot/Logistic/sigmoid_function.png" style="width:100%;border-radius:8px;" alt="Sigmoid">
+  </div>
+  <div class="card" style="padding:16px;">
+    <h3 style="margin:0 0 12px;font-size:0.95rem;">&#x1F5FA; Decision Boundary (CGPA + Coding)</h3>
+    <img src="/Dashboard/Plot/Logistic/decision_boundary.png" style="width:100%;border-radius:8px;" alt="Decision boundary">
+  </div>
+  <div class="card" style="padding:16px;">
+    <h3 style="margin:0 0 12px;font-size:0.95rem;">&#x2696;&#xFE0F; Scaler Comparison</h3>
+    <img src="/Dashboard/Plot/Logistic/scaler_comparison.png" style="width:100%;border-radius:8px;" alt="Scaler comparison">
+    <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+      {% for label, acc in logr.scaler_results.items() %}
+      <div style="flex:1;min-width:90px;background:var(--border);border-radius:8px;padding:10px;text-align:center;">
+        <div style="font-size:1rem;font-weight:800;color:var(--blue);">{{ acc }}%</div>
+        <div style="font-size:0.68rem;color:var(--slate-gray);margin-top:2px;">{{ label }}</div>
+      </div>
+      {% endfor %}
     </div>
   </div>
+</div>
 
-  <!-- Coefficients -->
+<!-- Weights + Sample Predictions -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:22px;">
   <div class="card" style="padding:0;overflow:hidden;">
-    <div class="table-header-bar"><h2 style="margin:0;font-size:1rem;">⚖️ Feature Weights (θ)</h2></div>
+    <div class="table-header-bar"><h2 style="margin:0;font-size:1rem;">&#x2696;&#xFE0F; Feature Weights (&theta;)</h2></div>
     <div class="table-wrap" style="border-radius:0;">
       <table class="data-table">
         <thead><tr><th>Feature</th><th>Coefficient</th><th>Influence</th></tr></thead>
@@ -435,7 +313,7 @@ async function predictMLR() {
             <td><span class="range-pill">{{ coef }}</span></td>
             <td>
               <div style="background:var(--border);border-radius:4px;height:6px;width:100%;overflow:hidden;">
-                <div style="height:100%;border-radius:4px;width:{{ [coef | abs * 30, 100] | min }}%;background:{% if coef > 0 %}linear-gradient(90deg,var(--emerald),#34D399){% else %}linear-gradient(90deg,var(--red),#FCA5A5){% endif %};"></div>
+                <div style="height:100%;border-radius:4px;width:{{ [coef|abs * 40, 100]|min }}%;background:{% if coef > 0 %}linear-gradient(90deg,#10B981,#34D399){% else %}linear-gradient(90deg,#EF4444,#FCA5A5){% endif %};"></div>
               </div>
             </td>
           </tr>
@@ -445,76 +323,64 @@ async function predictMLR() {
     </div>
   </div>
 
-</div>
-
-<!-- Sample Predictions Table -->
-<div class="card" style="padding:0;overflow:hidden;margin-bottom:22px;">
-  <div class="table-header-bar">
-    <h2 style="margin:0;font-size:1rem;">🔍 Sample Predictions (First 10 test rows)</h2>
-  </div>
-  <div class="table-wrap" style="border-radius:0;">
-    <table class="data-table">
-      <thead><tr><th>#</th><th>Actual</th><th>Predicted Probability</th><th>Decision</th><th>Result</th></tr></thead>
-      <tbody>
-        {% for row in logr.sample %}
-        <tr>
-          <td>{{ loop.index }}</td>
-          <td>
-            {% if row.actual == 1 %}<span class="scaled-val">Placed</span>
-            {% else %}<span class="range-pill" style="background:rgba(239,68,68,0.08);color:#DC2626;">Not Placed</span>{% endif %}
-          </td>
-          <td>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <div style="background:var(--border);border-radius:4px;height:6px;width:80px;overflow:hidden;">
-                <div style="height:100%;width:{{ row.prob }}%;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:4px;"></div>
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div class="table-header-bar"><h2 style="margin:0;font-size:1rem;">&#x1F50D; Sample Predictions (10 test rows)</h2></div>
+    <div class="table-wrap" style="border-radius:0;">
+      <table class="data-table">
+        <thead><tr><th>#</th><th>Actual</th><th>Probability</th><th>Pred.</th><th>OK?</th></tr></thead>
+        <tbody>
+          {% for row in logr.sample %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{% if row.actual==1 %}<span class="scaled-val">Placed</span>{% else %}<span class="range-pill" style="background:rgba(239,68,68,0.08);color:#DC2626;">Not Placed</span>{% endif %}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <div style="background:var(--border);border-radius:3px;height:5px;width:60px;overflow:hidden;">
+                  <div style="height:100%;width:{{ row.prob }}%;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:3px;"></div>
+                </div>
+                <span style="font-size:0.8rem;font-weight:600;">{{ row.prob }}%</span>
               </div>
-              <span style="font-size:0.82rem;font-weight:600;">{{ row.prob }}%</span>
-            </div>
-          </td>
-          <td>{% if row.pred == 1 %}Placed{% else %}Not Placed{% endif %}</td>
-          <td>
-            {% if row.actual == row.pred %}
-              <span style="color:#059669;font-weight:700;">✓ Correct</span>
-            {% else %}
-              <span style="color:#DC2626;font-weight:700;">✗ Wrong</span>
-            {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+            </td>
+            <td>{% if row.pred==1 %}Placed{% else %}Not Placed{% endif %}</td>
+            <td>{% if row.actual==row.pred %}<span style="color:#059669;font-weight:700;">&#x2713;</span>{% else %}<span style="color:#DC2626;font-weight:700;">&#x2717;</span>{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 
 <!-- Live Predictor -->
 <div class="card" style="margin-bottom:22px;">
-  <h3 style="margin:0 0 18px;font-size:1rem;">🎯 Predict Placement (Logistic Regression)</h3>
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:18px;">
-    {% set logr_fields = [('logr-cgpa','CGPA','8.5','0.1','0','10'),
-                          ('logr-apt','Aptitude Score','80','1','0','100'),
-                          ('logr-code','Coding Score','85','1','0','100'),
-                          ('logr-mock','Mock Interview','75','1','0','100'),
-                          ('logr-intern','Internships','2','1','0','10'),
-                          ('logr-proj','Projects','3','1','0','20')] %}
-    {% for id,label,val,step,mn,mx in logr_fields %}
+  <h3 style="margin:0 0 18px;font-size:1rem;">&#x1F3AF; Predict Placement (Live)</h3>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:18px;">
+    {% for id,label,val,step,mn,mx in [
+      ('logr-cgpa','CGPA','8.5','0.1','0','10'),
+      ('logr-apt','Aptitude Score','80','1','0','100'),
+      ('logr-code','Coding Score','85','1','0','100'),
+      ('logr-mock','Mock Interview','75','1','0','100'),
+      ('logr-attend','Attendance %','85','1','0','100'),
+      ('logr-intern','Internships','2','1','0','10'),
+      ('logr-proj','Projects','3','1','0','20')
+    ] %}
     <div>
-      <label style="display:block;font-size:0.8rem;font-weight:600;color:var(--slate-gray);margin-bottom:6px;">{{ label }}</label>
+      <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--slate-gray);margin-bottom:5px;">{{ label }}</label>
       <input id="{{ id }}" type="number" step="{{ step }}" min="{{ mn }}" max="{{ mx }}" value="{{ val }}"
-             style="width:100%;padding:10px 14px;border:1px solid #D1D8E0;border-radius:8px;font-size:0.9rem;font-family:var(--font);">
+             style="width:100%;padding:9px 12px;border:1px solid #D1D8E0;border-radius:8px;font-size:0.88rem;font-family:var(--font);">
     </div>
     {% endfor %}
   </div>
   <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;">
-    <button onclick="predictPlacement()" class="btn btn-primary" style="padding:10px 28px;">Predict Placement →</button>
+    <button onclick="predictPlacement()" class="btn btn-primary" style="padding:10px 26px;">Predict Placement &rarr;</button>
     <div id="logr-result" style="display:none;padding:12px 20px;border-radius:10px;font-weight:700;font-size:1.05rem;"></div>
   </div>
-  <!-- Probability gauge -->
-  <div id="logr-gauge-wrap" style="display:none;margin-top:20px;">
-    <div style="font-size:0.75rem;font-weight:600;color:var(--slate-gray);margin-bottom:6px;">Placement Probability</div>
-    <div style="background:var(--border);border-radius:8px;height:12px;overflow:hidden;max-width:400px;">
-      <div id="logr-gauge-bar" style="height:100%;border-radius:8px;transition:width 0.8s ease;background:linear-gradient(90deg,var(--blue),var(--cyan));width:0%;"></div>
+  <div id="logr-gauge-wrap" style="display:none;margin-top:18px;">
+    <div style="font-size:0.73rem;font-weight:600;color:var(--slate-gray);margin-bottom:5px;">Placement Probability</div>
+    <div style="background:var(--border);border-radius:8px;height:10px;overflow:hidden;max-width:400px;">
+      <div id="logr-gauge-bar" style="height:100%;border-radius:8px;transition:width 0.8s ease;width:0%;"></div>
     </div>
-    <div id="logr-gauge-label" style="font-size:0.8rem;color:var(--slate-gray);margin-top:4px;"></div>
+    <div id="logr-gauge-label" style="font-size:0.78rem;color:var(--slate-gray);margin-top:4px;"></div>
   </div>
 </div>
 
@@ -522,6 +388,7 @@ async function predictMLR() {
 </div><!-- /tab-logr -->
 
 {% endblock %}
+
 {% block scripts %}
 <!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -534,66 +401,114 @@ function showRegTab(name, btn) {
   btn.classList.add('active');
 }
 
-{% if logr %}
-const BLUE    = 'rgba(37,99,235,0.8)';
-const EMERALD = 'rgba(16,185,129,0.8)';
-const CYAN    = 'rgba(6,182,212,0.8)';
+// ── Chart colours (single declaration)
+const C_BLUE    = 'rgba(37,99,235,0.8)';
+const C_AZURE   = 'rgba(0,127,255,0.85)';
+const C_EMERALD = 'rgba(16,185,129,0.85)';
+const C_NAVY    = '#1B2A6B';
 
-// Cost history
-const logrCost = {{ logr.cost_history | tojson }};
-new Chart(document.getElementById('logr-cost'), {
+// ── SLR Charts ─────────────────────────────────────────────────────
+{% if slr %}
+const slrScatterX = {{ slr.scatter_x | tojson }};
+const slrScatterY = {{ slr.scatter_y | tojson }};
+const slrLineX    = {{ slr.line_x    | tojson }};
+const slrLineY    = {{ slr.line_y    | tojson }};
+
+new Chart(document.getElementById('slr-scatter'), {
+  type: 'scatter',
+  data: {
+    datasets: [
+      { label:'Actual Data',
+        data: slrScatterX.map((x,i) => ({x,y:slrScatterY[i]})),
+        backgroundColor: C_BLUE, pointRadius: 3, pointHoverRadius: 5 },
+      { label:'Regression Line', type:'line',
+        data: slrLineX.map((x,i) => ({x,y:slrLineY[i]})),
+        borderColor: C_EMERALD, borderWidth: 2.5,
+        pointRadius: 0, fill: false, tension: 0.1 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position:'top', labels:{font:{size:11}} } },
+    scales: { x:{title:{display:true,text:'CGPA'}},
+              y:{title:{display:true,text:'Salary (LPA)'}} }
+  }
+});
+
+const slrCost = {{ slr.cost_history | tojson }};
+new Chart(document.getElementById('slr-cost'), {
   type: 'line',
   data: {
-    labels: logrCost.map((_,i) => i * 10),
-    datasets: [{ label:'Cross-Entropy Loss', data: logrCost,
-      borderColor: BLUE, backgroundColor:'rgba(37,99,235,0.06)',
+    labels: slrCost.map((_,i) => i * 10),
+    datasets: [{ label:'MSE Cost', data: slrCost,
+      borderColor: C_AZURE, backgroundColor:'rgba(0,127,255,0.06)',
       borderWidth:2, pointRadius:0, fill:true, tension:0.3 }]
   },
   options: {
     responsive:true, maintainAspectRatio:false,
     plugins:{ legend:{display:false} },
     scales:{ x:{title:{display:true,text:'Epoch'}},
-             y:{title:{display:true,text:'Loss'}} }
+             y:{title:{display:true,text:'MSE'}} }
   }
 });
+{% endif %}
 
-// Probability distribution (placed vs not-placed)
-function makeBins(arr, bins=20) {
-  const counts = new Array(bins).fill(0);
-  arr.forEach(v => { const b = Math.min(Math.floor(v * bins), bins-1); counts[b]++; });
-  return counts;
-}
-const histPlaced    = {{ logr.hist_placed    | tojson }};
-const histNotPlaced = {{ logr.hist_notplaced | tojson }};
-const binLabels = Array.from({length:20}, (_,i) => ((i+0.5)/20*100).toFixed(0)+'%');
+// ── MLR Chart ──────────────────────────────────────────────────────
+{% if mlr %}
+const mlrActual    = {{ mlr.sample | map(attribute='actual')    | list | tojson }};
+const mlrPredicted = {{ mlr.sample | map(attribute='predicted') | list | tojson }};
 
-new Chart(document.getElementById('logr-dist'), {
+new Chart(document.getElementById('mlr-avp'), {
   type: 'bar',
   data: {
-    labels: binLabels,
+    labels: mlrActual.map((_,i) => 'Row '+(i+1)),
     datasets: [
-      { label:'Placed',     data: makeBins(histPlaced),    backgroundColor: EMERALD },
-      { label:'Not Placed', data: makeBins(histNotPlaced), backgroundColor: 'rgba(239,68,68,0.7)' }
+      { label:'Actual',    data: mlrActual,    backgroundColor: C_BLUE,    barPercentage:0.45 },
+      { label:'Predicted', data: mlrPredicted, backgroundColor: C_EMERALD, barPercentage:0.45 }
     ]
   },
   options: {
     responsive:true, maintainAspectRatio:false,
     plugins:{ legend:{position:'top', labels:{font:{size:11}}} },
-    scales: {
-      x:{ title:{display:true, text:'Predicted Probability'}, stacked:false },
-      y:{ title:{display:true, text:'Count'} }
-    }
+    scales:{ y:{title:{display:true,text:'Salary (LPA)'}} }
   }
 });
 {% endif %}
 
-// Live placement predictor
+// ── Live salary predictors ─────────────────────────────────────────
+async function predictSLR() {
+  const fd = new FormData();
+  fd.append('model', 'slr');
+  fd.append('CGPA', document.getElementById('slr-cgpa').value);
+  const res  = await fetch('/predict-salary', {method:'POST', body:fd});
+  const data = await res.json();
+  const el   = document.getElementById('slr-result');
+  el.style.display = 'block';
+  el.textContent = data.error ? '⚠ '+data.error : '💰 '+data.predicted_salary.toFixed(2)+' LPA';
+}
+
+async function predictMLR() {
+  const fd = new FormData();
+  fd.append('model','mlr');
+  fd.append('CGPA',               document.getElementById('mlr-cgpa').value);
+  fd.append('AptitudeTestScore',  document.getElementById('mlr-apt').value);
+  fd.append('CodingTestScore',    document.getElementById('mlr-code').value);
+  fd.append('MockInterviewScore', document.getElementById('mlr-mock').value);
+  const res  = await fetch('/predict-salary', {method:'POST', body:fd});
+  const data = await res.json();
+  const el   = document.getElementById('mlr-result');
+  el.style.display = 'block';
+  el.textContent = data.error ? '⚠ '+data.error : '💰 Predicted: '+data.predicted_salary.toFixed(2)+' LPA';
+}
+
+// ── Live placement predictor ───────────────────────────────────────
 async function predictPlacement() {
   const fd = new FormData();
   fd.append('CGPA',               document.getElementById('logr-cgpa').value);
   fd.append('AptitudeTestScore',  document.getElementById('logr-apt').value);
   fd.append('CodingTestScore',    document.getElementById('logr-code').value);
   fd.append('MockInterviewScore', document.getElementById('logr-mock').value);
+  fd.append('AttendancePercent',  document.getElementById('logr-attend').value);
   fd.append('Internships',        document.getElementById('logr-intern').value);
   fd.append('Projects',           document.getElementById('logr-proj').value);
 
@@ -604,26 +519,21 @@ async function predictPlacement() {
 
   if (data.error) {
     el.textContent = '⚠ ' + data.error;
-    el.style.background = 'rgba(239,68,68,0.1)';
-    el.style.color = '#DC2626';
+    el.style.background = 'rgba(239,68,68,0.1)'; el.style.color = '#DC2626';
     return;
   }
-
   const placed = data.prediction === 1;
   el.textContent = data.label + '  ·  Probability: ' + data.probability + '%';
   el.style.background = placed ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.08)';
-  el.style.color       = placed ? '#059669'               : '#DC2626';
+  el.style.color       = placed ? '#059669' : '#DC2626';
 
-  // Gauge
   const gWrap  = document.getElementById('logr-gauge-wrap');
   const gBar   = document.getElementById('logr-gauge-bar');
   const gLabel = document.getElementById('logr-gauge-label');
   gWrap.style.display = 'block';
   setTimeout(() => { gBar.style.width = data.probability + '%'; }, 50);
-  gLabel.textContent  = data.probability + '% placement probability  (threshold: 50%)';
-  gBar.style.background = placed
-    ? 'linear-gradient(90deg,#10B981,#34D399)'
-    : 'linear-gradient(90deg,#EF4444,#FCA5A5)';
+  gLabel.textContent = data.probability + '% placement probability  (threshold: 50%)';
+  gBar.style.background = placed ? 'linear-gradient(90deg,#10B981,#34D399)' : 'linear-gradient(90deg,#EF4444,#FCA5A5)';
 }
 </script>
 {% endblock %}

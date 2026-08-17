@@ -569,113 +569,269 @@ def _get_regression_data():
 
 
 # ---------------------------------------------------------------------------
-# Logistic Regression (Gradient Descent — from scratch)
+# Logistic Regression (sklearn — matching the reference implementation)
 # ---------------------------------------------------------------------------
-LOGR_FEATURES = ["CGPA", "AptitudeTestScore", "CodingTestScore",
-                  "MockInterviewScore", "Internships", "Projects"]
-LOGR_TARGET   = "PlacementStatus"
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression as SKLinearRegression, LogisticRegression as SKLogisticRegression
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.metrics import accuracy_score, roc_auc_score, log_loss
+
+LOGR_FEATURES = [
+    "CGPA", "AptitudeTestScore", "CodingTestScore",
+    "MockInterviewScore", "AttendancePercent",
+    "Internships", "Projects",
+]
+LOGR_TARGET = "PlacementStatus"
 
 
-def _sigmoid(z):
-    return 1.0 / (1.0 + np.exp(-np.clip(z, -500, 500)))
+def _run_logistic_regression(df):
+    """Full sklearn logistic regression pipeline matching the reference code."""
+    import warnings
+    warnings.filterwarnings("ignore")
 
+    os.makedirs(config.LOGISTIC_DIR, exist_ok=True)
 
-def _run_logistic_regression(df, alpha=0.1, epochs=500):
-    """Binary Logistic Regression via Gradient Descent (PlacementStatus 0/1)."""
-    cols = LOGR_FEATURES + [LOGR_TARGET]
-    data = df[cols].dropna().copy()
-    for c in LOGR_FEATURES:
+    # ── Prepare data ────────────────────────────────────────────────
+    feature_cols = [c for c in LOGR_FEATURES if c in df.columns]
+    target_col   = LOGR_TARGET
+    needed        = feature_cols + [target_col]
+    if "Salary Package" in df.columns:
+        needed.append("Salary Package")
+
+    data = df[needed].copy()
+    for c in feature_cols:
         data[c] = pd.to_numeric(data[c], errors="coerce")
-    data[LOGR_TARGET] = pd.to_numeric(data[LOGR_TARGET], errors="coerce")
-    data = data.dropna()
+    data[target_col] = pd.to_numeric(data[target_col], errors="coerce")
+    data = data.dropna(subset=feature_cols + [target_col])
 
-    n = len(data)
+    n     = len(data)
     split = int(0.8 * n)
+    train = data.iloc[:split].copy()
+    val   = data.iloc[split:].copy()
 
-    X_raw = data[LOGR_FEATURES].values.astype(float)
-    y     = data[LOGR_TARGET].values.astype(float)
+    x_train = train[feature_cols].copy()
+    y_train = train[target_col].copy()
+    x_val   = val[feature_cols].copy()
+    y_val   = val[target_col].copy()
 
-    X_train, X_test = X_raw[:split], X_raw[split:]
-    y_train, y_test = y[:split],     y[split:]
+    # Fill missing with train median
+    for col in feature_cols:
+        fill = x_train[col].median()
+        x_train[col] = x_train[col].fillna(fill)
+        x_val[col]   = x_val[col].fillna(fill)
 
-    # Standardise with train stats
-    mu  = X_train.mean(axis=0)
-    sig = X_train.std(axis=0) + 1e-9
-    X_tr = (X_train - mu) / sig
-    X_te = (X_test  - mu) / sig
+    # ── Class balance ────────────────────────────────────────────────
+    placed_pct = float((y_train == 1).mean() * 100)
 
-    # Add bias column
-    ones_tr = np.ones((X_tr.shape[0], 1))
-    ones_te = np.ones((X_te.shape[0], 1))
-    X_tr_b  = np.hstack([ones_tr, X_tr])
-    X_te_b  = np.hstack([ones_te, X_te])
+    # ── CGPA vs Placement S-curve ────────────────────────────────────
+    bins = pd.cut(train["CGPA"], bins=15) if "CGPA" in train.columns else None
+    if bins is not None:
+        fraction_placed = train.groupby(bins, observed=True)[target_col].mean()
+        bin_centers     = [interval.mid for interval in fraction_placed.index]
+        fig, ax = plt.subplots(figsize=(7, 4))
+        ax.plot(bin_centers, fraction_placed.values, marker="o", color="#2563EB", linewidth=2)
+        ax.set_xlabel("CGPA", fontsize=11)
+        ax.set_ylabel("Fraction Placed", fontsize=11)
+        ax.set_title("CGPA vs Placement — the S-shaped pattern", fontsize=12, fontweight="bold")
+        ax.grid(True, alpha=0.3)
+        fig.tight_layout()
+        fig.savefig(os.path.join(config.LOGISTIC_DIR, "cgpa_vs_placement_curve.png"), dpi=120)
+        plt.close(fig)
 
-    # Initialise weights
-    m_feat = X_tr_b.shape[1]
-    theta  = np.zeros(m_feat)
-    m      = len(y_train)
+    # ── Sigmoid function ─────────────────────────────────────────────
+    z_vals = np.linspace(-8, 8, 200)
+    sig_vals = 1 / (1 + np.exp(-z_vals))
+    fig, ax = plt.subplots(figsize=(7, 4))
+    ax.plot(z_vals, sig_vals, color="#2563EB", linewidth=2.5)
+    ax.axhline(0.5, color="#94A3B8", linestyle="--", linewidth=1)
+    ax.axvline(0,   color="#94A3B8", linestyle="--", linewidth=1)
+    ax.set_xlabel("z",            fontsize=11)
+    ax.set_ylabel("σ(z)",         fontsize=11)
+    ax.set_title("The Sigmoid Function — always between 0 and 1", fontsize=12, fontweight="bold")
+    ax.grid(True, alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(os.path.join(config.LOGISTIC_DIR, "sigmoid_function.png"), dpi=120)
+    plt.close(fig)
 
-    cost_history = []
-    for _ in range(epochs):
-        z    = X_tr_b @ theta
-        h    = _sigmoid(z)
-        err  = h - y_train
-        grad = (1 / m) * (X_tr_b.T @ err)
-        theta -= alpha * grad
-        # Binary cross-entropy cost
-        cost = -(1 / m) * (y_train @ np.log(h + 1e-9) +
-                            (1 - y_train) @ np.log(1 - h + 1e-9))
-        cost_history.append(float(cost))
+    # ── AUC per feature ──────────────────────────────────────────────
+    auc_features = ["CGPA", "MockInterviewScore", "CodingTestScore",
+                    "AptitudeTestScore", "AttendancePercent"]
+    auc_features = [f for f in auc_features if f in feature_cols]
+    auc_scores = {}
+    for col in auc_features:
+        try:
+            auc_scores[col] = round(float(roc_auc_score(y_train, x_train[col])), 4)
+        except Exception:
+            pass
 
-    # Predictions on test set
-    y_prob = _sigmoid(X_te_b @ theta)
-    y_pred = (y_prob >= 0.5).astype(int)
+    # ── Why not a straight line? ─────────────────────────────────────
+    lin = SKLinearRegression()
+    lin.fit(x_train[["CGPA"]], y_train)
+    lin_min = round(float(lin.predict(x_train[["CGPA"]]).min()), 2)
+    lin_max = round(float(lin.predict(x_train[["CGPA"]]).max()), 2)
 
-    # Metrics
-    tp = int(np.sum((y_pred == 1) & (y_test == 1)))
-    tn = int(np.sum((y_pred == 0) & (y_test == 0)))
-    fp = int(np.sum((y_pred == 1) & (y_test == 0)))
-    fn = int(np.sum((y_pred == 0) & (y_test == 1)))
+    # ── Full logistic regression model ───────────────────────────────
+    model = SKLogisticRegression(max_iter=1000, random_state=42)
+    model.fit(x_train, y_train)
 
-    accuracy  = (tp + tn) / len(y_test)
-    precision = tp / (tp + fp) if (tp + fp) else 0.0
-    recall    = tp / (tp + fn) if (tp + fn) else 0.0
-    f1        = (2 * precision * recall / (precision + recall)
-                 if (precision + recall) else 0.0)
+    y_pred_val  = model.predict(x_val)
+    y_prob_val  = model.predict_proba(x_val)[:, 1]
+    val_acc     = round(float(accuracy_score(y_val, y_pred_val)) * 100, 2)
+    val_logloss = round(float(log_loss(y_val, model.predict_proba(x_val))), 4)
 
-    # Sample probabilities (first 10 test rows)
+    # Confusion matrix
+    tp = int(np.sum((y_pred_val == 1) & (y_val == 1)))
+    tn = int(np.sum((y_pred_val == 0) & (y_val == 0)))
+    fp = int(np.sum((y_pred_val == 1) & (y_val == 0)))
+    fn = int(np.sum((y_pred_val == 0) & (y_val == 1)))
+    precision = round(tp / (tp + fp) * 100, 2) if (tp + fp) else 0.0
+    recall    = round(tp / (tp + fn) * 100, 2) if (tp + fn) else 0.0
+    f1_val    = round(2 * precision * recall / (precision + recall), 2) if (precision + recall) else 0.0
+
+    # Coefficients
+    coefs = {f: round(float(w), 4) for f, w in zip(feature_cols, model.coef_[0])}
+
+    # ── Decision boundary (CGPA + CodingTestScore) ───────────────────
+    if "CodingTestScore" in feature_cols:
+        bm = SKLogisticRegression(max_iter=1000, random_state=42)
+        bm.fit(x_train[["CGPA", "CodingTestScore"]].to_numpy(), y_train)
+        x_min_g = x_train["CGPA"].min() - 0.5
+        x_max_g = x_train["CGPA"].max() + 0.5
+        y_min_g = x_train["CodingTestScore"].min() - 5
+        y_max_g = x_train["CodingTestScore"].max() + 5
+        xx, yy = np.meshgrid(np.linspace(x_min_g, x_max_g, 200),
+                             np.linspace(y_min_g, y_max_g, 200))
+        zz = bm.predict(np.c_[xx.ravel(), yy.ravel()]).reshape(xx.shape)
+        fig, ax = plt.subplots(figsize=(7, 5))
+        ax.contourf(xx, yy, zz, alpha=0.2, levels=1, colors=["#FCA5A5", "#93C5FD"])
+        sc = ax.scatter(x_val["CGPA"], x_val["CodingTestScore"],
+                        c=y_val, cmap="coolwarm", alpha=0.35, s=8)
+        ax.set_xlabel("CGPA", fontsize=11)
+        ax.set_ylabel("Coding Test Score", fontsize=11)
+        ax.set_title("Decision Boundary (CGPA + Coding Test Score)", fontsize=12, fontweight="bold")
+        ax.grid(True, alpha=0.2)
+        fig.tight_layout()
+        fig.savefig(os.path.join(config.LOGISTIC_DIR, "decision_boundary.png"), dpi=120)
+        plt.close(fig)
+
+    # ── Scaler comparison ────────────────────────────────────────────
+    def _eval_logr(Xtr, Xva, ytr, yva):
+        m = SKLogisticRegression(max_iter=1000, random_state=42)
+        m.fit(Xtr, ytr)
+        return round(float(accuracy_score(yva, m.predict(Xva))) * 100, 2)
+
+    scaler_results = {
+        "Unscaled":      _eval_logr(x_train, x_val, y_train, y_val),
+    }
+    ss = StandardScaler()
+    scaler_results["StandardScaler"] = _eval_logr(
+        ss.fit_transform(x_train), ss.transform(x_val), y_train, y_val)
+    mm = MinMaxScaler()
+    scaler_results["MinMaxScaler"] = _eval_logr(
+        mm.fit_transform(x_train), mm.transform(x_val), y_train, y_val)
+
+    # Scaler bar chart
+    fig, ax = plt.subplots(figsize=(6, 3.5))
+    bars = ax.bar(list(scaler_results.keys()), list(scaler_results.values()),
+                  color=["#64748B", "#2563EB", "#10B981"], width=0.5, edgecolor="white")
+    for bar, acc_val in zip(bars, scaler_results.values()):
+        ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.2,
+                f"{acc_val}%", ha="center", va="bottom", fontsize=10, fontweight="bold")
+    ax.set_ylabel("Validation Accuracy (%)", fontsize=10)
+    ax.set_title("Scaler Comparison — Same Model, Different Inputs", fontsize=11, fontweight="bold")
+    ax.set_ylim(0, 105)
+    ax.grid(True, axis="y", alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(os.path.join(config.LOGISTIC_DIR, "scaler_comparison.png"), dpi=120)
+    plt.close(fig)
+
+    # ── Softmax: 3-class (Not Placed / Standard / Premium) ───────────
+    softmax_acc = None
+    if "Salary Package" in data.columns:
+        salary_median = train.loc[train["Salary Package"] > 0, "Salary Package"].median() \
+                        if "Salary Package" in train.columns else 0
+
+        def _tier(s):
+            try:
+                val = float(s)
+                if pd.isna(val) or val == 0:
+                    return "Not Placed"
+                if val < float(salary_median): 
+                    return "Standard Package"
+                return "Premium Package"
+            except (ValueError, TypeError):
+                return "Not Placed"
+
+        y_train_tier = train["Salary Package"].apply(_tier)
+        y_val_tier   = val["Salary Package"].apply(_tier)
+        ts = StandardScaler()
+        X_tr_tier = ts.fit_transform(x_train)
+        X_va_tier  = ts.transform(x_val)
+        sm = SKLogisticRegression(solver="lbfgs", max_iter=1000, random_state=42)
+        sm.fit(X_tr_tier, y_train_tier)
+        softmax_acc = round(float(accuracy_score(y_val_tier, sm.predict(X_va_tier))) * 100, 2)
+
+    # Sample predictions (10 rows)
     sample = []
-    for i in range(min(10, len(y_test))):
+    for i in range(min(10, len(y_val))):
         sample.append({
-            "actual": int(y_test[i]),
-            "prob":   round(float(y_prob[i]) * 100, 1),
-            "pred":   int(y_pred[i])
+            "actual": int(list(y_val)[i]),
+            "prob":   round(float(y_prob_val[i]) * 100, 1),
+            "pred":   int(y_pred_val[i]),
         })
 
-    # Probability distribution for chart (100 bins)
-    hist_placed    = [round(float(p), 3) for p in y_prob[y_test == 1][:300]]
-    hist_notplaced = [round(float(p), 3) for p in y_prob[y_test == 0][:300]]
+    # Probability distributions for chart
+    y_val_arr = np.array(y_val)
+    hist_placed    = [round(float(p), 3) for p in y_prob_val[y_val_arr == 1][:300]]
+    hist_notplaced = [round(float(p), 3) for p in y_prob_val[y_val_arr == 0][:300]]
+
+    # Save report
+    os.makedirs(config.LOGISTIC_DIR, exist_ok=True)
+    with open(os.path.join(config.LOGISTIC_DIR, "logistic_regression_report.txt"), "w") as f:
+        f.write(f"Placed: {round(placed_pct,1)}%  Not Placed: {round(100-placed_pct,1)}%\n\n")
+        f.write("Single-feature AUC:\n")
+        for col, auc in auc_scores.items():
+            f.write(f"  {col}: {auc}\n")
+        f.write(f"\nFull model validation accuracy: {val_acc}%\n")
+        f.write(f"Full model cross-entropy (log loss): {val_logloss}\n")
+        f.write("\nScaler comparison:\n")
+        for label, acc in scaler_results.items():
+            f.write(f"  {label}: {acc}%\n")
+        if softmax_acc is not None:
+            f.write(f"\nSoftmax 3-class accuracy: {softmax_acc}%\n")
+
+    # For live prediction: store scaler params manually (no pickle needed)
+    mu_arr  = np.array(x_train.mean()).tolist()
+    sig_arr = np.array(x_train.std() + 1e-9).tolist()
 
     return {
-        "accuracy":   round(accuracy  * 100, 2),
-        "precision":  round(precision * 100, 2),
-        "recall":     round(recall    * 100, 2),
-        "f1":         round(f1        * 100, 2),
+        "accuracy":      val_acc,
+        "precision":     precision,
+        "recall":        recall,
+        "f1":            f1_val,
+        "log_loss":      val_logloss,
         "tp": tp, "tn": tn, "fp": fp, "fn": fn,
-        "n_train": split,
-        "n_test":  n - split,
-        "epochs":  epochs,
-        "alpha":   alpha,
-        "cost_history":   [round(c, 6) for c in cost_history[::10]],
-        "sample":         sample,
-        "hist_placed":    hist_placed,
-        "hist_notplaced": hist_notplaced,
-        "coefs": {f: round(float(w), 4) for f, w in zip(LOGR_FEATURES, theta[1:])},
-        "intercept": round(float(theta[0]), 4),
-        # For live prediction
-        "_theta": theta.tolist(),
-        "_mu":    mu.tolist(),
-        "_sig":   sig.tolist(),
+        "n_train":       split,
+        "n_test":        n - split,
+        "placed_pct":    round(placed_pct, 1),
+        "lin_range":     f"{lin_min} → {lin_max}",
+        "auc_scores":    auc_scores,
+        "coefs":         coefs,
+        "intercept":     round(float(model.intercept_[0]), 4),
+        "scaler_results":scaler_results,
+        "softmax_acc":   softmax_acc,
+        "sample":        sample,
+        "hist_placed":   hist_placed,
+        "hist_notplaced":hist_notplaced,
+        "has_plots":     True,
+        # For live prediction (mean/std of unscaled train)
+        "_mu":    mu_arr,
+        "_sig":   sig_arr,
+        "_coef":  model.coef_[0].tolist(),
+        "_intercept": float(model.intercept_[0]),
+        "_features":  feature_cols,
     }
 
 
@@ -690,27 +846,22 @@ def predict_salary():
     mlr, slr, logr = _get_regression_data()
     if mlr is None:
         return jsonify({"error": "Dataset not loaded"}), 500
-
     try:
         model_type = request.form.get("model", "mlr")
-
         if model_type == "mlr":
             theta = np.array(mlr["_theta"])
             mu    = np.array(mlr["_mu"])
             sig   = np.array(mlr["_sig"])
             vals  = [float(request.form.get(f, 0)) for f in MLR_FEATURES]
             x_norm = (np.array(vals) - mu) / sig
-            x_b    = np.array([1.0] + x_norm.tolist())
-            pred   = float(x_b @ theta)
+            pred   = float(np.array([1.0] + x_norm.tolist()) @ theta)
             return jsonify({"predicted_salary": round(pred, 2)})
         else:
             theta0 = slr["_theta0"]; theta1 = slr["_theta1"]
             X_mu   = slr["_X_mu"];   X_sig  = slr["_X_sig"]
             cgpa   = float(request.form.get("CGPA", 0))
-            x_norm = (cgpa - X_mu) / X_sig
-            pred   = theta0 + theta1 * x_norm
+            pred   = theta0 + theta1 * ((cgpa - X_mu) / X_sig)
             return jsonify({"predicted_salary": round(pred, 2)})
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -721,14 +872,16 @@ def predict_placement():
     if logr is None:
         return jsonify({"error": "Dataset not loaded"}), 500
     try:
-        theta = np.array(logr["_theta"])
-        mu    = np.array(logr["_mu"])
-        sig   = np.array(logr["_sig"])
-        vals  = [float(request.form.get(f, 0)) for f in LOGR_FEATURES]
-        x_norm = (np.array(vals) - mu) / sig
-        x_b    = np.array([1.0] + x_norm.tolist())
-        prob   = float(_sigmoid(x_b @ theta))
-        pred   = 1 if prob >= 0.5 else 0
+        coef      = np.array(logr["_coef"])
+        intercept = float(logr["_intercept"])
+        mu        = np.array(logr["_mu"])
+        sig       = np.array(logr["_sig"])
+        features  = logr["_features"]
+        vals      = np.array([float(request.form.get(f, 0)) for f in features])
+        x_norm    = (vals - mu) / sig
+        z         = intercept + float(coef @ x_norm)
+        prob      = 1.0 / (1.0 + np.exp(-np.clip(z, -500, 500)))
+        pred      = 1 if prob >= 0.5 else 0
         return jsonify({
             "probability": round(prob * 100, 1),
             "prediction":  pred,
