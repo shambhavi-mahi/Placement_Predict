@@ -561,11 +561,12 @@ def _get_regression_data():
     if "mlr" not in _regression_cache:
         df = _safe_load_csv()
         if df is None:
-            return None, None, None
+            return None, None, None, None
         _regression_cache["mlr"]  = _run_multilinear_regression(df)
         _regression_cache["slr"]  = _run_simple_regression(df)
         _regression_cache["logr"] = _run_logistic_regression(df)
-    return _regression_cache["mlr"], _regression_cache["slr"], _regression_cache["logr"]
+        _regression_cache["reg"]  = _run_regularization_models(df)
+    return _regression_cache["mlr"], _regression_cache["slr"], _regression_cache["logr"], _regression_cache["reg"]
 
 
 # ---------------------------------------------------------------------------
@@ -574,9 +575,45 @@ def _get_regression_data():
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from sklearn.linear_model import LinearRegression as SKLinearRegression, LogisticRegression as SKLogisticRegression
+from sklearn.linear_model import LinearRegression as SKLinearRegression, LogisticRegression as SKLogisticRegression, Ridge, Lasso, ElasticNet
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
-from sklearn.metrics import accuracy_score, roc_auc_score, log_loss
+from sklearn.metrics import accuracy_score, roc_auc_score, log_loss, mean_squared_error, mean_absolute_error, r2_score
+
+def _run_regularization_models(df):
+    data = df[MLR_FEATURES + [TARGET_COL]].dropna().copy()
+    for col in MLR_FEATURES:
+        data[col] = pd.to_numeric(data[col], errors="coerce")
+    data[TARGET_COL] = pd.to_numeric(data[TARGET_COL], errors="coerce")
+    data = data.dropna()
+
+    n = len(data)
+    X = data[MLR_FEATURES].values.astype(float)
+    y = data[TARGET_COL].values.astype(float)
+
+    split = int(0.8 * n)
+    X_train, X_test = X[:split], X[split:]
+    y_train, y_test = y[:split], y[split:]
+
+    ss = StandardScaler()
+    X_train_s = ss.fit_transform(X_train)
+    X_test_s = ss.transform(X_test)
+
+    results = {}
+    models = {
+        "ridge": Ridge(alpha=1.0, random_state=42),
+        "lasso": Lasso(alpha=0.1, random_state=42),
+        "elasticnet": ElasticNet(alpha=0.1, l1_ratio=0.5, random_state=42)
+    }
+
+    for name, model in models.items():
+        model.fit(X_train_s, y_train)
+        preds = model.predict(X_test_s)
+        results[name] = {
+            "r2": round(float(r2_score(y_test, preds)), 4),
+            "rmse": round(float(mean_squared_error(y_test, preds) ** 0.5), 4),
+            "mae": round(float(mean_absolute_error(y_test, preds)), 4)
+        }
+    return results
 
 LOGR_FEATURES = [
     "CGPA", "AptitudeTestScore", "CodingTestScore",
@@ -837,13 +874,13 @@ def _run_logistic_regression(df):
 
 @app.route("/regression")
 def regression_page():
-    mlr, slr, logr = _get_regression_data()
-    return render_template("regression.html", mlr=mlr, slr=slr, logr=logr)
+    mlr, slr, logr, reg = _get_regression_data()
+    return render_template("regression.html", mlr=mlr, slr=slr, logr=logr, reg=reg)
 
 
 @app.route("/predict-salary", methods=["POST"])
 def predict_salary():
-    mlr, slr, logr = _get_regression_data()
+    mlr, slr, logr, reg = _get_regression_data()
     if mlr is None:
         return jsonify({"error": "Dataset not loaded"}), 500
     try:

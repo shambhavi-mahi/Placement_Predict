@@ -393,32 +393,46 @@
 {# ══════════════════════════════════════════════════════════════════ #}
 <div id="tab-compare" style="display:none;">
 
-<!-- Conceptual Summary Table -->
+<!-- Conceptual Summary Matrix -->
 <div class="card" style="padding:0;overflow:hidden;margin-bottom:22px;">
-  <div class="table-header-bar"><h2 style="margin:0;font-size:1rem;">🧩 Model Capabilities Summary</h2></div>
+  <div class="table-header-bar"><h2 style="margin:0;font-size:1rem;">🧩 Regularization & Capabilities Matrix</h2></div>
   <div class="table-wrap" style="border-radius:0;">
     <table class="data-table">
-      <thead><tr><th>Model</th><th>Task Type</th><th>Target Variable</th><th>Optimization</th><th>Key Metric</th></tr></thead>
+      <thead><tr><th>Model</th><th>Task Type</th><th>Penalty Type</th><th>Feature Selection</th><th>Key Metric</th></tr></thead>
       <tbody>
         <tr>
           <td><strong style="color:var(--blue);">Simple Linear (SLR)</strong></td>
           <td><span class="range-pill">Regression</span></td>
-          <td>Salary Package (Continuous)</td>
-          <td>Gradient Descent (MSE)</td>
+          <td>None (Unregularized)</td>
+          <td>No</td>
           <td>R² Score</td>
         </tr>
         <tr>
-          <td><strong style="color:var(--emerald);">Multi-Linear (MLR)</strong></td>
+          <td><strong style="color:#0EA5E9;">Ridge Regression</strong></td>
           <td><span class="range-pill">Regression</span></td>
-          <td>Salary Package (Continuous)</td>
-          <td>Normal Equation (Closed-form)</td>
+          <td>L2 (Shrinks coefficients)</td>
+          <td>No</td>
+          <td>R² Score</td>
+        </tr>
+        <tr>
+          <td><strong style="color:#F59E0B;">Lasso Regression</strong></td>
+          <td><span class="range-pill">Regression</span></td>
+          <td>L1 (Sparse coefficients)</td>
+          <td>Yes (Sets to 0)</td>
+          <td>R² Score</td>
+        </tr>
+        <tr>
+          <td><strong style="color:#10B981;">Elastic Net</strong></td>
+          <td><span class="range-pill">Regression</span></td>
+          <td>L1 + L2 (Combined)</td>
+          <td>Yes</td>
           <td>R² Score</td>
         </tr>
         <tr>
           <td><strong style="color:var(--cyan);">Logistic (LogR)</strong></td>
           <td><span class="range-pill" style="background:rgba(139,92,246,0.1);color:#8B5CF6;">Classification</span></td>
-          <td>PlacementStatus (Categorical 0/1)</td>
-          <td>Gradient Descent (Cross-Entropy)</td>
+          <td>L2 (Default scikit-learn)</td>
+          <td>No</td>
           <td>Accuracy</td>
         </tr>
       </tbody>
@@ -426,44 +440,38 @@
   </div>
 </div>
 
-{% if slr and mlr %}
+{% if slr and reg %}
 <!-- Side by Side KPI Comparison -->
 <div class="scaler-formula-card robust-card" style="margin-bottom:22px;">
-  <h2>Performance Comparison: SLR vs MLR</h2>
-  <p>Comparing the two continuous models on predicting exactly the same target variable (<strong>Salary Package</strong>).</p>
+  <h2>Performance Comparison: SLR vs Regularization</h2>
+  <p>Comparing the continuous regression models on predicting the exact same target variable (<strong>Salary Package</strong>). Multi-Linear Regression has been removed from this comparison matrix.</p>
 </div>
 
-<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:22px;">
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-bottom:22px;">
+  <!-- R2 Score -->
   <div class="kpi-card">
     <div class="kpi-icon green">R²</div>
-    <div class="kpi-body">
+    <div class="kpi-body" style="width: 100%;">
       <div class="kpi-label">R² Score (Higher is better)</div>
-      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:6px;">
-        <div><div style="font-size:0.75rem;color:var(--slate-gray);margin-bottom:2px;">SLR</div><div style="font-size:1.15rem;font-weight:700;color:var(--blue);">{{ slr.r2 }}</div></div>
-        <div style="width:1px;background:var(--border);height:24px;"></div>
-        <div style="text-align:right;"><div style="font-size:0.75rem;color:var(--slate-gray);margin-bottom:2px;">MLR</div><div style="font-size:1.15rem;font-weight:700;color:var(--emerald);">{{ mlr.r2 }}</div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;">
+        <div style="text-align:center;"><div style="font-size:0.7rem;color:var(--slate-gray);">SLR</div><div style="font-weight:700;color:var(--blue);">{{ slr.r2 }}</div></div>
+        <div style="text-align:center;"><div style="font-size:0.7rem;color:var(--slate-gray);">Ridge</div><div style="font-weight:700;color:#0EA5E9;">{{ reg.ridge.r2 }}</div></div>
+        <div style="text-align:center;"><div style="font-size:0.7rem;color:var(--slate-gray);">Lasso</div><div style="font-weight:700;color:#F59E0B;">{{ reg.lasso.r2 }}</div></div>
+        <div style="text-align:center;"><div style="font-size:0.7rem;color:var(--slate-gray);">ENet</div><div style="font-weight:700;color:#10B981;">{{ reg.elasticnet.r2 }}</div></div>
       </div>
     </div>
   </div>
+
+  <!-- RMSE -->
   <div class="kpi-card">
     <div class="kpi-icon orange">📉</div>
-    <div class="kpi-body">
+    <div class="kpi-body" style="width: 100%;">
       <div class="kpi-label">RMSE (Lower is better)</div>
-      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:6px;">
-        <div><div style="font-size:0.75rem;color:var(--slate-gray);margin-bottom:2px;">SLR</div><div style="font-size:1.15rem;font-weight:700;color:var(--blue);">{{ slr.rmse }}</div></div>
-        <div style="width:1px;background:var(--border);height:24px;"></div>
-        <div style="text-align:right;"><div style="font-size:0.75rem;color:var(--slate-gray);margin-bottom:2px;">MLR</div><div style="font-size:1.15rem;font-weight:700;color:var(--emerald);">{{ mlr.rmse }}</div></div>
-      </div>
-    </div>
-  </div>
-  <div class="kpi-card">
-    <div class="kpi-icon azure">📏</div>
-    <div class="kpi-body">
-      <div class="kpi-label">MAE (Lower is better)</div>
-      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:6px;">
-        <div><div style="font-size:0.75rem;color:var(--slate-gray);margin-bottom:2px;">SLR</div><div style="font-size:1.15rem;font-weight:700;color:var(--blue);">{{ slr.mae }}</div></div>
-        <div style="width:1px;background:var(--border);height:24px;"></div>
-        <div style="text-align:right;"><div style="font-size:0.75rem;color:var(--slate-gray);margin-bottom:2px;">MLR</div><div style="font-size:1.15rem;font-weight:700;color:var(--emerald);">{{ mlr.mae }}</div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;">
+        <div style="text-align:center;"><div style="font-size:0.7rem;color:var(--slate-gray);">SLR</div><div style="font-weight:700;color:var(--blue);">{{ slr.rmse }}</div></div>
+        <div style="text-align:center;"><div style="font-size:0.7rem;color:var(--slate-gray);">Ridge</div><div style="font-weight:700;color:#0EA5E9;">{{ reg.ridge.rmse }}</div></div>
+        <div style="text-align:center;"><div style="font-size:0.7rem;color:var(--slate-gray);">Lasso</div><div style="font-weight:700;color:#F59E0B;">{{ reg.lasso.rmse }}</div></div>
+        <div style="text-align:center;"><div style="font-size:0.7rem;color:var(--slate-gray);">ENet</div><div style="font-weight:700;color:#10B981;">{{ reg.elasticnet.rmse }}</div></div>
       </div>
     </div>
   </div>
@@ -628,7 +636,7 @@ async function predictPlacement() {
 }
 
 // ── Compare Models Chart ──────────────────────────────────────────
-{% if slr and mlr %}
+{% if slr and reg %}
 new Chart(document.getElementById('compare-chart'), {
   type: 'bar',
   data: {
@@ -641,9 +649,21 @@ new Chart(document.getElementById('compare-chart'), {
         borderRadius: 4
       },
       {
-        label: 'Multi-Linear (MLR)',
-        data: [{{ mlr.r2 }}, {{ mlr.rmse }}, {{ mlr.mae }}],
-        backgroundColor: C_EMERALD,
+        label: 'Ridge Regression',
+        data: [{{ reg.ridge.r2 }}, {{ reg.ridge.rmse }}, {{ reg.ridge.mae }}],
+        backgroundColor: '#0EA5E9',
+        borderRadius: 4
+      },
+      {
+        label: 'Lasso Regression',
+        data: [{{ reg.lasso.r2 }}, {{ reg.lasso.rmse }}, {{ reg.lasso.mae }}],
+        backgroundColor: '#F59E0B',
+        borderRadius: 4
+      },
+      {
+        label: 'Elastic Net',
+        data: [{{ reg.elasticnet.r2 }}, {{ reg.elasticnet.rmse }}, {{ reg.elasticnet.mae }}],
+        backgroundColor: '#10B981',
         borderRadius: 4
       }
     ]
