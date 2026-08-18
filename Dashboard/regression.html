@@ -12,6 +12,7 @@
   <button class="fe-tab active" id="btn-slr"  onclick="showRegTab('slr', this)">📈 Simple Linear</button>
   <button class="fe-tab"        id="btn-mlr"  onclick="showRegTab('mlr', this)">📊 Multi-Linear</button>
   <button class="fe-tab"        id="btn-logr" onclick="showRegTab('logr', this)">🔵 Logistic Regression</button>
+  <button class="fe-tab"        id="btn-compare" onclick="showRegTab('compare', this)">⚖️ Compare Models</button>
 </div>
 
 {# ══════════════════════════════════════════════════════════════════ #}
@@ -387,6 +388,96 @@
 {% endif %}
 </div><!-- /tab-logr -->
 
+{# ══════════════════════════════════════════════════════════════════ #}
+{# TAB 4 — Compare Models                                            #}
+{# ══════════════════════════════════════════════════════════════════ #}
+<div id="tab-compare" style="display:none;">
+
+<!-- Conceptual Summary Table -->
+<div class="card" style="padding:0;overflow:hidden;margin-bottom:22px;">
+  <div class="table-header-bar"><h2 style="margin:0;font-size:1rem;">🧩 Model Capabilities Summary</h2></div>
+  <div class="table-wrap" style="border-radius:0;">
+    <table class="data-table">
+      <thead><tr><th>Model</th><th>Task Type</th><th>Target Variable</th><th>Optimization</th><th>Key Metric</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong style="color:var(--blue);">Simple Linear (SLR)</strong></td>
+          <td><span class="range-pill">Regression</span></td>
+          <td>Salary Package (Continuous)</td>
+          <td>Gradient Descent (MSE)</td>
+          <td>R² Score</td>
+        </tr>
+        <tr>
+          <td><strong style="color:var(--emerald);">Multi-Linear (MLR)</strong></td>
+          <td><span class="range-pill">Regression</span></td>
+          <td>Salary Package (Continuous)</td>
+          <td>Normal Equation (Closed-form)</td>
+          <td>R² Score</td>
+        </tr>
+        <tr>
+          <td><strong style="color:var(--cyan);">Logistic (LogR)</strong></td>
+          <td><span class="range-pill" style="background:rgba(139,92,246,0.1);color:#8B5CF6;">Classification</span></td>
+          <td>PlacementStatus (Categorical 0/1)</td>
+          <td>Gradient Descent (Cross-Entropy)</td>
+          <td>Accuracy</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if slr and mlr %}
+<!-- Side by Side KPI Comparison -->
+<div class="scaler-formula-card robust-card" style="margin-bottom:22px;">
+  <h2>Performance Comparison: SLR vs MLR</h2>
+  <p>Comparing the two continuous models on predicting exactly the same target variable (<strong>Salary Package</strong>).</p>
+</div>
+
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:22px;">
+  <div class="kpi-card">
+    <div class="kpi-icon green">R²</div>
+    <div class="kpi-body">
+      <div class="kpi-label">R² Score (Higher is better)</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:6px;">
+        <div><div style="font-size:0.75rem;color:var(--slate-gray);margin-bottom:2px;">SLR</div><div style="font-size:1.15rem;font-weight:700;color:var(--blue);">{{ slr.r2 }}</div></div>
+        <div style="width:1px;background:var(--border);height:24px;"></div>
+        <div style="text-align:right;"><div style="font-size:0.75rem;color:var(--slate-gray);margin-bottom:2px;">MLR</div><div style="font-size:1.15rem;font-weight:700;color:var(--emerald);">{{ mlr.r2 }}</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon orange">📉</div>
+    <div class="kpi-body">
+      <div class="kpi-label">RMSE (Lower is better)</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:6px;">
+        <div><div style="font-size:0.75rem;color:var(--slate-gray);margin-bottom:2px;">SLR</div><div style="font-size:1.15rem;font-weight:700;color:var(--blue);">{{ slr.rmse }}</div></div>
+        <div style="width:1px;background:var(--border);height:24px;"></div>
+        <div style="text-align:right;"><div style="font-size:0.75rem;color:var(--slate-gray);margin-bottom:2px;">MLR</div><div style="font-size:1.15rem;font-weight:700;color:var(--emerald);">{{ mlr.rmse }}</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon azure">📏</div>
+    <div class="kpi-body">
+      <div class="kpi-label">MAE (Lower is better)</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:6px;">
+        <div><div style="font-size:0.75rem;color:var(--slate-gray);margin-bottom:2px;">SLR</div><div style="font-size:1.15rem;font-weight:700;color:var(--blue);">{{ slr.mae }}</div></div>
+        <div style="width:1px;background:var(--border);height:24px;"></div>
+        <div style="text-align:right;"><div style="font-size:0.75rem;color:var(--slate-gray);margin-bottom:2px;">MLR</div><div style="font-size:1.15rem;font-weight:700;color:var(--emerald);">{{ mlr.mae }}</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Comparison Chart -->
+<div class="card" style="padding:22px;margin-bottom:22px;">
+  <h3 style="margin:0 0 14px;font-size:1rem;">📊 Metric Comparison Visualised</h3>
+  <div style="position:relative;height:320px;"><canvas id="compare-chart"></canvas></div>
+</div>
+{% endif %}
+
+</div><!-- /tab-compare -->
+
 {% endblock %}
 
 {% block scripts %}
@@ -395,7 +486,7 @@
 <script>
 // ── Tab switching
 function showRegTab(name, btn) {
-  ['slr','mlr','logr'].forEach(t => document.getElementById('tab-'+t).style.display='none');
+  ['slr','mlr','logr','compare'].forEach(t => document.getElementById('tab-'+t).style.display='none');
   document.querySelectorAll('.fe-tab').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-'+name).style.display='block';
   btn.classList.add('active');
@@ -535,5 +626,40 @@ async function predictPlacement() {
   gLabel.textContent = data.probability + '% placement probability  (threshold: 50%)';
   gBar.style.background = placed ? 'linear-gradient(90deg,#10B981,#34D399)' : 'linear-gradient(90deg,#EF4444,#FCA5A5)';
 }
+
+// ── Compare Models Chart ──────────────────────────────────────────
+{% if slr and mlr %}
+new Chart(document.getElementById('compare-chart'), {
+  type: 'bar',
+  data: {
+    labels: ['R² Score', 'RMSE', 'MAE'],
+    datasets: [
+      {
+        label: 'Simple Linear (SLR)',
+        data: [{{ slr.r2 }}, {{ slr.rmse }}, {{ slr.mae }}],
+        backgroundColor: C_BLUE,
+        borderRadius: 4
+      },
+      {
+        label: 'Multi-Linear (MLR)',
+        data: [{{ mlr.r2 }}, {{ mlr.rmse }}, {{ mlr.mae }}],
+        backgroundColor: C_EMERALD,
+        borderRadius: 4
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'top', labels: { font: { size: 12, family: "'Inter', sans-serif" } } },
+      tooltip: { mode: 'index', intersect: false }
+    },
+    scales: {
+      y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+{% endif %}
 </script>
 {% endblock %}
