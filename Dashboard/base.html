@@ -114,6 +114,15 @@
       Regression
     </a>
 
+    <a href="{{ url_for('decision_tree_page') }}" class="menu-btn {% if request.endpoint == 'decision_tree_page' %}active{% endif %}">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 22V8"/>
+        <path d="m5 15 7-7 7 7"/>
+        <path d="M2 22h20"/>
+      </svg>
+      Decision Tree
+    </a>
+
     <!-- Sidebar brand footer -->
     <div class="sidebar-brand-card">
       <span class="sbc-icon">🎓</span>

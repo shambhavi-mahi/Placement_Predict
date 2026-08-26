@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Decision Tree — PlacementPredict{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>Decision Tree (Classification)</h2>
+  <p>Visualizing how trees split and comparing unconstrained vs shallow generalization.</p>
+</div>
+
+{% if dt %}
+<div class="card" style="margin-bottom:22px;">
+  <h3 style="margin:0 0 16px;">Overfitting vs Generalization</h3>
+  <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(250px,1fr));">
+    
+    <!-- Unconstrained Tree -->
+    <div class="kpi-card" style="border:1px solid #FCA5A5; background:rgba(239,68,68,0.03);">
+      <div class="kpi-icon orange">🌲</div>
+      <div class="kpi-body" style="width:100%;">
+        <div class="kpi-label" style="color:#DC2626;font-weight:600;">Unconstrained Tree (Overfit)</div>
+        <div style="font-size:0.8rem;color:var(--slate-gray);margin-top:4px;">Depth: {{ dt.full.depth }} (Grows until pure)</div>
+        <div style="display:flex;justify-content:space-between;margin-top:10px;">
+          <div>
+            <div style="font-size:0.75rem;color:var(--slate-gray);">Train Accuracy</div>
+            <div style="font-size:1.2rem;font-weight:700;color:var(--text);">{{ dt.full.train_acc }}%</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:0.75rem;color:var(--slate-gray);">Val Accuracy</div>
+            <div style="font-size:1.2rem;font-weight:700;color:#DC2626;">{{ dt.full.val_acc }}%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Shallow Tree -->
+    <div class="kpi-card" style="border:1px solid #10B981; background:rgba(16,185,129,0.03);">
+      <div class="kpi-icon green">🌳</div>
+      <div class="kpi-body" style="width:100%;">
+        <div class="kpi-label" style="color:#10B981;font-weight:600;">Shallow Tree (Generalized)</div>
+        <div style="font-size:0.8rem;color:var(--slate-gray);margin-top:4px;">Depth: 3 (Truncated)</div>
+        <div style="display:flex;justify-content:space-between;margin-top:10px;">
+          <div>
+            <div style="font-size:0.75rem;color:var(--slate-gray);">Train Accuracy</div>
+            <div style="font-size:1.2rem;font-weight:700;color:var(--text);">{{ dt.shallow.train_acc }}%</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:0.75rem;color:var(--slate-gray);">Val Accuracy</div>
+            <div style="font-size:1.2rem;font-weight:700;color:#10B981;">{{ dt.shallow.val_acc }}%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:3fr 1.5fr;gap:22px;align-items:start;margin-bottom:22px;">
+  
+  <!-- Tree Visualization -->
+  <div class="card" style="padding:16px;">
+    <h3 style="margin:0 0 12px;font-size:1rem;">Shallow Tree Logic (Max Depth: 3)</h3>
+    <img src="{{ url_for('static', filename='Plot/DecisionTree/tree_visualization.png') }}" 
+         alt="Tree Visualization" 
+         style="width:100%;border-radius:6px;border:1px solid var(--border);">
+  </div>
+
+  <!-- Feature Importance -->
+  <div class="card" style="padding:16px;">
+    <h3 style="margin:0 0 12px;font-size:1rem;">Feature Importance</h3>
+    <img src="{{ url_for('static', filename='Plot/DecisionTree/feature_importance.png') }}" 
+         alt="Feature Importance" 
+         style="width:100%;border-radius:6px;border:1px solid var(--border);margin-bottom:12px;">
+    <div style="font-size:0.85rem;color:var(--slate-gray);line-height:1.5;">
+      <strong>Note:</strong> <code>SGPA_Sem8</code> dominates because it is highly correlated with <code>CGPA</code> and other SGPA columns. The tree simply picked one of several near-identical features to split on at the root.
+    </div>
+  </div>
+
+</div>
+
+{% else %}
+<div class="card">
+  <p>Dataset not loaded. Please load the dataset first.</p>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -15,6 +15,7 @@ SPLITS_DIR = os.path.join(BASE_DIR, "data", "splits")
 # Dashboard static assets
 PLOTS_DIR    = os.path.join(BASE_DIR, "Dashboard", "Plot")
 LOGISTIC_DIR = os.path.join(BASE_DIR, "Dashboard", "Plot", "Logistic")
+DECISION_TREE_DIR = os.path.join(BASE_DIR, "Dashboard", "Plot", "DecisionTree")
 
 # Reports
 REPORTS_DIR    = os.path.join(BASE_DIR, "Output", "Report")
