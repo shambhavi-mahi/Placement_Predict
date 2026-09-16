@@ -576,6 +576,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression as SKLinearRegression, LogisticRegression as SKLogisticRegression, Ridge, Lasso, ElasticNet
 from sklearn.tree import DecisionTreeClassifier, plot_tree
+from sklearn.ensemble import RandomForestClassifier, BaggingClassifier, GradientBoostingClassifier, AdaBoostClassifier
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.metrics import accuracy_score, roc_auc_score, log_loss, mean_squared_error, mean_absolute_error, r2_score
 
@@ -615,7 +616,7 @@ def _run_regularization_models(df):
         }
     return results
 
-def _run_decision_tree(df):
+def _run_tree_models(df):
     os.makedirs(config.DECISION_TREE_DIR, exist_ok=True)
     enc_df, _, _, _ = _apply_encoding(df)
     drop_cols = ["StudentID", "IsAnomaly", "Salary Package", config.TARGET_COLUMN]
@@ -630,16 +631,29 @@ def _run_decision_tree(df):
     x_train, x_val = X.iloc[:split], X.iloc[split:]
     y_train, y_val = y.iloc[:split], y.iloc[split:]
     
+    # 1. Single Trees (Overfitting vs Underfitting)
     full_tree = DecisionTreeClassifier(random_state=config.RANDOM_STATE)
     full_tree.fit(x_train, y_train)
-    train_acc_full = accuracy_score(y_train, full_tree.predict(x_train))
-    val_acc_full = accuracy_score(y_val, full_tree.predict(x_val))
-    depth_full = full_tree.get_depth()
-    
     shallow_tree = DecisionTreeClassifier(max_depth=3, random_state=config.RANDOM_STATE)
     shallow_tree.fit(x_train, y_train)
-    train_acc_shallow = accuracy_score(y_train, shallow_tree.predict(x_train))
-    val_acc_shallow = accuracy_score(y_val, shallow_tree.predict(x_val))
+    
+    # 2. Bagging
+    bagging = BaggingClassifier(random_state=config.RANDOM_STATE)
+    bagging.fit(x_train, y_train)
+    rf = RandomForestClassifier(random_state=config.RANDOM_STATE)
+    rf.fit(x_train, y_train)
+    
+    # 3. Boosting
+    adaboost = AdaBoostClassifier(random_state=config.RANDOM_STATE)
+    adaboost.fit(x_train, y_train)
+    gb = GradientBoostingClassifier(random_state=config.RANDOM_STATE)
+    gb.fit(x_train, y_train)
+    
+    def acc(model):
+        return {
+            "train_acc": round(float(accuracy_score(y_train, model.predict(x_train))) * 100, 2),
+            "val_acc": round(float(accuracy_score(y_val, model.predict(x_val))) * 100, 2)
+        }
     
     plt.figure(figsize=(20, 10))
     plot_tree(shallow_tree, feature_names=feature_cols, class_names=["Not Placed", "Placed"], filled=True, fontsize=9)
@@ -658,17 +672,16 @@ def _run_decision_tree(df):
     plt.savefig(f"{config.DECISION_TREE_DIR}/feature_importance.png")
     plt.close()
     
-    return {
-        "full": {
-            "train_acc": round(float(train_acc_full) * 100, 2),
-            "val_acc": round(float(val_acc_full) * 100, 2),
-            "depth": depth_full
-        },
-        "shallow": {
-            "train_acc": round(float(train_acc_shallow) * 100, 2),
-            "val_acc": round(float(val_acc_shallow) * 100, 2)
-        }
+    res = {
+        "full": acc(full_tree),
+        "shallow": acc(shallow_tree),
+        "bagging": acc(bagging),
+        "rf": acc(rf),
+        "ada": acc(adaboost),
+        "gb": acc(gb)
     }
+    res["full"]["depth"] = full_tree.get_depth()
+    return res
 
 LOGR_FEATURES = [
     "CGPA", "AptitudeTestScore", "CodingTestScore",
@@ -988,7 +1001,7 @@ def decision_tree_page():
     df = _safe_load_csv()
     dt_data = None
     if df is not None:
-        dt_data = _run_decision_tree(df)
+        dt_data = _run_tree_models(df)
     return render_template("decision_tree.html", dt=dt_data)
 
 

@@ -1,85 +1,286 @@
 {% extends "base.html" %}
-{% block title %}Decision Tree — PlacementPredict{% endblock %}
+{% block title %}Trees & Ensembles — PlacementPredict{% endblock %}
 
 {% block content %}
 <div class="page-header">
-  <h2>Decision Tree (Classification)</h2>
-  <p>Visualizing how trees split and comparing unconstrained vs shallow generalization.</p>
+  <h2>Trees & Ensembles</h2>
+  <p>Mitigating overfitting (high variance) and underfitting (high bias) via Bagging and Boosting.</p>
 </div>
 
 {% if dt %}
-<div class="card" style="margin-bottom:22px;">
-  <h3 style="margin:0 0 16px;">Overfitting vs Generalization</h3>
-  <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(250px,1fr));">
-    
-    <!-- Unconstrained Tree -->
-    <div class="kpi-card" style="border:1px solid #FCA5A5; background:rgba(239,68,68,0.03);">
-      <div class="kpi-icon orange">🌲</div>
-      <div class="kpi-body" style="width:100%;">
-        <div class="kpi-label" style="color:#DC2626;font-weight:600;">Unconstrained Tree (Overfit)</div>
-        <div style="font-size:0.8rem;color:var(--slate-gray);margin-top:4px;">Depth: {{ dt.full.depth }} (Grows until pure)</div>
-        <div style="display:flex;justify-content:space-between;margin-top:10px;">
-          <div>
-            <div style="font-size:0.75rem;color:var(--slate-gray);">Train Accuracy</div>
-            <div style="font-size:1.2rem;font-weight:700;color:var(--text);">{{ dt.full.train_acc }}%</div>
+<div class="tabs-container">
+  <!-- Tab navigation -->
+  <div class="tabs-nav">
+    <button class="tab-btn active" data-target="tab-single">1. Single Trees</button>
+    <button class="tab-btn" data-target="tab-bagging">2. Bagging (Random Forest)</button>
+    <button class="tab-btn" data-target="tab-boosting">3. Boosting (AdaBoost, GB)</button>
+    <button class="tab-btn" data-target="tab-compare">4. Compare Models</button>
+  </div>
+
+  <!-- Tab 1: Single Trees -->
+  <div id="tab-single" class="tab-pane active">
+    <div class="card" style="margin-bottom:22px;">
+      <h3 style="margin:0 0 16px;">Overfitting vs Generalization</h3>
+      <p style="font-size:0.9rem; color:var(--slate-gray); margin-bottom:16px;">
+        An unconstrained tree grows until every leaf is pure, memorizing the training data. This leads to <strong>Overfitting (High Variance)</strong>, shown by a huge gap between Train and Val accuracy. A shallow tree stops growing early, which forces it to generalize and ignore noise, though it might suffer from slight <strong>Underfitting (High Bias)</strong>.
+      </p>
+      <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(250px,1fr));">
+        
+        <!-- Unconstrained Tree -->
+        <div class="kpi-card" style="border:1px solid #FCA5A5; background:rgba(239,68,68,0.03);">
+          <div class="kpi-icon orange">🌲</div>
+          <div class="kpi-body" style="width:100%;">
+            <div class="kpi-label" style="color:#DC2626;font-weight:600;">Unconstrained Tree (Overfit)</div>
+            <div style="font-size:0.8rem;color:var(--slate-gray);margin-top:4px;">Depth: {{ dt.full.depth }} (Grows until pure)</div>
+            <div style="display:flex;justify-content:space-between;margin-top:10px;">
+              <div>
+                <div style="font-size:0.75rem;color:var(--slate-gray);">Train Accuracy</div>
+                <div style="font-size:1.2rem;font-weight:700;color:var(--text);">{{ dt.full.train_acc }}%</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:0.75rem;color:var(--slate-gray);">Val Accuracy</div>
+                <div style="font-size:1.2rem;font-weight:700;color:#DC2626;">{{ dt.full.val_acc }}%</div>
+              </div>
+            </div>
           </div>
-          <div style="text-align:right;">
-            <div style="font-size:0.75rem;color:var(--slate-gray);">Val Accuracy</div>
-            <div style="font-size:1.2rem;font-weight:700;color:#DC2626;">{{ dt.full.val_acc }}%</div>
+        </div>
+
+        <!-- Shallow Tree -->
+        <div class="kpi-card" style="border:1px solid #10B981; background:rgba(16,185,129,0.03);">
+          <div class="kpi-icon green">🌳</div>
+          <div class="kpi-body" style="width:100%;">
+            <div class="kpi-label" style="color:#10B981;font-weight:600;">Shallow Tree (Generalized)</div>
+            <div style="font-size:0.8rem;color:var(--slate-gray);margin-top:4px;">Depth: 3 (Truncated)</div>
+            <div style="display:flex;justify-content:space-between;margin-top:10px;">
+              <div>
+                <div style="font-size:0.75rem;color:var(--slate-gray);">Train Accuracy</div>
+                <div style="font-size:1.2rem;font-weight:700;color:var(--text);">{{ dt.shallow.train_acc }}%</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:0.75rem;color:var(--slate-gray);">Val Accuracy</div>
+                <div style="font-size:1.2rem;font-weight:700;color:#10B981;">{{ dt.shallow.val_acc }}%</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Shallow Tree -->
-    <div class="kpi-card" style="border:1px solid #10B981; background:rgba(16,185,129,0.03);">
-      <div class="kpi-icon green">🌳</div>
-      <div class="kpi-body" style="width:100%;">
-        <div class="kpi-label" style="color:#10B981;font-weight:600;">Shallow Tree (Generalized)</div>
-        <div style="font-size:0.8rem;color:var(--slate-gray);margin-top:4px;">Depth: 3 (Truncated)</div>
-        <div style="display:flex;justify-content:space-between;margin-top:10px;">
-          <div>
-            <div style="font-size:0.75rem;color:var(--slate-gray);">Train Accuracy</div>
-            <div style="font-size:1.2rem;font-weight:700;color:var(--text);">{{ dt.shallow.train_acc }}%</div>
+    <div style="display:grid;grid-template-columns:3fr 1.5fr;gap:22px;align-items:start;">
+      <!-- Tree Visualization -->
+      <div class="card" style="padding:16px;">
+        <h3 style="margin:0 0 12px;font-size:1rem;">Shallow Tree Logic (Max Depth: 3)</h3>
+        <img src="{{ url_for('static', filename='Plot/DecisionTree/tree_visualization.png') }}" 
+             alt="Tree Visualization" style="width:100%;border-radius:6px;border:1px solid var(--border);">
+      </div>
+
+      <!-- Feature Importance -->
+      <div class="card" style="padding:16px;">
+        <h3 style="margin:0 0 12px;font-size:1rem;">Feature Importance</h3>
+        <img src="{{ url_for('static', filename='Plot/DecisionTree/feature_importance.png') }}" 
+             alt="Feature Importance" style="width:100%;border-radius:6px;border:1px solid var(--border);margin-bottom:12px;">
+        <div style="font-size:0.85rem;color:var(--slate-gray);line-height:1.5;">
+          <strong>Note:</strong> <code>SGPA_Sem8</code> dominates because it is highly correlated with <code>CGPA</code> and other SGPA columns. The tree simply picked one of several near-identical features to split on at the root.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 2: Bagging -->
+  <div id="tab-bagging" class="tab-pane">
+    <div class="card" style="margin-bottom:22px;">
+      <h3 style="margin:0 0 16px;">Bagging & Random Forest (Reducing Variance)</h3>
+      <p style="font-size:0.9rem; color:var(--slate-gray); margin-bottom:16px;">
+        <strong>Bagging</strong> (Bootstrap Aggregating) trains many independent trees on random subsets of the data. <strong>Random Forest</strong> takes this further by also using random subsets of features. By averaging their predictions, we drastically reduce the Overfitting (variance) seen in single unconstrained trees while maintaining high accuracy.
+      </p>
+      
+      <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(250px,1fr));">
+        <!-- Bagging -->
+        <div class="kpi-card">
+          <div class="kpi-icon blue">🛍️</div>
+          <div class="kpi-body" style="width:100%;">
+            <div class="kpi-label">Bagging (Standard)</div>
+            <div style="display:flex;justify-content:space-between;margin-top:10px;">
+              <div>
+                <div style="font-size:0.75rem;color:var(--slate-gray);">Train Accuracy</div>
+                <div style="font-size:1.2rem;font-weight:700;color:var(--text);">{{ dt.bagging.train_acc }}%</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:0.75rem;color:var(--slate-gray);">Val Accuracy</div>
+                <div style="font-size:1.2rem;font-weight:700;color:var(--accent);">{{ dt.bagging.val_acc }}%</div>
+              </div>
+            </div>
           </div>
-          <div style="text-align:right;">
-            <div style="font-size:0.75rem;color:var(--slate-gray);">Val Accuracy</div>
-            <div style="font-size:1.2rem;font-weight:700;color:#10B981;">{{ dt.shallow.val_acc }}%</div>
+        </div>
+
+        <!-- Random Forest -->
+        <div class="kpi-card">
+          <div class="kpi-icon indigo">🌲</div>
+          <div class="kpi-body" style="width:100%;">
+            <div class="kpi-label">Random Forest</div>
+            <div style="display:flex;justify-content:space-between;margin-top:10px;">
+              <div>
+                <div style="font-size:0.75rem;color:var(--slate-gray);">Train Accuracy</div>
+                <div style="font-size:1.2rem;font-weight:700;color:var(--text);">{{ dt.rf.train_acc }}%</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:0.75rem;color:var(--slate-gray);">Val Accuracy</div>
+                <div style="font-size:1.2rem;font-weight:700;color:var(--accent);">{{ dt.rf.val_acc }}%</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
-
-  </div>
-</div>
-
-<div style="display:grid;grid-template-columns:3fr 1.5fr;gap:22px;align-items:start;margin-bottom:22px;">
-  
-  <!-- Tree Visualization -->
-  <div class="card" style="padding:16px;">
-    <h3 style="margin:0 0 12px;font-size:1rem;">Shallow Tree Logic (Max Depth: 3)</h3>
-    <img src="{{ url_for('static', filename='Plot/DecisionTree/tree_visualization.png') }}" 
-         alt="Tree Visualization" 
-         style="width:100%;border-radius:6px;border:1px solid var(--border);">
   </div>
 
-  <!-- Feature Importance -->
-  <div class="card" style="padding:16px;">
-    <h3 style="margin:0 0 12px;font-size:1rem;">Feature Importance</h3>
-    <img src="{{ url_for('static', filename='Plot/DecisionTree/feature_importance.png') }}" 
-         alt="Feature Importance" 
-         style="width:100%;border-radius:6px;border:1px solid var(--border);margin-bottom:12px;">
-    <div style="font-size:0.85rem;color:var(--slate-gray);line-height:1.5;">
-      <strong>Note:</strong> <code>SGPA_Sem8</code> dominates because it is highly correlated with <code>CGPA</code> and other SGPA columns. The tree simply picked one of several near-identical features to split on at the root.
+  <!-- Tab 3: Boosting -->
+  <div id="tab-boosting" class="tab-pane">
+    <div class="card" style="margin-bottom:22px;">
+      <h3 style="margin:0 0 16px;">Boosting (Reducing Bias)</h3>
+      <p style="font-size:0.9rem; color:var(--slate-gray); margin-bottom:16px;">
+        Unlike Bagging which trains trees independently, <strong>Boosting</strong> trains trees sequentially. Each new tree attempts to correct the errors (residuals) made by the previous trees. This reduces Underfitting (bias) and creates a highly accurate ensemble, though it can overfit if not tuned properly.
+      </p>
+      
+      <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(250px,1fr));">
+        <!-- AdaBoost -->
+        <div class="kpi-card">
+          <div class="kpi-icon purple">🚀</div>
+          <div class="kpi-body" style="width:100%;">
+            <div class="kpi-label">AdaBoost</div>
+            <div style="display:flex;justify-content:space-between;margin-top:10px;">
+              <div>
+                <div style="font-size:0.75rem;color:var(--slate-gray);">Train Accuracy</div>
+                <div style="font-size:1.2rem;font-weight:700;color:var(--text);">{{ dt.ada.train_acc }}%</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:0.75rem;color:var(--slate-gray);">Val Accuracy</div>
+                <div style="font-size:1.2rem;font-weight:700;color:var(--accent);">{{ dt.ada.val_acc }}%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gradient Boosting -->
+        <div class="kpi-card">
+          <div class="kpi-icon orange">⚡</div>
+          <div class="kpi-body" style="width:100%;">
+            <div class="kpi-label">Gradient Boosting</div>
+            <div style="display:flex;justify-content:space-between;margin-top:10px;">
+              <div>
+                <div style="font-size:0.75rem;color:var(--slate-gray);">Train Accuracy</div>
+                <div style="font-size:1.2rem;font-weight:700;color:var(--text);">{{ dt.gb.train_acc }}%</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:0.75rem;color:var(--slate-gray);">Val Accuracy</div>
+                <div style="font-size:1.2rem;font-weight:700;color:var(--accent);">{{ dt.gb.val_acc }}%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 4: Compare Models -->
+  <div id="tab-compare" class="tab-pane">
+    <div class="card">
+      <h3 style="margin:0 0 16px;">Train vs Validation Accuracy</h3>
+      <p style="font-size:0.9rem; color:var(--slate-gray); margin-bottom:16px;">
+        A large gap between Train (Blue) and Validation (Green) indicates <strong>Overfitting</strong>. Note how Ensembles generally maintain high validation accuracy without completely memorizing the training set.
+      </p>
+      <div style="height:400px; width:100%;">
+        <canvas id="ensembleChart"></canvas>
+      </div>
     </div>
   </div>
 
 </div>
-
 {% else %}
 <div class="card">
   <p>Dataset not loaded. Please load the dataset first.</p>
 </div>
 {% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Tab Switching Logic
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const tabPanes = document.querySelectorAll('.tab-pane');
+  let chartInitialized = false;
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabBtns.forEach(b => b.classList.remove('active'));
+      tabPanes.forEach(p => p.classList.remove('active'));
+      
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.target).classList.add('active');
+
+      // Initialize chart when the compare tab is clicked for the first time
+      if (btn.dataset.target === 'tab-compare' && !chartInitialized && typeof Chart !== 'undefined') {
+        const ctx = document.getElementById('ensembleChart').getContext('2d');
+        new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: ['Unconstrained', 'Shallow', 'Bagging', 'Random Forest', 'AdaBoost', 'Gradient Boost'],
+            datasets: [
+              {
+                label: 'Train Accuracy (%)',
+                data: [
+                  {{ dt.full.train_acc if dt else 0 }},
+                  {{ dt.shallow.train_acc if dt else 0 }},
+                  {{ dt.bagging.train_acc if dt else 0 }},
+                  {{ dt.rf.train_acc if dt else 0 }},
+                  {{ dt.ada.train_acc if dt else 0 }},
+                  {{ dt.gb.train_acc if dt else 0 }}
+                ],
+                backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                borderColor: 'rgba(59, 130, 246, 1)',
+                borderWidth: 1
+              },
+              {
+                label: 'Validation Accuracy (%)',
+                data: [
+                  {{ dt.full.val_acc if dt else 0 }},
+                  {{ dt.shallow.val_acc if dt else 0 }},
+                  {{ dt.bagging.val_acc if dt else 0 }},
+                  {{ dt.rf.val_acc if dt else 0 }},
+                  {{ dt.ada.val_acc if dt else 0 }},
+                  {{ dt.gb.val_acc if dt else 0 }}
+                ],
+                backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                borderColor: 'rgba(16, 185, 129, 1)',
+                borderWidth: 1
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: { 
+                beginAtZero: false,
+                min: 70, // Start y-axis at 70% to highlight differences
+                max: 100 
+              }
+            },
+            plugins: {
+              legend: { position: 'top' },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    return context.dataset.label + ': ' + context.parsed.y + '%';
+                  }
+                }
+              }
+            }
+          }
+        });
+        chartInitialized = true;
+      }
+    });
+  });
+</script>
 
 {% endblock %}
