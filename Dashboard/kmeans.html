@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Module 4 · K-Means Clustering{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:1.5rem;">
+  <h1 style="font-size:1.75rem;font-weight:700;color:#1E3A5F;margin:0 0 .35rem;">
+    K-Means Clustering
+  </h1>
+  <p style="color:#64748B;margin:0;">
+    Unsupervised grouping of students by academic &amp; assessment profile —
+    revealing natural performance tiers without using placement labels.
+  </p>
+</div>
+
+{% if data %}
+
+{# ── KPI Cards ──────────────────────────────────────────────────────────── #}
+<div class="kpi-grid" style="margin-bottom:1.75rem;">
+
+  <div class="kpi-card">
+    <div class="kpi-label">Best K</div>
+    <div class="kpi-value" style="color:#2563EB;">{{ data.best_k }}</div>
+    <div class="kpi-sub">Optimal clusters (max silhouette)</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-label">Best Silhouette Score</div>
+    <div class="kpi-value" style="color:#10B981;">{{ data.best_sil }}</div>
+    <div class="kpi-sub">Cluster separation quality (−1 → 1)</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-label">Total Samples</div>
+    <div class="kpi-value" style="color:#1E3A5F;">{{ data.n_samples }}</div>
+    <div class="kpi-sub">Rows used after dropping NaNs</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-label">N Features</div>
+    <div class="kpi-value" style="color:#F59E0B;">{{ data.feat_cols | length }}</div>
+    <div class="kpi-sub">Numeric columns clustered</div>
+  </div>
+
+</div>
+
+{# ── Elbow / Silhouette Plots ────────────────────────────────────────────── #}
+<div class="card" style="margin-bottom:1.75rem;">
+  <div class="card-header" style="font-weight:600;color:#1E3A5F;padding:.9rem 1.25rem;
+       border-bottom:1px solid #E2E8F0;">
+    Elbow Method &amp; Silhouette Score
+  </div>
+  <div style="padding:1.25rem;text-align:center;">
+    <img src="{{ url_for('static', filename='Plot/KMeans/elbow_silhouette.png') }}"
+         alt="Elbow and Silhouette Plot"
+         style="max-width:100%;border-radius:6px;">
+    <p style="margin:.75rem 0 0;font-size:.82rem;color:#64748B;">
+      Left: Inertia drops sharply then levels off — the "elbow" is the ideal K.&ensp;
+      Right: The dashed orange line marks the K with the highest silhouette score
+      (<strong>K={{ data.best_k }}</strong>).
+    </p>
+  </div>
+</div>
+
+{# ── Cluster Scatter Plot ────────────────────────────────────────────────── #}
+<div class="card" style="margin-bottom:1.75rem;">
+  <div class="card-header" style="font-weight:600;color:#1E3A5F;padding:.9rem 1.25rem;
+       border-bottom:1px solid #E2E8F0;">
+    Cluster Scatter — CGPA vs Mock Interview Score
+  </div>
+  <div style="padding:1.25rem;text-align:center;">
+    <img src="{{ url_for('static', filename='Plot/KMeans/cluster_scatter.png') }}"
+         alt="Cluster Scatter Plot"
+         style="max-width:100%;border-radius:6px;">
+    <p style="margin:.75rem 0 0;font-size:.82rem;color:#64748B;">
+      Each dot is a student; colour denotes cluster membership (K={{ data.best_k }}).
+      Clusters represent distinct academic performance tiers.
+    </p>
+  </div>
+</div>
+
+{# ── Cluster Profiles Table ──────────────────────────────────────────────── #}
+<div class="card" style="margin-bottom:1.75rem;">
+  <div class="card-header" style="font-weight:600;color:#1E3A5F;padding:.9rem 1.25rem;
+       border-bottom:1px solid #E2E8F0;">
+    Cluster Profiles — Mean Feature Values
+  </div>
+  <div style="padding:1.25rem;overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:.875rem;">
+      <thead>
+        <tr style="background:#F1F5F9;">
+          <th style="padding:.6rem .85rem;text-align:left;color:#475569;font-weight:600;
+                     border-bottom:2px solid #CBD5E1;">Cluster</th>
+          <th style="padding:.6rem .85rem;text-align:right;color:#475569;font-weight:600;
+                     border-bottom:2px solid #CBD5E1;">Size</th>
+          <th style="padding:.6rem .85rem;text-align:right;color:#475569;font-weight:600;
+                     border-bottom:2px solid #CBD5E1;">%</th>
+          <th style="padding:.6rem .85rem;text-align:right;color:#475569;font-weight:600;
+                     border-bottom:2px solid #CBD5E1;">CGPA</th>
+          <th style="padding:.6rem .85rem;text-align:right;color:#475569;font-weight:600;
+                     border-bottom:2px solid #CBD5E1;">Mock Interview</th>
+          <th style="padding:.6rem .85rem;text-align:right;color:#475569;font-weight:600;
+                     border-bottom:2px solid #CBD5E1;">Coding Test</th>
+          <th style="padding:.6rem .85rem;text-align:right;color:#475569;font-weight:600;
+                     border-bottom:2px solid #CBD5E1;">Aptitude Test</th>
+          <th style="padding:.6rem .85rem;text-align:right;color:#475569;font-weight:600;
+                     border-bottom:2px solid #CBD5E1;">Attendance %</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in data.profiles %}
+        <tr style="border-bottom:1px solid #E2E8F0;
+                   {% if loop.index is odd %}background:#FAFBFF;{% endif %}">
+          <td style="padding:.6rem .85rem;font-weight:600;color:#2563EB;">
+            Cluster {{ p.cluster }}
+          </td>
+          <td style="padding:.6rem .85rem;text-align:right;">{{ p.size }}</td>
+          <td style="padding:.6rem .85rem;text-align:right;">{{ p.pct }}%</td>
+          <td style="padding:.6rem .85rem;text-align:right;">
+            {{ p.CGPA if p.CGPA is defined else '—' }}
+          </td>
+          <td style="padding:.6rem .85rem;text-align:right;">
+            {{ p.MockInterviewScore if p.MockInterviewScore is defined else '—' }}
+          </td>
+          <td style="padding:.6rem .85rem;text-align:right;">
+            {{ p.CodingTestScore if p.CodingTestScore is defined else '—' }}
+          </td>
+          <td style="padding:.6rem .85rem;text-align:right;">
+            {{ p.AptitudeTestScore if p.AptitudeTestScore is defined else '—' }}
+          </td>
+          <td style="padding:.6rem .85rem;text-align:right;">
+            {{ p.AttendancePercent if p.AttendancePercent is defined else '—' }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# ── Explanation Card ────────────────────────────────────────────────────── #}
+<div class="card" style="border-left:4px solid #2563EB;background:#EFF6FF;">
+  <div style="padding:1.1rem 1.25rem;">
+    <h3 style="margin:0 0 .5rem;font-size:1rem;font-weight:700;color:#1E40AF;">
+      How K-Means Works
+    </h3>
+    <p style="margin:0;font-size:.875rem;color:#1E3A5F;line-height:1.65;">
+      <strong>K-Means</strong> partitions students into <em>K</em> groups by minimising
+      within-cluster variance (inertia). Each iteration reassigns every student to the
+      nearest centroid, then recomputes centroids, until convergence.
+    </p>
+    <ul style="margin:.65rem 0 0 1.1rem;font-size:.875rem;color:#1E3A5F;line-height:1.8;">
+      <li>Use the <strong>Elbow plot</strong> to find where adding more clusters gives
+          diminishing returns — the bend in the inertia curve.</li>
+      <li>Confirm with the <strong>Silhouette Score</strong>: values closer to 1 mean
+          well-separated, compact clusters.</li>
+      <li>Features are <strong>standardised</strong> (zero mean, unit variance) before
+          clustering so no single scale dominates.</li>
+    </ul>
+  </div>
+</div>
+
+{% else %}
+<div class="card" style="padding:2rem;text-align:center;color:#64748B;">
+  <p>No clustering data available. Run the K-Means module to generate results.</p>
+</div>
+{% endif %}
+{% endblock %}

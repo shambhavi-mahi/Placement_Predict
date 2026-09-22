@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header" style="margin-bottom:1.5rem;">
+  <h1 style="font-size:1.6rem;font-weight:700;color:#1E293B;margin:0 0 0.3rem;">
+    Module 2 · Train / Validation / Test Splitting
+  </h1>
+  <p style="color:#64748B;margin:0;font-size:0.95rem;">
+    Why splitting data matters — and how peeking at the wrong set silently inflates your results.
+  </p>
+</div>
+
+{% if data %}
+
+<!-- ── KPI Row ─────────────────────────────────────────────────────────── -->
+<div class="kpi-grid" style="margin-bottom:1.5rem;">
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#334155,#1E293B);">📊</div>
+    <div class="kpi-label">Total Samples</div>
+    <div class="kpi-value">{{ data.n_total }}</div>
+    <div style="font-size:0.78rem;color:#64748B;">Full dataset</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#2563EB,#1D4ED8);">🏋️</div>
+    <div class="kpi-label">Train (60%)</div>
+    <div class="kpi-value">{{ data.train.n }}</div>
+    <div style="font-size:0.78rem;color:#64748B;">Model learning</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#F59E0B,#D97706);">🔍</div>
+    <div class="kpi-label">Validation (20%)</div>
+    <div class="kpi-value">{{ data.val.n }}</div>
+    <div style="font-size:0.78rem;color:#64748B;">Hyperparameter tuning</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#EF4444,#DC2626);">🏁</div>
+    <div class="kpi-label">Test (20%)</div>
+    <div class="kpi-value">{{ data.test.n }}</div>
+    <div style="font-size:0.78rem;color:#64748B;">Final evaluation only</div>
+  </div>
+
+</div>
+
+<!-- ── Split Bar Visual ───────────────────────────────────────────────── -->
+<div class="card" style="padding:1.25rem 1.5rem;margin-bottom:1.5rem;">
+  <h3 style="font-size:0.95rem;font-weight:700;color:#1E293B;margin:0 0 1rem;">📏 Dataset Split Visualisation</h3>
+  <div style="display:flex;height:48px;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.1);">
+    <div style="flex:{{ data.train.pct }};background:linear-gradient(90deg,#2563EB,#3B82F6);display:flex;align-items:center;justify-content:center;">
+      <span style="color:#fff;font-size:0.82rem;font-weight:700;">Train {{ data.train.pct }}%</span>
+    </div>
+    <div style="flex:{{ data.val.pct }};background:linear-gradient(90deg,#F59E0B,#FBBF24);display:flex;align-items:center;justify-content:center;">
+      <span style="color:#78350F;font-size:0.82rem;font-weight:700;">Val {{ data.val.pct }}%</span>
+    </div>
+    <div style="flex:{{ data.test.pct }};background:linear-gradient(90deg,#EF4444,#F87171);display:flex;align-items:center;justify-content:center;">
+      <span style="color:#fff;font-size:0.82rem;font-weight:700;">Test {{ data.test.pct }}%</span>
+    </div>
+  </div>
+  <div style="display:flex;gap:1.5rem;margin-top:0.75rem;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:6px;">
+      <div style="width:12px;height:12px;border-radius:3px;background:#2563EB;"></div>
+      <span style="font-size:0.8rem;color:#64748B;">Train — model fits on this data</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <div style="width:12px;height:12px;border-radius:3px;background:#F59E0B;"></div>
+      <span style="font-size:0.8rem;color:#64748B;">Validation — tune hyperparameters here</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <div style="width:12px;height:12px;border-radius:3px;background:#EF4444;"></div>
+      <span style="font-size:0.8rem;color:#64748B;">Test — touch only once, at final evaluation</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── 3-column per-split stats ───────────────────────────────────────── -->
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-bottom:1.5rem;">
+
+  {% for split_name, border, bg in [('train','#2563EB','#EFF6FF'),('val','#F59E0B','#FFFBEB'),('test','#EF4444','#FFF1F2')] %}
+  {% set sp = data[split_name] %}
+  <div class="card" style="padding:1.25rem;border-top:4px solid {{ border }};background:{{ bg }};">
+    <h3 style="font-size:0.95rem;font-weight:700;color:#1E293B;margin:0 0 1rem;">
+      {{ sp.label }} Set
+    </h3>
+    <div style="display:flex;flex-direction:column;gap:0.6rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:0.82rem;color:#64748B;">Samples</span>
+        <span style="font-weight:700;color:#1E293B;">{{ sp.n }}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:0.82rem;color:#64748B;">Share</span>
+        <span style="font-weight:700;color:{{ border }};">{{ sp.pct }}%</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:0.82rem;color:#64748B;">Placed</span>
+        <span style="font-weight:700;color:#10B981;">{{ sp.placed }} ({{ sp.placed_pct }}%)</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:0.82rem;color:#64748B;">Not Placed</span>
+        <span style="font-weight:700;color:#EF4444;">{{ sp.not_placed }}</span>
+      </div>
+      {% if sp.cgpa_mean %}
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:0.82rem;color:#64748B;">Avg CGPA</span>
+        <span style="font-weight:700;color:#1E293B;">{{ sp.cgpa_mean }}</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+
+</div>
+
+<!-- ── Data Leakage Section ───────────────────────────────────────────── -->
+<div class="card" style="padding:1.5rem;margin-bottom:1.5rem;">
+  <h3 style="font-size:1rem;font-weight:700;color:#1E293B;margin:0 0 0.4rem;">⚠️ Data Leakage Demo</h3>
+  <p style="font-size:0.88rem;color:#64748B;margin:0 0 1.25rem;line-height:1.6;">
+    Fitting a scaler (or any preprocessor) on the <em>entire</em> dataset before splitting leaks
+    test/validation statistics into training — the model gets an unfair peek at future data.
+  </p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+
+    <!-- Correct -->
+    <div style="background:#F0FDF4;border:1px solid #86EFAC;border-left:4px solid #10B981;border-radius:8px;padding:1.25rem;">
+      <div style="font-size:0.82rem;font-weight:700;color:#166534;text-transform:uppercase;letter-spacing:.05em;margin-bottom:0.5rem;">
+        ✅ Correct (fit on train only)
+      </div>
+      <div style="font-size:2rem;font-weight:800;color:#15803D;margin-bottom:0.25rem;">{{ data.acc_correct }}%</div>
+      <div style="font-size:0.82rem;color:#166534;">Validation accuracy</div>
+      <div style="margin-top:0.75rem;font-size:0.8rem;color:#15803D;line-height:1.5;">
+        <code style="background:#DCFCE7;padding:2px 6px;border-radius:4px;">scaler.fit_transform(X_train)</code><br>
+        <code style="background:#DCFCE7;padding:2px 6px;border-radius:4px;margin-top:4px;display:inline-block;">scaler.transform(X_val)</code>
+      </div>
+    </div>
+
+    <!-- Leaked -->
+    <div style="background:#FFF1F2;border:1px solid #FECDD3;border-left:4px solid #EF4444;border-radius:8px;padding:1.25rem;">
+      <div style="font-size:0.82rem;font-weight:700;color:#9F1239;text-transform:uppercase;letter-spacing:.05em;margin-bottom:0.5rem;">
+        ❌ Leaked (fit on all data)
+      </div>
+      <div style="font-size:2rem;font-weight:800;color:#DC2626;margin-bottom:0.25rem;">{{ data.acc_leak }}%</div>
+      <div style="font-size:0.82rem;color:#9F1239;">Validation accuracy (inflated)</div>
+      <div style="margin-top:0.75rem;font-size:0.8rem;color:#B91C1C;line-height:1.5;">
+        <code style="background:#FFE4E6;padding:2px 6px;border-radius:4px;">scaler.fit_transform(X_all)</code><br>
+        <span style="font-size:0.78rem;opacity:.8;">← sees val/test stats during fit ⚠️</span>
+      </div>
+    </div>
+
+  </div>
+
+  {% if data.leak_diff != 0 %}
+  <div style="margin-top:1rem;padding:0.75rem 1rem;background:#FEF3C7;border:1px solid #FDE68A;border-radius:6px;">
+    <span style="font-size:0.85rem;color:#78350F;">
+      🔍 Leakage artificially
+      {% if data.leak_diff > 0 %}inflates{% else %}deflates{% endif %}
+      accuracy by <strong>{{ data.leak_diff | abs }}pp</strong>.
+      In production this means your model will perform worse than expected.
+    </span>
+  </div>
+  {% endif %}
+</div>
+
+{% else %}
+<div class="card" style="padding:2rem;text-align:center;color:#94A3B8;">
+  <p>⚠️ Splitting data not available. Ensure the dataset is loaded correctly.</p>
+</div>
+{% endif %}
+{% endblock %}

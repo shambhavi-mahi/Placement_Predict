@@ -24,7 +24,32 @@ def _safe_load_csv():
         return None
 
 
+def _get_numeric_cols(df):
+    return [c for c in config.NUMERIC_COLUMNS if c in df.columns]
+
+
 from models.feature_engg import _apply_minmax, _apply_standard, _apply_robust, _apply_encoding
+
+# Module imports
+from module1.baseline import run_baseline
+from module2.splitting import run_splitting
+from module2.pipeline import run_pipeline
+from module2.coefficients import run_coefficients
+from module3.pruning import run_pruning
+from module3.modern_boosting import run_modern_boosting
+from module3.shap_importance import run_shap_importance
+from module3.compare_models import run_compare_models
+from module4.kmeans import run_kmeans
+from module4.hierarchical import run_hierarchical
+
+# Per-request caches (computed once per server session)
+_cache = {}
+
+def _cached(key, fn, df):
+    if key not in _cache:
+        _cache[key] = fn(df)
+    return _cache[key]
+
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
@@ -372,6 +397,84 @@ def decision_tree_page():
     if df is not None:
         dt_data = _run_tree_models(df)
     return render_template("decision_tree.html", dt=dt_data)
+
+
+# ── Module 1 ────────────────────────────────────────────────────────────────
+
+@app.route("/baseline")
+def baseline_page():
+    df = _safe_load_csv()
+    baseline = _cached("baseline", run_baseline, df) if df is not None else None
+    return render_template("baseline.html", baseline=baseline)
+
+
+# ── Module 2 ────────────────────────────────────────────────────────────────
+
+@app.route("/splitting")
+def splitting_page():
+    df = _safe_load_csv()
+    data = _cached("splitting", run_splitting, df) if df is not None else None
+    return render_template("splitting.html", data=data)
+
+
+@app.route("/pipeline")
+def pipeline_page():
+    df = _safe_load_csv()
+    data = _cached("pipeline", run_pipeline, df) if df is not None else None
+    return render_template("pipeline.html", data=data)
+
+
+@app.route("/coefficients")
+def coefficients_page():
+    df = _safe_load_csv()
+    data = _cached("coefficients", run_coefficients, df) if df is not None else None
+    return render_template("coefficients.html", data=data)
+
+
+# ── Module 3 ────────────────────────────────────────────────────────────────
+
+@app.route("/pruning")
+def pruning_page():
+    df = _safe_load_csv()
+    data = _cached("pruning", run_pruning, df) if df is not None else None
+    return render_template("pruning.html", data=data)
+
+
+@app.route("/modern-boosting")
+def modern_boosting_page():
+    df = _safe_load_csv()
+    data = _cached("modern_boosting", run_modern_boosting, df) if df is not None else None
+    return render_template("modern_boosting.html", data=data)
+
+
+@app.route("/shap-importance")
+def shap_importance_page():
+    df = _safe_load_csv()
+    data = _cached("shap_importance", run_shap_importance, df) if df is not None else None
+    return render_template("shap_importance.html", data=data)
+
+
+@app.route("/compare-models")
+def compare_models_page():
+    df = _safe_load_csv()
+    data = _cached("compare_models", run_compare_models, df) if df is not None else None
+    return render_template("compare_models.html", data=data)
+
+
+# ── Module 4 ────────────────────────────────────────────────────────────────
+
+@app.route("/kmeans")
+def kmeans_page():
+    df = _safe_load_csv()
+    data = _cached("kmeans", run_kmeans, df) if df is not None else None
+    return render_template("kmeans.html", data=data)
+
+
+@app.route("/hierarchical")
+def hierarchical_page():
+    df = _safe_load_csv()
+    data = _cached("hierarchical", run_hierarchical, df) if df is not None else None
+    return render_template("hierarchical.html", data=data)
 
 
 # ---------------------------------------------------------------------------

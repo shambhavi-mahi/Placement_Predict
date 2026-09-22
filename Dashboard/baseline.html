@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header" style="margin-bottom:1.5rem;">
+  <h1 style="font-size:1.6rem;font-weight:700;color:#1E293B;margin:0 0 0.3rem;">
+    Module 1 · Baseline Model &amp; Serving
+  </h1>
+  <p style="color:#64748B;margin:0;font-size:0.95rem;">
+    The dumb baseline: always predict the majority class. Every real model must beat this.
+  </p>
+</div>
+
+{% if baseline %}
+
+<!-- ── KPI Row ─────────────────────────────────────────────────────────── -->
+<div class="kpi-grid" style="margin-bottom:1.5rem;">
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#10B981,#059669);">🎓</div>
+    <div class="kpi-label">Placed</div>
+    <div class="kpi-value">{{ baseline.placed_pct }}%</div>
+    <div style="font-size:0.78rem;color:#64748B;">{{ baseline.placed_count }} students</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#EF4444,#DC2626);">❌</div>
+    <div class="kpi-label">Not Placed</div>
+    <div class="kpi-value">{{ baseline.not_placed_pct }}%</div>
+    <div style="font-size:0.78rem;color:#64748B;">{{ baseline.not_placed_count }} students</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#F59E0B,#D97706);">🎯</div>
+    <div class="kpi-label">Baseline Accuracy</div>
+    <div class="kpi-value">{{ baseline.baseline_acc }}%</div>
+    <div style="font-size:0.78rem;color:#64748B;">Majority-class predictor</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#2563EB,#1D4ED8);">🧠</div>
+    <div class="kpi-label">Smart Model Accuracy</div>
+    <div class="kpi-value">{% if baseline.smart_acc %}{{ baseline.smart_acc }}%{% else %}N/A{% endif %}</div>
+    <div style="font-size:0.78rem;color:#64748B;">Logistic Regression</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#8B5CF6,#7C3AED);">📈</div>
+    <div class="kpi-label">Improvement Gap</div>
+    <div class="kpi-value" style="color:{% if baseline.gap and baseline.gap > 0 %}#10B981{% else %}#EF4444{% endif %};">
+      {% if baseline.gap %}+{{ baseline.gap }}%{% else %}N/A{% endif %}
+    </div>
+    <div style="font-size:0.78rem;color:#64748B;">Smart − Baseline</div>
+  </div>
+
+</div>
+
+<!-- ── 2-column: Explanation + Confusion Matrix ───────────────────────── -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.5rem;">
+
+  <!-- Left: What is a Baseline? -->
+  <div class="card" style="padding:1.5rem;">
+    <h3 style="font-size:1rem;font-weight:700;color:#1E293B;margin:0 0 1rem;">
+      🤔 What is a Baseline Model?
+    </h3>
+    <p style="color:#475569;font-size:0.9rem;line-height:1.65;margin:0 0 0.75rem;">
+      A <strong>baseline model</strong> is the simplest possible predictor — it requires no features,
+      no training loop, and no hyperparameter tuning. The majority-class baseline simply looks at
+      the training labels and always predicts whichever class appears most often.
+    </p>
+    <p style="color:#475569;font-size:0.9rem;line-height:1.65;margin:0 0 0.75rem;">
+      For this dataset the majority class is
+      <strong style="color:{% if baseline.majority_class == 1 %}#10B981{% else %}#EF4444{% endif %};">
+        {{ baseline.majority_label }}
+      </strong>
+      ({{ baseline.placed_pct if baseline.majority_class == 1 else baseline.not_placed_pct }}% of samples).
+      So the baseline guesses "{{ baseline.majority_label }}" for every student.
+    </p>
+    <p style="color:#475569;font-size:0.9rem;line-height:1.65;margin:0;">
+      If a sophisticated algorithm cannot surpass this number, it is <em>not actually learning</em>
+      anything useful — it might as well flip a biased coin.
+    </p>
+    <hr style="border:none;border-top:1px solid #E2E8F0;margin:1rem 0;">
+    <div style="display:flex;gap:1.5rem;">
+      <div>
+        <div style="font-size:0.78rem;color:#94A3B8;text-transform:uppercase;letter-spacing:.05em;">Train samples</div>
+        <div style="font-size:1.1rem;font-weight:700;color:#1E293B;">{{ baseline.n_train }}</div>
+      </div>
+      <div>
+        <div style="font-size:0.78rem;color:#94A3B8;text-transform:uppercase;letter-spacing:.05em;">Val samples</div>
+        <div style="font-size:1.1rem;font-weight:700;color:#1E293B;">{{ baseline.n_val }}</div>
+      </div>
+      <div>
+        <div style="font-size:0.78rem;color:#94A3B8;text-transform:uppercase;letter-spacing:.05em;">Total</div>
+        <div style="font-size:1.1rem;font-weight:700;color:#1E293B;">{{ baseline.n_total }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Confusion Matrix -->
+  <div class="card" style="padding:1.5rem;">
+    <h3 style="font-size:1rem;font-weight:700;color:#1E293B;margin:0 0 0.5rem;">
+      🔲 Confusion Matrix <span style="font-weight:400;font-size:0.82rem;color:#94A3B8;">(Validation Set)</span>
+    </h3>
+    <p style="font-size:0.82rem;color:#64748B;margin:0 0 1rem;">
+      Rows = Predicted &nbsp;|&nbsp; Columns = Actual
+    </p>
+
+    <!-- Matrix grid -->
+    <div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:4px;max-width:320px;margin:0 auto 1rem;">
+      <!-- Header row -->
+      <div></div>
+      <div style="text-align:center;font-size:0.75rem;font-weight:600;color:#64748B;padding:6px;">Actual Placed</div>
+      <div style="text-align:center;font-size:0.75rem;font-weight:600;color:#64748B;padding:6px;">Actual Not Placed</div>
+      <!-- Row 1 -->
+      <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:0.75rem;font-weight:600;color:#64748B;padding:6px;text-align:center;">Pred Placed</div>
+      <div style="background:#D1FAE5;border:2px solid #10B981;border-radius:8px;padding:16px;text-align:center;">
+        <div style="font-size:1.6rem;font-weight:800;color:#065F46;">{{ baseline.tp }}</div>
+        <div style="font-size:0.72rem;color:#047857;font-weight:600;">TP ✓</div>
+      </div>
+      <div style="background:#FEE2E2;border:2px solid #EF4444;border-radius:8px;padding:16px;text-align:center;">
+        <div style="font-size:1.6rem;font-weight:800;color:#7F1D1D;">{{ baseline.fp }}</div>
+        <div style="font-size:0.72rem;color:#B91C1C;font-weight:600;">FP ✗</div>
+      </div>
+      <!-- Row 2 -->
+      <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:0.75rem;font-weight:600;color:#64748B;padding:6px;text-align:center;">Pred Not Placed</div>
+      <div style="background:#FEE2E2;border:2px solid #EF4444;border-radius:8px;padding:16px;text-align:center;">
+        <div style="font-size:1.6rem;font-weight:800;color:#7F1D1D;">{{ baseline.fn }}</div>
+        <div style="font-size:0.72rem;color:#B91C1C;font-weight:600;">FN ✗</div>
+      </div>
+      <div style="background:#D1FAE5;border:2px solid #10B981;border-radius:8px;padding:16px;text-align:center;">
+        <div style="font-size:1.6rem;font-weight:800;color:#065F46;">{{ baseline.tn }}</div>
+        <div style="font-size:0.72rem;color:#047857;font-weight:600;">TN ✓</div>
+      </div>
+    </div>
+
+    <!-- Derived metrics -->
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+      <div style="text-align:center;">
+        <div style="font-size:0.75rem;color:#94A3B8;text-transform:uppercase;">Precision</div>
+        <div style="font-size:1rem;font-weight:700;color:#2563EB;">{{ baseline.precision }}%</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:0.75rem;color:#94A3B8;text-transform:uppercase;">Recall</div>
+        <div style="font-size:1rem;font-weight:700;color:#2563EB;">{{ baseline.recall }}%</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:0.75rem;color:#94A3B8;text-transform:uppercase;">F1 Score</div>
+        <div style="font-size:1rem;font-weight:700;color:#2563EB;">{{ baseline.f1 }}%</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Insight Box ────────────────────────────────────────────────────── -->
+<div style="background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border:1px solid #BFDBFE;border-left:4px solid #2563EB;border-radius:10px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;">
+  <h3 style="font-size:0.95rem;font-weight:700;color:#1E40AF;margin:0 0 0.5rem;">💡 Why Does the Gap Matter?</h3>
+  <p style="color:#1E3A8A;font-size:0.88rem;line-height:1.65;margin:0;">
+    {% if baseline.gap and baseline.gap > 0 %}
+      The Logistic Regression model achieves <strong>{{ baseline.smart_acc }}%</strong> accuracy versus the
+      baseline's <strong>{{ baseline.baseline_acc }}%</strong> — a gain of
+      <strong style="color:#10B981;">+{{ baseline.gap }} percentage points</strong>.
+      This confirms the features carry genuine predictive signal: the model is truly learning.
+    {% else %}
+      The smart model does not improve over the baseline. This is a red flag — check feature quality,
+      class imbalance, or whether the split is representative.
+    {% endif %}
+    Setting a baseline is the first step of every ML project. Without it you cannot know whether
+    your model is actually useful.
+  </p>
+</div>
+
+{% else %}
+<div class="card" style="padding:2rem;text-align:center;color:#94A3B8;">
+  <p style="font-size:1rem;">⚠️ Baseline data not available. Ensure the dataset is loaded correctly.</p>
+</div>
+{% endif %}
+{% endblock %}

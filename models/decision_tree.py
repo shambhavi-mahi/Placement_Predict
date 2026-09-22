@@ -8,7 +8,6 @@ from sklearn.ensemble import RandomForestClassifier, BaggingClassifier, Gradient
 from sklearn.metrics import accuracy_score
 import config
 
-# Note: We must import _apply_encoding here
 from models.feature_engg import _apply_encoding
 
 def _run_tree_models(df):

@@ -1,0 +1,18 @@
+Placed: 65.8%  Not Placed: 34.2%
+
+Single-feature AUC:
+  CGPA: 0.9033
+  MockInterviewScore: 0.8992
+  CodingTestScore: 0.8738
+  AptitudeTestScore: 0.8524
+  AttendancePercent: 0.8358
+
+Full model validation accuracy: 88.86%
+Full model cross-entropy (log loss): 0.2529
+
+Scaler comparison:
+  Unscaled: 88.86%
+  StandardScaler: 88.87%
+  MinMaxScaler: 88.93%
+
+Softmax 3-class accuracy: 82.41%

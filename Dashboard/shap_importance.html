@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block title %}Feature Importance & SHAP — PlacementPredict{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>Module 3 · Feature Importance &amp; SHAP</h2>
+  <p>Understanding which features the model actually relies on — using MDI, Permutation Importance, and SHAP values.</p>
+</div>
+
+{% if data %}
+
+<!-- KPI Row -->
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:22px;">
+  <div class="kpi-card">
+    <div class="kpi-icon blue">🎯</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Val Accuracy (RF)</div>
+      <div class="kpi-value">{{ data.val_acc }}%</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon green">📊</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Features Analysed</div>
+      <div class="kpi-value">{{ data.n_features }}</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon orange">🏆</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Top MDI Feature</div>
+      <div class="kpi-value" style="font-size:1rem;">{{ data.mdi_data[0].feature if data.mdi_data }}</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon purple">🔀</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Top Permutation Feature</div>
+      <div class="kpi-value" style="font-size:1rem;">{{ data.perm_data[0].feature if data.perm_data }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs-container">
+  <div class="tabs-nav">
+    <button class="tab-btn active" data-target="tab-mdi">1. MDI Importance</button>
+    <button class="tab-btn" data-target="tab-perm">2. Permutation Importance</button>
+    <button class="tab-btn" data-target="tab-shap">3. SHAP Values</button>
+  </div>
+
+  <!-- Tab 1: MDI -->
+  <div id="tab-mdi" class="tab-pane active">
+    <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:20px;align-items:start;">
+      <div class="card" style="padding:16px;">
+        <h3 style="margin:0 0 14px;font-size:1rem;">Mean Decrease Impurity (MDI)</h3>
+        <img src="{{ url_for('static', filename='Plot/SHAP/mdi_importance.png') }}"
+             alt="MDI Importance" style="width:100%;border-radius:6px;border:1px solid var(--border);">
+      </div>
+      <div class="card" style="padding:16px;">
+        <h3 style="margin:0 0 14px;font-size:1rem;">Top Features (MDI)</h3>
+        <table style="width:100%;font-size:0.85rem;border-collapse:collapse;">
+          <thead>
+            <tr style="border-bottom:2px solid var(--border);">
+              <th style="padding:6px 8px;text-align:left;color:var(--slate-gray);font-size:0.75rem;">Feature</th>
+              <th style="padding:6px 8px;text-align:right;color:var(--slate-gray);font-size:0.75rem;">Importance</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in data.mdi_data[:10] %}
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:6px 8px;">{{ item.feature }}</td>
+              <td style="padding:6px 8px;text-align:right;font-weight:600;color:#2563EB;">{{ item.importance }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px;padding:16px;background:rgba(37,99,235,0.04);border:1px solid rgba(37,99,235,0.15);">
+      <h4 style="margin:0 0 8px;color:#2563EB;">⚠️ MDI Bias</h4>
+      <p style="font-size:0.88rem;color:var(--slate-gray);margin:0;">
+        MDI (built-in feature importance) can <strong>overrate high-cardinality features</strong> because trees get more opportunities to split on them. For more reliable estimates, use Permutation Importance on the validation set.
+      </p>
+    </div>
+  </div>
+
+  <!-- Tab 2: Permutation -->
+  <div id="tab-perm" class="tab-pane">
+    <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:20px;align-items:start;">
+      <div class="card" style="padding:16px;">
+        <h3 style="margin:0 0 14px;font-size:1rem;">Permutation Importance (Validation Set)</h3>
+        <img src="{{ url_for('static', filename='Plot/SHAP/perm_importance.png') }}"
+             alt="Permutation Importance" style="width:100%;border-radius:6px;border:1px solid var(--border);">
+      </div>
+      <div class="card" style="padding:16px;">
+        <h3 style="margin:0 0 14px;font-size:1rem;">Top Features (Permutation)</h3>
+        <table style="width:100%;font-size:0.85rem;border-collapse:collapse;">
+          <thead>
+            <tr style="border-bottom:2px solid var(--border);">
+              <th style="padding:6px 8px;text-align:left;color:var(--slate-gray);font-size:0.75rem;">Feature</th>
+              <th style="padding:6px 8px;text-align:right;color:var(--slate-gray);font-size:0.75rem;">Δ Accuracy</th>
+              <th style="padding:6px 8px;text-align:right;color:var(--slate-gray);font-size:0.75rem;">Std</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in data.perm_data[:10] %}
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:6px 8px;">{{ item.feature }}</td>
+              <td style="padding:6px 8px;text-align:right;font-weight:600;color:#10B981;">{{ item.importance }}</td>
+              <td style="padding:6px 8px;text-align:right;color:var(--slate-gray);">±{{ item.std }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px;padding:16px;background:rgba(16,185,129,0.04);border:1px solid rgba(16,185,129,0.2);">
+      <h4 style="margin:0 0 8px;color:#10B981;">How Permutation Importance Works</h4>
+      <p style="font-size:0.88rem;color:var(--slate-gray);margin:0;">
+        A feature's column is randomly shuffled on the <strong>validation set</strong>, breaking its relationship with the target. The drop in accuracy = how much the model relied on that feature. This is model-agnostic and avoids MDI's high-cardinality bias.
+      </p>
+    </div>
+  </div>
+
+  <!-- Tab 3: SHAP -->
+  <div id="tab-shap" class="tab-pane">
+    {% if data.shap_available %}
+    <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:20px;align-items:start;">
+      <div class="card" style="padding:16px;">
+        <h3 style="margin:0 0 14px;font-size:1rem;">SHAP Feature Importance</h3>
+        <img src="{{ url_for('static', filename='Plot/SHAP/shap_importance.png') }}"
+             alt="SHAP Importance" style="width:100%;border-radius:6px;border:1px solid var(--border);">
+      </div>
+      <div class="card" style="padding:16px;">
+        <h3 style="margin:0 0 14px;font-size:1rem;">Mean |SHAP| per Feature</h3>
+        <table style="width:100%;font-size:0.85rem;border-collapse:collapse;">
+          <thead>
+            <tr style="border-bottom:2px solid var(--border);">
+              <th style="padding:6px 8px;text-align:left;color:var(--slate-gray);font-size:0.75rem;">Feature</th>
+              <th style="padding:6px 8px;text-align:right;color:var(--slate-gray);font-size:0.75rem;">Mean |SHAP|</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in data.shap_data[:10] %}
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:6px 8px;">{{ item.feature }}</td>
+              <td style="padding:6px 8px;text-align:right;font-weight:600;color:#F59E0B;">{{ item.importance }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% else %}
+    <div class="card" style="padding:28px;text-align:center;border:2px dashed var(--border);">
+      <div style="font-size:2rem;margin-bottom:12px;">📦</div>
+      <h3 style="margin:0 0 8px;">SHAP library not installed</h3>
+      <p style="color:var(--slate-gray);font-size:0.9rem;margin-bottom:16px;">
+        Install SHAP to enable per-sample model explanations.
+      </p>
+      <code style="display:inline-block;background:var(--surface-2,#F1F5F9);padding:8px 16px;border-radius:6px;font-size:0.9rem;">
+        pip install shap
+      </code>
+    </div>
+    {% endif %}
+    <div class="card" style="margin-top:16px;padding:16px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.2);">
+      <h4 style="margin:0 0 8px;color:#F59E0B;">What SHAP Adds</h4>
+      <p style="font-size:0.88rem;color:var(--slate-gray);margin:0;">
+        SHAP (SHapley Additive exPlanations) gives <strong>per-sample explanations</strong> — for any individual student, you can see exactly how much each feature pushed the prediction toward "Placed" or "Not Placed". MDI and Permutation Importance only give global averages.
+      </p>
+    </div>
+  </div>
+</div>
+
+{% else %}
+<div class="card" style="padding:32px;text-align:center;color:var(--slate-gray);">
+  <p>Dataset not loaded. Please ensure the CSV is available.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Tab switching
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.target;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(target).classList.add('active');
+    });
+  });
+</script>
+{% endblock %}

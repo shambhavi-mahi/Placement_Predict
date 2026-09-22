@@ -16,6 +16,10 @@ SPLITS_DIR = os.path.join(BASE_DIR, "data", "splits")
 PLOTS_DIR    = os.path.join(BASE_DIR, "Dashboard", "Plot")
 LOGISTIC_DIR = os.path.join(BASE_DIR, "Dashboard", "Plot", "Logistic")
 DECISION_TREE_DIR = os.path.join(BASE_DIR, "Dashboard", "Plot", "DecisionTree")
+COEFFICIENTS_DIR  = os.path.join(BASE_DIR, "Dashboard", "Plot", "Coefficients")
+SHAP_DIR          = os.path.join(BASE_DIR, "Dashboard", "Plot", "SHAP")
+KMEANS_DIR        = os.path.join(BASE_DIR, "Dashboard", "Plot", "KMeans")
+HIERARCHICAL_DIR  = os.path.join(BASE_DIR, "Dashboard", "Plot", "Hierarchical")
 
 # Reports
 REPORTS_DIR    = os.path.join(BASE_DIR, "Output", "Report")

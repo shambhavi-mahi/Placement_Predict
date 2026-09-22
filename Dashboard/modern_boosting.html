@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Module 3 · Modern Boosted Trees{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Modern Boosted Trees</h1>
+  <p class="page-subtitle">
+    Benchmark <strong>sklearn GradientBoosting</strong>, <strong>XGBoost</strong>, and <strong>LightGBM</strong>
+    — three generations of boosted tree implementations — on the same placement dataset split.
+    Discover how regularization, column subsampling, and leaf-wise growth change performance.
+  </p>
+</div>
+
+{% if data %}
+
+<!-- Dataset strip -->
+<div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 1.5rem;">
+  <div class="kpi-card">
+    <div class="kpi-label">Training Samples</div>
+    <div class="kpi-value">{{ data.n_train }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Validation Samples</div>
+    <div class="kpi-value">{{ data.n_val }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Feature Count</div>
+    <div class="kpi-value">{{ data.n_features }}</div>
+  </div>
+</div>
+
+<!-- ── 3 Model Cards ──────────────────────────────────────────────── -->
+{% if data.results %}
+{% set lib_colors = {
+  'scikit-learn': ('#EFF6FF', '#2563EB', '#1E40AF'),
+  'xgboost':      ('#FEF3C7', '#F59E0B', '#92400E'),
+  'lightgbm':     ('#ECFDF5', '#10B981', '#065F46')
+} %}
+
+<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr)); gap:1.25rem; margin-bottom:2rem;">
+  {% for row in data.results %}
+  {% set bg, accent, text = lib_colors.get(row.library, ('#F9FAFB','#6B7280','#374151')) %}
+  <div class="card" style="border-top: 4px solid {{ accent }}; background:{{ bg }};">
+    <!-- Library badge -->
+    <div style="margin-bottom:0.75rem;">
+      <span style="display:inline-block; padding:0.2rem 0.7rem; border-radius:999px;
+        background:{{ accent }}; color:#fff; font-size:0.75rem; font-weight:700; letter-spacing:0.05em;">
+        {{ row.library | upper }}
+      </span>
+    </div>
+    <h3 style="margin:0 0 0.75rem; font-size:1rem; color:{{ text }};">{{ row.name }}</h3>
+
+    {% if row.train_acc is not none %}
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:0.75rem;">
+      <div style="text-align:center; background:rgba(255,255,255,0.7); border-radius:8px; padding:0.5rem;">
+        <div style="font-size:0.72rem; color:#6B7280; text-transform:uppercase; letter-spacing:0.05em;">Train Acc</div>
+        <div style="font-size:1.4rem; font-weight:700; color:{{ text }};">{{ row.train_acc }}%</div>
+      </div>
+      <div style="text-align:center; background:rgba(255,255,255,0.7); border-radius:8px; padding:0.5rem;">
+        <div style="font-size:0.72rem; color:#6B7280; text-transform:uppercase; letter-spacing:0.05em;">Val Acc</div>
+        <div style="font-size:1.4rem; font-weight:700; color:{{ text }};">{{ row.val_acc }}%</div>
+      </div>
+    </div>
+    {% else %}
+    <div style="text-align:center; padding:0.75rem; margin-bottom:0.75rem; border-radius:8px;
+         background:#FEE2E2; color:#991B1B; font-weight:600; font-size:0.85rem;">
+      ⚠️ Not Installed
+    </div>
+    {% endif %}
+
+    <p style="margin:0; font-size:0.83rem; color:#4B5563; line-height:1.5; font-style:italic;">
+      {{ row.note }}
+    </p>
+
+    {% if row.train_acc is none %}
+    <div style="margin-top:0.75rem; padding:0.5rem 0.75rem; background:rgba(0,0,0,0.06);
+         border-radius:6px; font-size:0.78rem; font-family:monospace; color:#374151;">
+      pip install {{ row.library }}
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+<!-- ── Comparison Table ───────────────────────────────────────────── -->
+{% set best_val = [] %}
+{% for row in data.results %}
+  {% if row.val_acc is not none %}
+    {% set _ = best_val.append(row.val_acc) %}
+  {% endif %}
+{% endfor %}
+{% set best_v = best_val | max if best_val else None %}
+
+<div class="card" style="margin-bottom:2rem;">
+  <h3 style="margin-bottom:1rem; color:var(--primary-blue);">Comparison Table</h3>
+  <div style="overflow-x:auto;">
+    <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+      <thead>
+        <tr style="background:var(--primary-blue); color:#fff;">
+          <th style="padding:0.65rem 1rem; text-align:left; border-radius:6px 0 0 0;">Model</th>
+          <th style="padding:0.65rem 1rem; text-align:center;">Library</th>
+          <th style="padding:0.65rem 1rem; text-align:center;">Train Acc %</th>
+          <th style="padding:0.65rem 1rem; text-align:center; border-radius:0 6px 0 0;">Val Acc %</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in data.results %}
+        {% set is_best = (best_v is not none and row.val_acc == best_v) %}
+        <tr style="
+          background: {% if is_best %}linear-gradient(90deg,#FEF9C3,#FEF3C7){% elif loop.index % 2 == 0 %}#F9FAFB{% else %}#ffffff{% endif %};
+          border: {% if is_best %}2px solid #F59E0B{% else %}1px solid #E5E7EB{% endif %};">
+          <td style="padding:0.6rem 1rem; font-weight:{% if is_best %}700{% else %}500{% endif %};">
+            {% if is_best %}⭐ {% endif %}{{ row.name }}
+          </td>
+          <td style="padding:0.6rem 1rem; text-align:center;">
+            <span style="display:inline-block; padding:0.15rem 0.6rem; border-radius:999px; font-size:0.78rem; font-weight:600;
+              background:{% if row.library == 'scikit-learn' %}#DBEAFE{% elif row.library == 'xgboost' %}#FEF3C7{% else %}#D1FAE5{% endif %};
+              color:{% if row.library == 'scikit-learn' %}#1E40AF{% elif row.library == 'xgboost' %}#92400E{% else %}#065F46{% endif %};">
+              {{ row.library }}
+            </span>
+          </td>
+          <td style="padding:0.6rem 1rem; text-align:center;">
+            {% if row.train_acc is not none %}{{ row.train_acc }}%
+            {% else %}<span style="color:#DC2626; font-size:0.8rem;">Not installed</span>{% endif %}
+          </td>
+          <td style="padding:0.6rem 1rem; text-align:center; font-weight:{% if is_best %}700{% else %}400{% endif %};">
+            {% if row.val_acc is not none %}{{ row.val_acc }}%
+            {% else %}<span style="color:#DC2626; font-size:0.8rem;">Not installed</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- ── Why Modern Boosting? ───────────────────────────────────────── -->
+<div class="card" style="background: linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%);
+     border-left: 4px solid #7C3AED;">
+  <h3 style="margin:0 0 1rem; color:#5B21B6;">Why Modern Boosting?</h3>
+  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:1rem;">
+    <div style="background:rgba(255,255,255,0.7); border-radius:10px; padding:1rem;">
+      <div style="font-size:1.5rem; margin-bottom:0.4rem;">🛡️</div>
+      <h4 style="margin:0 0 0.4rem; color:#5B21B6; font-size:0.9rem;">Regularization (XGBoost)</h4>
+      <p style="margin:0; font-size:0.82rem; color:#4B5563; line-height:1.5;">
+        L1 + L2 penalties on leaf weights reduce overfitting — something sklearn GB lacks natively.
+      </p>
+    </div>
+    <div style="background:rgba(255,255,255,0.7); border-radius:10px; padding:1rem;">
+      <div style="font-size:1.5rem; margin-bottom:0.4rem;">🎲</div>
+      <h4 style="margin:0 0 0.4rem; color:#5B21B6; font-size:0.9rem;">Column Subsampling</h4>
+      <p style="margin:0; font-size:0.82rem; color:#4B5563; line-height:1.5;">
+        Random feature selection per tree (like Random Forest) reduces correlation between boosted trees.
+      </p>
+    </div>
+    <div style="background:rgba(255,255,255,0.7); border-radius:10px; padding:1rem;">
+      <div style="font-size:1.5rem; margin-bottom:0.4rem;">🍃</div>
+      <h4 style="margin:0 0 0.4rem; color:#5B21B6; font-size:0.9rem;">Leaf-wise Growth (LightGBM)</h4>
+      <p style="margin:0; font-size:0.82rem; color:#4B5563; line-height:1.5;">
+        Grows the leaf with the highest loss reduction rather than level-by-level, enabling faster convergence.
+      </p>
+    </div>
+  </div>
+</div>
+
+{% else %}
+<div class="card" style="text-align:center; padding:3rem; color:#6B7280;">
+  <span style="font-size:3rem;">📭</span>
+  <p style="margin-top:1rem; font-size:1.1rem;">No boosting data available. Run the analysis first.</p>
+</div>
+{% endif %}
+
+{% endblock %}

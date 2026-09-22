@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Module 4 · Hierarchical Clustering{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:1.5rem;">
+  <h1 style="font-size:1.75rem;font-weight:700;color:#1E3A5F;margin:0 0 .35rem;">
+    Hierarchical Clustering
+  </h1>
+  <p style="color:#64748B;margin:0;">
+    Agglomerative methods build a cluster tree (dendrogram) bottom-up —
+    no need to fix K upfront. Compare Ward, Complete and Average linkages.
+  </p>
+</div>
+
+{% if data %}
+
+{# ── KPI Cards ──────────────────────────────────────────────────────────── #}
+<div class="kpi-grid" style="margin-bottom:1.75rem;">
+
+  <div class="kpi-card">
+    <div class="kpi-label">Best Linkage Method</div>
+    <div class="kpi-value" style="color:#2563EB;">{{ data.best.method }}</div>
+    <div class="kpi-sub">Highest silhouette linkage</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-label">Best N Clusters</div>
+    <div class="kpi-value" style="color:#10B981;">{{ data.best.n_clusters }}</div>
+    <div class="kpi-sub">Optimal cut of the dendrogram</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-label">Best Silhouette Score</div>
+    <div class="kpi-value" style="color:#F59E0B;">{{ data.best.silhouette }}</div>
+    <div class="kpi-sub">Cluster separation quality (−1 → 1)</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-label">N Samples</div>
+    <div class="kpi-value" style="color:#1E3A5F;">{{ data.n_samples }}</div>
+    <div class="kpi-sub">Rows used ({{ data.sample_size }} for dendrogram)</div>
+  </div>
+
+</div>
+
+{# ── Dendrogram ──────────────────────────────────────────────────────────── #}
+<div class="card" style="margin-bottom:1.75rem;">
+  <div class="card-header" style="font-weight:600;color:#1E3A5F;padding:.9rem 1.25rem;
+       border-bottom:1px solid #E2E8F0;">
+    Dendrogram — Ward Linkage ({{ data.sample_size }}-sample)
+  </div>
+  <div style="padding:1.25rem;text-align:center;">
+    <img src="{{ url_for('static', filename='Plot/Hierarchical/dendrogram.png') }}"
+         alt="Hierarchical Dendrogram"
+         style="max-width:100%;border-radius:6px;">
+    <p style="margin:.75rem 0 0;font-size:.82rem;color:#64748B;">
+      <strong>How to read:</strong> Each leaf is a student; branches merge as similarity
+      increases. <em>Horizontal cuts</em> in the dendrogram determine the number of
+      clusters — cut higher for fewer, coarser groups; lower for more, finer groups.
+      The coloured threshold line marks the level used for the best configuration.
+    </p>
+  </div>
+</div>
+
+{# ── Linkage Comparison Table ────────────────────────────────────────────── #}
+<div class="card" style="margin-bottom:1.75rem;">
+  <div class="card-header" style="font-weight:600;color:#1E3A5F;padding:.9rem 1.25rem;
+       border-bottom:1px solid #E2E8F0;">
+    Linkage Method Comparison
+  </div>
+  <div style="padding:1.25rem;overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:.875rem;">
+      <thead>
+        <tr style="background:#F1F5F9;">
+          <th style="padding:.6rem .85rem;text-align:left;color:#475569;font-weight:600;
+                     border-bottom:2px solid #CBD5E1;">Method</th>
+          <th style="padding:.6rem .85rem;text-align:center;color:#475569;font-weight:600;
+                     border-bottom:2px solid #CBD5E1;">N Clusters</th>
+          <th style="padding:.6rem .85rem;text-align:right;color:#475569;font-weight:600;
+                     border-bottom:2px solid #CBD5E1;">Silhouette Score</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in data.results %}
+        {% set is_best = (r.method == data.best.method and r.n_clusters == data.best.n_clusters) %}
+        <tr style="border-bottom:1px solid #E2E8F0;
+                   {% if is_best %}background:#ECFDF5;font-weight:700;
+                   {% elif loop.index is odd %}background:#FAFBFF;{% endif %}">
+          <td style="padding:.6rem .85rem;
+                     {% if is_best %}color:#059669;{% else %}color:#334155;{% endif %}">
+            {{ r.method }}
+            {% if is_best %}
+            <span style="margin-left:.4rem;font-size:.75rem;background:#10B981;color:#fff;
+                         padding:.1rem .45rem;border-radius:999px;">Best</span>
+            {% endif %}
+          </td>
+          <td style="padding:.6rem .85rem;text-align:center;">{{ r.n_clusters }}</td>
+          <td style="padding:.6rem .85rem;text-align:right;">
+            {{ r.silhouette }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# ── Cluster Profiles Table ──────────────────────────────────────────────── #}
+<div class="card" style="margin-bottom:1.75rem;">
+  <div class="card-header" style="font-weight:600;color:#1E3A5F;padding:.9rem 1.25rem;
+       border-bottom:1px solid #E2E8F0;">
+    Cluster Profiles — Best Configuration
+    ({{ data.best.method }}, K={{ data.best.n_clusters }})
+  </div>
+  <div style="padding:1.25rem;overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:.875rem;">
+      <thead>
+        <tr style="background:#F1F5F9;">
+          <th style="padding:.6rem .85rem;text-align:left;color:#475569;font-weight:600;
+                     border-bottom:2px solid #CBD5E1;">Cluster</th>
+          <th style="padding:.6rem .85rem;text-align:right;color:#475569;font-weight:600;
+                     border-bottom:2px solid #CBD5E1;">Size</th>
+          <th style="padding:.6rem .85rem;text-align:right;color:#475569;font-weight:600;
+                     border-bottom:2px solid #CBD5E1;">%</th>
+          {% for col in data.feat_cols[:5] %}
+          <th style="padding:.6rem .85rem;text-align:right;color:#475569;font-weight:600;
+                     border-bottom:2px solid #CBD5E1;">{{ col }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in data.profiles %}
+        <tr style="border-bottom:1px solid #E2E8F0;
+                   {% if loop.index is odd %}background:#FAFBFF;{% endif %}">
+          <td style="padding:.6rem .85rem;font-weight:600;color:#2563EB;">
+            Cluster {{ p.cluster }}
+          </td>
+          <td style="padding:.6rem .85rem;text-align:right;">{{ p.size }}</td>
+          <td style="padding:.6rem .85rem;text-align:right;">{{ p.pct }}%</td>
+          {% for col in data.feat_cols[:5] %}
+          <td style="padding:.6rem .85rem;text-align:right;">
+            {{ p[col] if p[col] is defined else '—' }}
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# ── K-Means vs Hierarchical Explanation ─────────────────────────────────── #}
+<div class="card" style="border-left:4px solid #8B5CF6;background:#F5F3FF;
+     margin-bottom:1.75rem;">
+  <div style="padding:1.1rem 1.25rem;">
+    <h3 style="margin:0 0 .65rem;font-size:1rem;font-weight:700;color:#5B21B6;">
+      K-Means vs Hierarchical — When to Use Which?
+    </h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;font-size:.875rem;">
+
+      <div style="background:#EDE9FE;border-radius:8px;padding:.85rem 1rem;">
+        <strong style="color:#6D28D9;">K-Means</strong>
+        <ul style="margin:.45rem 0 0 1.1rem;line-height:1.8;color:#3B1E8E;">
+          <li>Requires specifying <em>K</em> upfront.</li>
+          <li>Fast — scales to millions of rows.</li>
+          <li>Assumes spherical, similarly-sized clusters.</li>
+          <li>Sensitive to feature scale → always standardise.</li>
+          <li>Use Elbow / Silhouette to pick K.</li>
+        </ul>
+      </div>
+
+      <div style="background:#DDD6FE;border-radius:8px;padding:.85rem 1rem;">
+        <strong style="color:#5B21B6;">Hierarchical</strong>
+        <ul style="margin:.45rem 0 0 1.1rem;line-height:1.8;color:#3B1E8E;">
+          <li>Builds a <em>full tree</em> — cut at any level post-hoc.</li>
+          <li>No need to fix K before fitting.</li>
+          <li>Dendrogram reveals multi-level structure.</li>
+          <li>Memory-intensive — subsampling needed for large N.</li>
+          <li>Ward linkage usually gives compact clusters.</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{% else %}
+<div class="card" style="padding:2rem;text-align:center;color:#64748B;">
+  <p>No clustering data available. Run the Hierarchical module to generate results.</p>
+</div>
+{% endif %}
+{% endblock %}

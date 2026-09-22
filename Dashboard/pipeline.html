@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header" style="margin-bottom:1.5rem;">
+  <h1 style="font-size:1.6rem;font-weight:700;color:#1E293B;margin:0 0 0.3rem;">
+    Module 2 · End-to-End Pipeline
+  </h1>
+  <p style="color:#64748B;margin:0;font-size:0.95rem;">
+    Chain preprocessing and modelling into a single <code>sklearn.Pipeline</code> — no leakage, no boilerplate.
+  </p>
+</div>
+
+{% if data %}
+
+<!-- ── Pipeline Diagram ───────────────────────────────────────────────── -->
+<div class="card" style="padding:1.5rem;margin-bottom:1.5rem;">
+  <h3 style="font-size:0.95rem;font-weight:700;color:#1E293B;margin:0 0 1rem;">🔗 Pipeline Flow</h3>
+  <div style="display:flex;align-items:center;gap:0;flex-wrap:wrap;justify-content:center;">
+
+    <!-- Raw Data -->
+    <div style="background:#F8FAFC;border:2px dashed #CBD5E1;border-radius:10px;padding:14px 20px;text-align:center;min-width:110px;">
+      <div style="font-size:1.4rem;">📂</div>
+      <div style="font-size:0.8rem;font-weight:700;color:#475569;margin-top:4px;">Raw Features</div>
+      <div style="font-size:0.72rem;color:#94A3B8;">X_train</div>
+    </div>
+
+    <!-- Arrow -->
+    <div style="font-size:1.5rem;color:#94A3B8;padding:0 6px;">→</div>
+
+    <!-- Scaler -->
+    <div style="background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border:2px solid #93C5FD;border-radius:10px;padding:14px 20px;text-align:center;min-width:130px;">
+      <div style="font-size:1.4rem;">⚖️</div>
+      <div style="font-size:0.8rem;font-weight:700;color:#1D4ED8;margin-top:4px;">StandardScaler</div>
+      <div style="font-size:0.72rem;color:#3B82F6;">Step 1: scaler</div>
+    </div>
+
+    <!-- Arrow -->
+    <div style="font-size:1.5rem;color:#94A3B8;padding:0 6px;">→</div>
+
+    <!-- Model -->
+    <div style="background:linear-gradient(135deg,#F0FDF4,#DCFCE7);border:2px solid #6EE7B7;border-radius:10px;padding:14px 20px;text-align:center;min-width:130px;">
+      <div style="font-size:1.4rem;">🧠</div>
+      <div style="font-size:0.8rem;font-weight:700;color:#065F46;margin-top:4px;">ML Model</div>
+      <div style="font-size:0.72rem;color:#10B981;">Step 2: model</div>
+    </div>
+
+    <!-- Arrow -->
+    <div style="font-size:1.5rem;color:#94A3B8;padding:0 6px;">→</div>
+
+    <!-- Output -->
+    <div style="background:linear-gradient(135deg,#FFF7ED,#FFEDD5);border:2px solid #FED7AA;border-radius:10px;padding:14px 20px;text-align:center;min-width:110px;">
+      <div style="font-size:1.4rem;">🏷️</div>
+      <div style="font-size:0.8rem;font-weight:700;color:#C2410C;margin-top:4px;">Predictions</div>
+      <div style="font-size:0.72rem;color:#F97316;">ŷ</div>
+    </div>
+
+  </div>
+
+  <div style="margin-top:1.25rem;display:flex;gap:1.5rem;flex-wrap:wrap;border-top:1px solid #E2E8F0;padding-top:1rem;">
+    {% for key, desc in data.step_descriptions.items() %}
+    <div style="display:flex;align-items:flex-start;gap:8px;">
+      <code style="background:#EFF6FF;color:#2563EB;padding:2px 8px;border-radius:4px;font-size:0.78rem;white-space:nowrap;">{{ key }}</code>
+      <span style="font-size:0.82rem;color:#475569;">{{ desc }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ── Stats Bar ──────────────────────────────────────────────────────── -->
+<div class="kpi-grid" style="margin-bottom:1.5rem;">
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#2563EB,#1D4ED8);">🔢</div>
+    <div class="kpi-label">Features</div>
+    <div class="kpi-value">{{ data.n_features }}</div>
+    <div style="font-size:0.78rem;color:#64748B;">Numeric columns</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#10B981,#059669);">🏋️</div>
+    <div class="kpi-label">Train Samples</div>
+    <div class="kpi-value">{{ data.n_train }}</div>
+    <div style="font-size:0.78rem;color:#64748B;">80% split</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#F59E0B,#D97706);">🔍</div>
+    <div class="kpi-label">Val Samples</div>
+    <div class="kpi-value">{{ data.n_val }}</div>
+    <div style="font-size:0.78rem;color:#64748B;">20% split</div>
+  </div>
+</div>
+
+<!-- ── Results Table ──────────────────────────────────────────────────── -->
+<div class="card" style="padding:1.5rem;margin-bottom:1.5rem;overflow-x:auto;">
+  <h3 style="font-size:0.95rem;font-weight:700;color:#1E293B;margin:0 0 1rem;">📊 Pipeline Comparison</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:0.88rem;">
+    <thead>
+      <tr style="background:#F8FAFC;border-bottom:2px solid #E2E8F0;">
+        <th style="text-align:left;padding:10px 14px;color:#64748B;font-weight:600;text-transform:uppercase;font-size:0.75rem;letter-spacing:.05em;">Pipeline</th>
+        <th style="text-align:left;padding:10px 14px;color:#64748B;font-weight:600;text-transform:uppercase;font-size:0.75rem;letter-spacing:.05em;">Steps</th>
+        <th style="text-align:center;padding:10px 14px;color:#64748B;font-weight:600;text-transform:uppercase;font-size:0.75rem;letter-spacing:.05em;">Train Acc</th>
+        <th style="text-align:center;padding:10px 14px;color:#64748B;font-weight:600;text-transform:uppercase;font-size:0.75rem;letter-spacing:.05em;">Val Acc</th>
+        <th style="text-align:center;padding:10px 14px;color:#64748B;font-weight:600;text-transform:uppercase;font-size:0.75rem;letter-spacing:.05em;">Overfit?</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in data.results %}
+      {% set gap = r.train_acc - r.val_acc %}
+      <tr style="border-bottom:1px solid #F1F5F9;transition:background .15s;" onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background=''">
+        <td style="padding:12px 14px;font-weight:700;color:#1E293B;">{{ r.name }}</td>
+        <td style="padding:12px 14px;">
+          {% for step in r.steps %}
+          <code style="background:#EFF6FF;color:#2563EB;padding:2px 7px;border-radius:4px;font-size:0.75rem;margin-right:4px;">{{ step }}</code>
+          {% endfor %}
+        </td>
+        <td style="padding:12px 14px;text-align:center;font-weight:600;color:#1E293B;">{{ r.train_acc }}%</td>
+        <td style="padding:12px 14px;text-align:center;font-weight:700;color:#2563EB;">{{ r.val_acc }}%</td>
+        <td style="padding:12px 14px;text-align:center;">
+          {% if gap > 5 %}
+          <span style="background:#FEE2E2;color:#B91C1C;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:600;">Yes (+{{ gap | round(1) }}pp)</span>
+          {% else %}
+          <span style="background:#D1FAE5;color:#065F46;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:600;">No</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- ── Why Pipelines Prevent Leakage ─────────────────────────────────── -->
+<div class="card" style="padding:1.5rem;">
+  <h3 style="font-size:0.95rem;font-weight:700;color:#1E293B;margin:0 0 0.75rem;">🛡️ Why Pipelines Prevent Leakage</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+    <div>
+      <p style="font-size:0.88rem;color:#475569;line-height:1.65;margin:0 0 0.75rem;">
+        When you call <code>pipeline.fit(X_train, y_train)</code>, <strong>every step</strong>
+        inside the pipeline is fitted exclusively on the training data. The scaler learns the
+        training mean and standard deviation — it never sees validation or test values.
+      </p>
+      <p style="font-size:0.88rem;color:#475569;line-height:1.65;margin:0;">
+        At inference time, <code>pipeline.predict(X_val)</code> applies the already-fitted
+        transformers before passing data to the model. No information leaks across the split boundary.
+      </p>
+    </div>
+    <div style="background:#F8FAFC;border-radius:8px;padding:1rem;font-size:0.82rem;font-family:monospace;color:#1E293B;line-height:1.8;">
+      <span style="color:#64748B;"># ✅ Safe — leakage impossible</span><br>
+      pipe = Pipeline([<br>
+      &nbsp;&nbsp;('scaler', StandardScaler()),<br>
+      &nbsp;&nbsp;('model', LogisticRegression())<br>
+      ])<br><br>
+      pipe.fit(X_train, y_train)<br>
+      <span style="color:#64748B;"># scaler fitted on X_train only</span><br><br>
+      preds = pipe.predict(X_val)<br>
+      <span style="color:#64748B;"># scaler.transform applied automatically</span>
+    </div>
+  </div>
+</div>
+
+{% else %}
+<div class="card" style="padding:2rem;text-align:center;color:#94A3B8;">
+  <p>⚠️ Pipeline data not available. Ensure the dataset is loaded correctly.</p>
+</div>
+{% endif %}
+{% endblock %}

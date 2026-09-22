@@ -16,6 +16,38 @@
 
   <!-- Stylesheet -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  <style>
+    /* Module sidebar styles */
+    .sidebar-module-group { margin-bottom: 4px; }
+    .sidebar-module-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 14px; cursor: pointer; border-radius: 8px;
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.07em;
+      text-transform: uppercase; color: #64748B;
+      user-select: none; transition: background 0.15s;
+    }
+    .sidebar-module-header:hover { background: rgba(37,99,235,0.06); }
+    .sidebar-module-header .module-label { color: #2563EB; }
+    .sidebar-module-chevron { font-size: 0.6rem; transition: transform 0.2s; }
+    .sidebar-module-group.collapsed .sidebar-module-chevron { transform: rotate(-90deg); }
+    .sidebar-module-items { overflow: hidden; transition: max-height 0.25s ease; }
+    .sidebar-module-group.collapsed .sidebar-module-items { max-height: 0 !important; }
+    .menu-btn-sub {
+      display: flex; align-items: center; gap: 9px;
+      padding: 6px 14px 6px 28px;
+      border-radius: 8px; font-size: 0.82rem; font-weight: 500;
+      color: var(--text-muted, #64748B); text-decoration: none;
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .menu-btn-sub:hover { background: rgba(37,99,235,0.08); color: #2563EB; }
+    .menu-btn-sub.active { background: rgba(37,99,235,0.12); color: #2563EB; font-weight: 600; }
+    .menu-btn-sub .topic-num {
+      font-size: 0.68rem; font-weight: 700; color: #94A3B8;
+      min-width: 18px; text-align: right;
+    }
+  </style>
 </head>
 <body>
 
@@ -61,9 +93,7 @@
   <!-- Left Sidebar -->
   <aside class="sidebar">
 
-    <span class="sidebar-section-label">Explore</span>
-
-    <a href="{{ url_for('home') }}" class="menu-btn {% if request.endpoint == 'home' %}active{% endif %}">
+    <a href="{{ url_for('home') }}" class="menu-btn {% if request.endpoint == 'home' %}active{% endif %}" style="margin-bottom:4px;">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
         <polyline points="9 22 9 12 15 12 15 22"/>
@@ -71,63 +101,117 @@
       Home
     </a>
 
-    <a href="{{ url_for('load_page') }}" class="menu-btn {% if request.endpoint == 'load_page' %}active{% endif %}">
-      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
-        <polyline points="7 10 12 15 17 10"/>
-        <line x1="12" y1="15" x2="12" y2="3"/>
-      </svg>
-      Load Data
-    </a>
+    <!-- ── Module 1: Foundations ───────────────────── -->
+    <div class="sidebar-module-group" id="mod1">
+      <div class="sidebar-module-header" onclick="toggleModule('mod1')">
+        <span><span class="module-label">Module 1</span> · Foundations</span>
+        <span class="sidebar-module-chevron">▼</span>
+      </div>
+      <div class="sidebar-module-items">
+        <a href="{{ url_for('load_page') }}" class="menu-btn-sub {% if request.endpoint == 'load_page' %}active{% endif %}">
+          <span class="topic-num">1</span> Data Ingestion
+        </a>
+        <a href="{{ url_for('baseline_page') }}" class="menu-btn-sub {% if request.endpoint == 'baseline_page' %}active{% endif %}">
+          <span class="topic-num">2</span> Baseline Model & Serving
+        </a>
+        <a href="{{ url_for('eda_page') }}" class="menu-btn-sub {% if request.endpoint == 'eda_page' %}active{% endif %}">
+          <span class="topic-num">3</span> EDA, First Pass
+        </a>
+        <a href="{{ url_for('graphs_page') }}" class="menu-btn-sub {% if request.endpoint == 'graphs_page' %}active{% endif %}">
+          <span class="topic-num">4</span> Data Cleaning (Graphs)
+        </a>
+      </div>
+    </div>
 
-    <a href="{{ url_for('eda_page') }}" class="menu-btn {% if request.endpoint == 'eda_page' %}active{% endif %}">
-      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="3" y="3" width="18" height="18" rx="2"/>
-        <path d="M3 9h18M9 21V9"/>
-      </svg>
-      EDA (Stats)
-    </a>
+    <!-- ── Module 2: Linear Models ────────────────── -->
+    <div class="sidebar-module-group" id="mod2">
+      <div class="sidebar-module-header" onclick="toggleModule('mod2')">
+        <span><span class="module-label">Module 2</span> · Linear Models</span>
+        <span class="sidebar-module-chevron">▼</span>
+      </div>
+      <div class="sidebar-module-items">
+        <a href="{{ url_for('splitting_page') }}" class="menu-btn-sub {% if request.endpoint == 'splitting_page' %}active{% endif %}">
+          <span class="topic-num">5</span> Train/Val/Test Splitting
+        </a>
+        <a href="{{ url_for('regression_page') }}" class="menu-btn-sub {% if request.endpoint == 'regression_page' %}active{% endif %}">
+          <span class="topic-num">6</span> Linear Regression Basics
+        </a>
+        <a href="{{ url_for('feature_engg_page') }}" class="menu-btn-sub {% if request.endpoint == 'feature_engg_page' %}active{% endif %}">
+          <span class="topic-num">7</span> Feature Scaling
+        </a>
+        <a href="{{ url_for('feature_engg_page') }}" class="menu-btn-sub {% if request.endpoint == 'feature_engg_page' and request.args.get('tab') == 'encoding' %}active{% endif %}">
+          <span class="topic-num">8</span> Encoding & Imputation
+        </a>
+        <a href="{{ url_for('regression_page') }}" class="menu-btn-sub">
+          <span class="topic-num">9</span> Logistic Regression
+        </a>
+        <a href="{{ url_for('regression_page') }}" class="menu-btn-sub">
+          <span class="topic-num">10</span> Regularization
+        </a>
+        <a href="{{ url_for('pipeline_page') }}" class="menu-btn-sub {% if request.endpoint == 'pipeline_page' %}active{% endif %}">
+          <span class="topic-num">11</span> End-to-End Pipeline
+        </a>
+        <a href="{{ url_for('coefficients_page') }}" class="menu-btn-sub {% if request.endpoint == 'coefficients_page' %}active{% endif %}">
+          <span class="topic-num">12</span> Model Coefficients
+        </a>
+      </div>
+    </div>
 
-    <a href="{{ url_for('graphs_page') }}" class="menu-btn {% if request.endpoint == 'graphs_page' %}active{% endif %}">
-      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="18" y1="20" x2="18" y2="10"/>
-        <line x1="12" y1="20" x2="12" y2="4"/>
-        <line x1="6"  y1="20" x2="6"  y2="14"/>
-      </svg>
-      Graphs
-    </a>
+    <!-- ── Module 3: Tree-Based Models ───────────── -->
+    <div class="sidebar-module-group" id="mod3">
+      <div class="sidebar-module-header" onclick="toggleModule('mod3')">
+        <span><span class="module-label">Module 3</span> · Tree-Based Models</span>
+        <span class="sidebar-module-chevron">▼</span>
+      </div>
+      <div class="sidebar-module-items">
+        <a href="{{ url_for('decision_tree_page') }}" class="menu-btn-sub {% if request.endpoint == 'decision_tree_page' %}active{% endif %}">
+          <span class="topic-num">13</span> Decision Trees
+        </a>
+        <a href="{{ url_for('pruning_page') }}" class="menu-btn-sub {% if request.endpoint == 'pruning_page' %}active{% endif %}">
+          <span class="topic-num">14</span> Pruning & Splitting Criteria
+        </a>
+        <a href="{{ url_for('decision_tree_page') }}" class="menu-btn-sub">
+          <span class="topic-num">15</span> Bias-Variance Tradeoff
+        </a>
+        <a href="{{ url_for('decision_tree_page') }}" class="menu-btn-sub">
+          <span class="topic-num">16</span> Random Forests & Bagging
+        </a>
+        <a href="{{ url_for('decision_tree_page') }}" class="menu-btn-sub">
+          <span class="topic-num">17</span> Boosting Basics
+        </a>
+        <a href="{{ url_for('modern_boosting_page') }}" class="menu-btn-sub {% if request.endpoint == 'modern_boosting_page' %}active{% endif %}">
+          <span class="topic-num">18</span> Modern Boosted Trees
+        </a>
+        <a href="{{ url_for('shap_importance_page') }}" class="menu-btn-sub {% if request.endpoint == 'shap_importance_page' %}active{% endif %}">
+          <span class="topic-num">19</span> Feature Importance & SHAP
+        </a>
+        <a href="{{ url_for('compare_models_page') }}" class="menu-btn-sub {% if request.endpoint == 'compare_models_page' %}active{% endif %}">
+          <span class="topic-num">20</span> Comparing Model Tracks
+        </a>
+      </div>
+    </div>
 
-    <span class="sidebar-section-label">Model</span>
-
-    <a href="{{ url_for('feature_engg_page') }}" class="menu-btn {% if request.endpoint == 'feature_engg_page' %}active{% endif %}">
-      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-      </svg>
-      Feature Engg
-    </a>
-
-    <a href="{{ url_for('regression_page') }}" class="menu-btn {% if request.endpoint == 'regression_page' %}active{% endif %}">
-      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
-        <polyline points="16 7 22 7 22 13"/>
-      </svg>
-      Regression
-    </a>
-
-    <a href="{{ url_for('decision_tree_page') }}" class="menu-btn {% if request.endpoint == 'decision_tree_page' %}active{% endif %}">
-      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M12 22V8"/>
-        <path d="m5 15 7-7 7 7"/>
-        <path d="M2 22h20"/>
-      </svg>
-      Trees & Ensembles
-    </a>
+    <!-- ── Module 4: Unsupervised Learning ────────── -->
+    <div class="sidebar-module-group" id="mod4">
+      <div class="sidebar-module-header" onclick="toggleModule('mod4')">
+        <span><span class="module-label">Module 4</span> · Unsupervised</span>
+        <span class="sidebar-module-chevron">▼</span>
+      </div>
+      <div class="sidebar-module-items">
+        <a href="{{ url_for('kmeans_page') }}" class="menu-btn-sub {% if request.endpoint == 'kmeans_page' %}active{% endif %}">
+          <span class="topic-num">21</span> K-Means Clustering
+        </a>
+        <a href="{{ url_for('hierarchical_page') }}" class="menu-btn-sub {% if request.endpoint == 'hierarchical_page' %}active{% endif %}">
+          <span class="topic-num">24</span> Hierarchical Clustering
+        </a>
+      </div>
+    </div>
 
     <!-- Sidebar brand footer -->
     <div class="sidebar-brand-card">
       <span class="sbc-icon">🎓</span>
       <div class="sbc-title">PlacementPredict</div>
-      <div class="sbc-sub">Flask · Pandas · NumPy</div>
+      <div class="sbc-sub">Flask · Pandas · scikit-learn</div>
     </div>
 
   </aside>
@@ -144,7 +228,7 @@
   <p><strong>PlacementPredict</strong> · Machine Learning Analytics Dashboard · Built with Flask &amp; Python</p>
 </footer>
 
-<!-- Live clock + dark mode + Lucide -->
+<!-- Live clock + dark mode + Lucide + sidebar toggle -->
 <script>
   // Live clock
   (function () {
@@ -183,6 +267,43 @@
       const next = current === 'dark' ? 'light' : 'dark';
       localStorage.setItem('pp-theme', next);
       apply(next);
+    });
+  })();
+
+  // Module sidebar toggle
+  function toggleModule(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const isCollapsed = el.classList.contains('collapsed');
+    el.classList.toggle('collapsed', !isCollapsed);
+    // persist state
+    try {
+      const state = JSON.parse(localStorage.getItem('pp-sidebar') || '{}');
+      state[id] = !isCollapsed;
+      localStorage.setItem('pp-sidebar', JSON.stringify(state));
+    } catch(e) {}
+  }
+
+  // Restore sidebar state & auto-expand active module
+  (function() {
+    const groups = ['mod1','mod2','mod3','mod4'];
+    let state = {};
+    try { state = JSON.parse(localStorage.getItem('pp-sidebar') || '{}'); } catch(e) {}
+
+    groups.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const hasActive = el.querySelector('.active');
+      const savedCollapsed = state[id];
+      // Expand if has active link, otherwise respect saved state
+      if (hasActive) {
+        el.classList.remove('collapsed');
+      } else if (savedCollapsed === true) {
+        el.classList.add('collapsed');
+      }
+      // Set max-height for transition
+      const items = el.querySelector('.sidebar-module-items');
+      if (items) items.style.maxHeight = items.scrollHeight + 'px';
     });
   })();
 

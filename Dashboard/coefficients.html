@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header" style="margin-bottom:1.5rem;">
+  <h1 style="font-size:1.6rem;font-weight:700;color:#1E293B;margin:0 0 0.3rem;">
+    Module 2 · Interpreting Model Coefficients
+  </h1>
+  <p style="color:#64748B;margin:0;font-size:0.95rem;">
+    Logistic regression coefficients tell you how each feature shifts the log-odds of placement.
+  </p>
+</div>
+
+{% if data %}
+
+<!-- ── KPI Row ─────────────────────────────────────────────────────────── -->
+<div class="kpi-grid" style="margin-bottom:1.5rem;">
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#2563EB,#1D4ED8);">🎯</div>
+    <div class="kpi-label">Val Accuracy</div>
+    <div class="kpi-value">{{ data.val_acc }}%</div>
+    <div style="font-size:0.78rem;color:#64748B;">Logistic Regression</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#8B5CF6,#7C3AED);">🔢</div>
+    <div class="kpi-label">Features</div>
+    <div class="kpi-value">{{ data.n_features }}</div>
+    <div style="font-size:0.78rem;color:#64748B;">Numeric predictors</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#F59E0B,#D97706);">⚖️</div>
+    <div class="kpi-label">Intercept (β₀)</div>
+    <div class="kpi-value" style="font-size:1.3rem;">{{ data.intercept }}</div>
+    <div style="font-size:0.78rem;color:#64748B;">Log-odds when all features = 0</div>
+  </div>
+
+  {% if data.coef_data %}
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#10B981,#059669);">🏆</div>
+    <div class="kpi-label">Top Positive Feature</div>
+    <div class="kpi-value" style="font-size:1rem;color:#10B981;">{{ data.coef_data[0].feature }}</div>
+    <div style="font-size:0.78rem;color:#64748B;">β = {{ data.coef_data[0].coef }}</div>
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- ── Coefficient Bar Chart ──────────────────────────────────────────── -->
+{% if data.has_plot %}
+<div class="card" style="padding:1.5rem;margin-bottom:1.5rem;text-align:center;">
+  <h3 style="font-size:0.95rem;font-weight:700;color:#1E293B;margin:0 0 1rem;text-align:left;">
+    📊 Coefficient Bar Chart
+  </h3>
+  <img src="{{ url_for('static', filename='../Plot/Coefficients/coefficients_bar.png') }}"
+       onerror="this.src='{{ url_for('static', filename='Plot/Coefficients/coefficients_bar.png') }}'"
+       alt="Coefficient Bar Chart"
+       style="max-width:100%;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+  <p style="font-size:0.8rem;color:#94A3B8;margin:0.75rem 0 0;">
+    Green = positive predictor (increases placement odds) &nbsp;|&nbsp; Red = negative predictor (decreases odds)
+  </p>
+</div>
+{% endif %}
+
+<!-- ── Coefficient Table ──────────────────────────────────────────────── -->
+<div class="card" style="padding:1.5rem;margin-bottom:1.5rem;overflow-x:auto;">
+  <h3 style="font-size:0.95rem;font-weight:700;color:#1E293B;margin:0 0 1rem;">📋 Full Coefficient Table</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:0.86rem;">
+    <thead>
+      <tr style="background:#F8FAFC;border-bottom:2px solid #E2E8F0;">
+        <th style="text-align:left;padding:10px 14px;color:#64748B;font-weight:600;text-transform:uppercase;font-size:0.74rem;letter-spacing:.05em;">Feature</th>
+        <th style="text-align:center;padding:10px 14px;color:#64748B;font-weight:600;text-transform:uppercase;font-size:0.74rem;letter-spacing:.05em;">Coefficient (β)</th>
+        <th style="text-align:center;padding:10px 14px;color:#64748B;font-weight:600;text-transform:uppercase;font-size:0.74rem;letter-spacing:.05em;">Odds Ratio (eᵝ)</th>
+        <th style="text-align:center;padding:10px 14px;color:#64748B;font-weight:600;text-transform:uppercase;font-size:0.74rem;letter-spacing:.05em;">Direction</th>
+        <th style="text-align:left;padding:10px 14px;color:#64748B;font-weight:600;text-transform:uppercase;font-size:0.74rem;letter-spacing:.05em;">Interpretation</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in data.coef_data %}
+      <tr style="border-bottom:1px solid #F1F5F9;" onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background=''">
+        <td style="padding:11px 14px;font-weight:600;color:#1E293B;">{{ row.feature }}</td>
+        <td style="padding:11px 14px;text-align:center;font-weight:700;color:{{ row.color }};">{{ row.coef }}</td>
+        <td style="padding:11px 14px;text-align:center;color:#475569;">{{ row.odds_ratio }}</td>
+        <td style="padding:11px 14px;text-align:center;">
+          <span style="background:{{ '#D1FAE5' if row.coef > 0 else '#FEE2E2' }};
+                       color:{{ '#065F46' if row.coef > 0 else '#7F1D1D' }};
+                       padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;">
+            {{ row.direction }}
+          </span>
+        </td>
+        <td style="padding:11px 14px;color:#64748B;font-size:0.82rem;">{{ row.interpretation }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- ── Top Movers ─────────────────────────────────────────────────────── -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.5rem;">
+
+  <!-- Strongest Positive -->
+  <div class="card" style="padding:1.25rem;border-top:4px solid #10B981;background:#F0FDF4;">
+    <h3 style="font-size:0.9rem;font-weight:700;color:#065F46;margin:0 0 0.75rem;">
+      🚀 Strongest Positive Predictors
+    </h3>
+    <p style="font-size:0.8rem;color:#047857;margin:0 0 0.75rem;">Features that most increase placement probability.</p>
+    {% for item in data.top_positive %}
+    <div style="display:flex;justify-content:space-between;align-items:center;
+                padding:8px 12px;background:#DCFCE7;border-radius:6px;margin-bottom:6px;">
+      <span style="font-weight:600;color:#065F46;font-size:0.85rem;">{{ item.feature }}</span>
+      <div style="text-align:right;">
+        <span style="font-weight:800;color:#10B981;">β = {{ item.coef }}</span>
+        <span style="font-size:0.75rem;color:#059669;display:block;">OR = {{ item.odds_ratio }}</span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Strongest Negative -->
+  <div class="card" style="padding:1.25rem;border-top:4px solid #EF4444;background:#FFF1F2;">
+    <h3 style="font-size:0.9rem;font-weight:700;color:#7F1D1D;margin:0 0 0.75rem;">
+      📉 Strongest Negative Predictors
+    </h3>
+    <p style="font-size:0.8rem;color:#B91C1C;margin:0 0 0.75rem;">Features that most decrease placement probability.</p>
+    {% for item in data.top_negative %}
+    <div style="display:flex;justify-content:space-between;align-items:center;
+                padding:8px 12px;background:#FEE2E2;border-radius:6px;margin-bottom:6px;">
+      <span style="font-weight:600;color:#7F1D1D;font-size:0.85rem;">{{ item.feature }}</span>
+      <div style="text-align:right;">
+        <span style="font-weight:800;color:#EF4444;">β = {{ item.coef }}</span>
+        <span style="font-size:0.75rem;color:#DC2626;display:block;">OR = {{ item.odds_ratio }}</span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+
+<!-- ── Interpretation Guide ───────────────────────────────────────────── -->
+<div style="background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border:1px solid #BFDBFE;border-left:4px solid #2563EB;border-radius:10px;padding:1.25rem 1.5rem;">
+  <h3 style="font-size:0.9rem;font-weight:700;color:#1E40AF;margin:0 0 0.5rem;">📖 How to Read Coefficients</h3>
+  <ul style="margin:0;padding-left:1.2rem;color:#1E3A8A;font-size:0.85rem;line-height:1.75;">
+    <li><strong>β &gt; 0 (positive):</strong> Higher feature value → higher log-odds of placement → odds ratio &gt; 1.</li>
+    <li><strong>β &lt; 0 (negative):</strong> Higher feature value → lower log-odds of placement → odds ratio &lt; 1.</li>
+    <li><strong>|β| magnitude:</strong> Larger absolute value = stronger influence on the prediction.</li>
+    <li><strong>Odds Ratio (OR):</strong> A 1-standard-deviation increase in the feature multiplies the placement odds by OR.</li>
+    <li><strong>Standardization matters:</strong> Coefficients are comparable only because features were scaled to unit variance.</li>
+  </ul>
+</div>
+
+{% else %}
+<div class="card" style="padding:2rem;text-align:center;color:#94A3B8;">
+  <p>⚠️ Coefficient data not available. Ensure the dataset is loaded correctly.</p>
+</div>
+{% endif %}
+{% endblock %}

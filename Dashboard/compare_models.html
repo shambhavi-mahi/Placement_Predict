@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Comparing Model Tracks — PlacementPredict{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>Module 3 · Comparing Model Tracks</h2>
+  <p>Every model on the same validation split — ranked by accuracy with overfitting, F1, and AUC side-by-side.</p>
+</div>
+
+{% if data %}
+
+<!-- KPI Row -->
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:24px;">
+  <div class="kpi-card" style="border:1px solid rgba(37,99,235,0.3);">
+    <div class="kpi-icon blue">🥇</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Best Model</div>
+      <div class="kpi-value" style="font-size:1rem;">{{ data.best.name }}</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon green">🎯</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Best Val Accuracy</div>
+      <div class="kpi-value">{{ data.best.val_acc }}%</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon orange">🔢</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Models Compared</div>
+      <div class="kpi-value">{{ data.n_models }}</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon purple">📋</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Validation Samples</div>
+      <div class="kpi-value">{{ "{:,}".format(data.n_val) }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Comparison Matrix Table -->
+<div class="card" style="padding:20px;margin-bottom:22px;overflow-x:auto;">
+  <h3 style="margin:0 0 16px;font-size:1.05rem;">Full Model Comparison Matrix</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:0.875rem;min-width:700px;">
+    <thead>
+      <tr style="background:rgba(37,99,235,0.06);">
+        <th style="padding:10px 12px;text-align:center;color:var(--slate-gray);font-size:0.72rem;letter-spacing:0.05em;text-transform:uppercase;">Rank</th>
+        <th style="padding:10px 12px;text-align:left;color:var(--slate-gray);font-size:0.72rem;letter-spacing:0.05em;text-transform:uppercase;">Model</th>
+        <th style="padding:10px 12px;text-align:center;color:var(--slate-gray);font-size:0.72rem;letter-spacing:0.05em;text-transform:uppercase;">Category</th>
+        <th style="padding:10px 12px;text-align:right;color:var(--slate-gray);font-size:0.72rem;letter-spacing:0.05em;text-transform:uppercase;">Train Acc</th>
+        <th style="padding:10px 12px;text-align:right;color:var(--slate-gray);font-size:0.72rem;letter-spacing:0.05em;text-transform:uppercase;">Val Acc</th>
+        <th style="padding:10px 12px;text-align:right;color:var(--slate-gray);font-size:0.72rem;letter-spacing:0.05em;text-transform:uppercase;">F1</th>
+        <th style="padding:10px 12px;text-align:right;color:var(--slate-gray);font-size:0.72rem;letter-spacing:0.05em;text-transform:uppercase;">AUC</th>
+        <th style="padding:10px 12px;text-align:center;color:var(--slate-gray);font-size:0.72rem;letter-spacing:0.05em;text-transform:uppercase;">Overfit Gap</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in data.results %}
+      {% set i = loop.index0 %}
+      <tr style="border-bottom:1px solid var(--border);{% if i == 0 %}background:rgba(37,99,235,0.05);border-left:3px solid #2563EB;{% endif %}">
+        <td style="padding:10px 12px;text-align:center;font-weight:700;color:{% if i == 0 %}#F59E0B{% elif i == 1 %}#94A3B8{% elif i == 2 %}#B45309{% else %}var(--slate-gray){% endif %};">
+          {% if i == 0 %}🥇{% elif i == 1 %}🥈{% elif i == 2 %}🥉{% else %}{{ i+1 }}{% endif %}
+        </td>
+        <td style="padding:10px 12px;font-weight:{% if i == 0 %}600{% else %}400{% endif %};">
+          {{ row.name }}
+          {% if i == 0 %}<span style="font-size:0.7rem;background:#2563EB;color:white;padding:2px 6px;border-radius:12px;margin-left:6px;">Best</span>{% endif %}
+        </td>
+        <td style="padding:10px 12px;text-align:center;">
+          {% if row.category == 'Linear' %}
+            <span style="font-size:0.72rem;background:rgba(99,102,241,0.15);color:#6366F1;padding:2px 8px;border-radius:12px;font-weight:600;">Linear</span>
+          {% elif row.category == 'Tree' %}
+            <span style="font-size:0.72rem;background:rgba(16,185,129,0.15);color:#10B981;padding:2px 8px;border-radius:12px;font-weight:600;">Tree</span>
+          {% else %}
+            <span style="font-size:0.72rem;background:rgba(37,99,235,0.15);color:#2563EB;padding:2px 8px;border-radius:12px;font-weight:600;">Ensemble</span>
+          {% endif %}
+        </td>
+        <td style="padding:10px 12px;text-align:right;color:var(--slate-gray);">{{ row.train_acc }}%</td>
+        <td style="padding:10px 12px;text-align:right;font-weight:600;color:{% if row.val_acc >= 90 %}#10B981{% elif row.val_acc >= 80 %}#2563EB{% else %}#F59E0B{% endif %};">{{ row.val_acc }}%</td>
+        <td style="padding:10px 12px;text-align:right;color:var(--slate-gray);">{{ row.f1 }}%</td>
+        <td style="padding:10px 12px;text-align:right;color:var(--slate-gray);">{% if row.auc %}{{ row.auc }}{% else %}—{% endif %}</td>
+        <td style="padding:10px 12px;text-align:center;">
+          {% if row.gap <= 2 %}
+            <span style="font-size:0.75rem;background:rgba(16,185,129,0.15);color:#10B981;padding:3px 10px;border-radius:12px;font-weight:600;">{{ row.gap }}% ✓</span>
+          {% elif row.gap <= 5 %}
+            <span style="font-size:0.75rem;background:rgba(245,158,11,0.15);color:#D97706;padding:3px 10px;border-radius:12px;font-weight:600;">{{ row.gap }}% ⚠</span>
+          {% else %}
+            <span style="font-size:0.75rem;background:rgba(239,68,68,0.15);color:#EF4444;padding:3px 10px;border-radius:12px;font-weight:600;">{{ row.gap }}% Overfit</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- How to Read + Gap Legend -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:22px;">
+  <div class="card" style="padding:18px;">
+    <h4 style="margin:0 0 12px;font-size:0.95rem;">📖 How to Read This Table</h4>
+    <ul style="font-size:0.85rem;color:var(--slate-gray);margin:0;padding-left:16px;line-height:1.8;">
+      <li><strong>Val Acc</strong> — accuracy on held-out data. This is what matters in production.</li>
+      <li><strong>F1</strong> — balances precision & recall. Better than accuracy for imbalanced classes.</li>
+      <li><strong>AUC</strong> — area under the ROC curve. 1.0 = perfect, 0.5 = random guess.</li>
+      <li><strong>Overfit Gap</strong> — Train Acc minus Val Acc. Large gap = model memorized training data.</li>
+    </ul>
+  </div>
+  <div class="card" style="padding:18px;">
+    <h4 style="margin:0 0 12px;font-size:0.95rem;">🎨 Gap Colour Legend</h4>
+    <div style="display:flex;flex-direction:column;gap:8px;font-size:0.85rem;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="background:rgba(16,185,129,0.15);color:#10B981;padding:3px 10px;border-radius:12px;font-weight:600;font-size:0.75rem;">≤ 2% ✓</span>
+        <span style="color:var(--slate-gray);">Good generalization</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="background:rgba(245,158,11,0.15);color:#D97706;padding:3px 10px;border-radius:12px;font-weight:600;font-size:0.75rem;">2–5% ⚠</span>
+        <span style="color:var(--slate-gray);">Slight overfitting</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="background:rgba(239,68,68,0.15);color:#EF4444;padding:3px 10px;border-radius:12px;font-weight:600;font-size:0.75rem;">&gt; 5% Overfit</span>
+        <span style="color:var(--slate-gray);">High variance — consider pruning / regularization</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% else %}
+<div class="card" style="padding:32px;text-align:center;color:var(--slate-gray);">
+  <p>Dataset not loaded. Please ensure the CSV is available.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Jinja2 doesn't have enumerate, so we use loop.index in the template
+// (already handled via loop.index0 above — no JS needed)
+</script>
+{% endblock %}

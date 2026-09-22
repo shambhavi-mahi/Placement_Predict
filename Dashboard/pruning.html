@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}Module 3 · Pruning &amp; Splitting Criteria{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Pruning &amp; Splitting Criteria</h1>
+  <p class="page-subtitle">
+    Compare <strong>Gini Impurity</strong> vs <strong>Entropy (Information Gain)</strong> as splitting criteria,
+    and explore how post-pruning via <code>max_depth</code> and <code>min_samples_leaf</code>
+    controls overfitting in Decision Trees.
+  </p>
+</div>
+
+{% if data %}
+
+<!-- Dataset info strip -->
+<div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 1.5rem;">
+  <div class="kpi-card">
+    <div class="kpi-label">Training Samples</div>
+    <div class="kpi-value">{{ data.n_train }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Validation Samples</div>
+    <div class="kpi-value">{{ data.n_val }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Feature Count</div>
+    <div class="kpi-value">{{ data.n_features }}</div>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs-container">
+  <nav class="tabs-nav">
+    <button class="tab-btn active" data-tab="tab-criterion">1. Gini vs Entropy</button>
+    <button class="tab-btn" data-tab="tab-pruning">2. Pruning Experiments</button>
+  </nav>
+
+  <!-- ── Tab 1: Gini vs Entropy ─────────────────────────────────────── -->
+  <div id="tab-criterion" class="tab-pane active">
+
+    <!-- Concept card -->
+    <div class="card" style="background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+         border-left: 4px solid var(--primary-blue); margin-bottom: 1.5rem;">
+      <div style="display:flex; align-items:flex-start; gap:0.75rem;">
+        <span style="font-size:1.6rem;">💡</span>
+        <div>
+          <h3 style="margin:0 0 0.4rem; color:var(--primary-blue);">Splitting Criteria Explained</h3>
+          <p style="margin:0; color:#374151; line-height:1.6;">
+            <strong>Gini Impurity</strong> measures the probability of misclassifying a randomly chosen element.
+            It prefers binary splits and is computationally faster.
+            <strong>Entropy (Information Gain)</strong> is based on Shannon entropy — it is slower to compute
+            but can produce slightly more balanced trees. In practice both criteria often give similar results,
+            with differences visible mainly at extreme depths.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results table -->
+    {% if data.results %}
+    {% set best_val = data.results | map(attribute='val_acc') | max %}
+    <div class="card">
+      <h3 style="margin-bottom:1rem; color:var(--primary-blue);">Criterion × Depth Comparison</h3>
+      <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+          <thead>
+            <tr style="background:var(--primary-blue); color:#fff;">
+              <th style="padding:0.65rem 1rem; text-align:left; border-radius:6px 0 0 0;">Criterion</th>
+              <th style="padding:0.65rem 1rem; text-align:center;">Max Depth</th>
+              <th style="padding:0.65rem 1rem; text-align:center;">Train Acc %</th>
+              <th style="padding:0.65rem 1rem; text-align:center;">Val Acc %</th>
+              <th style="padding:0.65rem 1rem; text-align:center;">Gap</th>
+              <th style="padding:0.65rem 1rem; text-align:center;">Leaves</th>
+              <th style="padding:0.65rem 1rem; text-align:center; border-radius:0 6px 0 0;">Actual Depth</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in data.results %}
+            {% set is_best = (row.val_acc == best_val) %}
+            <tr style="
+              background: {% if is_best %}linear-gradient(90deg,#FEF9C3,#FEF3C7){% elif loop.index % 2 == 0 %}#F9FAFB{% else %}#ffffff{% endif %};
+              border: {% if is_best %}2px solid #F59E0B{% else %}1px solid #E5E7EB{% endif %};
+              font-weight: {% if is_best %}600{% else %}400{% endif %};">
+              <td style="padding:0.6rem 1rem;">
+                {% if is_best %}<span style="margin-right:0.4rem;">⭐</span>{% endif %}
+                <span style="display:inline-block; padding:0.15rem 0.6rem; border-radius:999px; font-size:0.8rem;
+                  background:{% if row.criterion == 'Gini' %}#DBEAFE{% else %}#D1FAE5{% endif %};
+                  color:{% if row.criterion == 'Gini' %}#1E40AF{% else %}#065F46{% endif %};">
+                  {{ row.criterion }}
+                </span>
+              </td>
+              <td style="padding:0.6rem 1rem; text-align:center; font-family:monospace;">{{ row.max_depth }}</td>
+              <td style="padding:0.6rem 1rem; text-align:center;">{{ row.train_acc }}%</td>
+              <td style="padding:0.6rem 1rem; text-align:center; color:{% if is_best %}#065F46{% else %}inherit{% endif %}; font-weight:{% if is_best %}700{% else %}400{% endif %};">{{ row.val_acc }}%</td>
+              <td style="padding:0.6rem 1rem; text-align:center;">
+                <span style="color:{% if row.gap > 10 %}#DC2626{% elif row.gap > 4 %}#D97706{% else %}#059669{% endif %}; font-weight:600;">
+                  {{ row.gap }}%
+                </span>
+              </td>
+              <td style="padding:0.6rem 1rem; text-align:center;">{{ row.n_leaves }}</td>
+              <td style="padding:0.6rem 1rem; text-align:center;">{{ row.depth }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-top:0.8rem; font-size:0.8rem; color:#6B7280;">
+        ⭐ Best validation accuracy. <strong>Gap</strong> = Train Acc − Val Acc (higher = more overfitting).
+      </p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ── Tab 2: Pruning Experiments ────────────────────────────────── -->
+  <div id="tab-pruning" class="tab-pane" style="display:none;">
+
+    <!-- Insight card -->
+    <div class="card" style="background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
+         border-left: 4px solid var(--accent-green); margin-bottom: 1.5rem;">
+      <div style="display:flex; align-items:flex-start; gap:0.75rem;">
+        <span style="font-size:1.6rem;">✂️</span>
+        <div>
+          <h3 style="margin:0 0 0.4rem; color:#065F46;">Post-Pruning via <code>min_samples_leaf</code></h3>
+          <p style="margin:0; color:#374151; line-height:1.6;">
+            Post-pruning via <code>min_samples_leaf</code> prevents memorization by forcing each leaf to
+            represent <em>at least N training samples</em>. Larger values produce smaller, more generalizable
+            trees — but too large a value causes underfitting. The sweet spot balances leaf purity and generalization.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    {% if data.leaf_results %}
+    {% set best_leaf_val = data.leaf_results | map(attribute='val_acc') | max %}
+    <div class="card">
+      <h3 style="margin-bottom:1rem; color:var(--primary-blue);">min_samples_leaf Sweep</h3>
+      <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+          <thead>
+            <tr style="background:var(--accent-green); color:#fff;">
+              <th style="padding:0.65rem 1rem; text-align:center; border-radius:6px 0 0 0;">min_samples_leaf</th>
+              <th style="padding:0.65rem 1rem; text-align:center;">Train Acc %</th>
+              <th style="padding:0.65rem 1rem; text-align:center;">Val Acc %</th>
+              <th style="padding:0.65rem 1rem; text-align:center; border-radius:0 6px 0 0;">Leaf Count</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in data.leaf_results %}
+            {% set is_best = (row.val_acc == best_leaf_val) %}
+            <tr style="
+              background: {% if is_best %}linear-gradient(90deg,#FEF9C3,#FEF3C7){% elif loop.index % 2 == 0 %}#F9FAFB{% else %}#ffffff{% endif %};
+              border: {% if is_best %}2px solid #F59E0B{% else %}1px solid #E5E7EB{% endif %};">
+              <td style="padding:0.6rem 1rem; text-align:center; font-family:monospace; font-weight:600;">
+                {% if is_best %}⭐ {% endif %}{{ row.min_samples_leaf }}
+              </td>
+              <td style="padding:0.6rem 1rem; text-align:center;">{{ row.train_acc }}%</td>
+              <td style="padding:0.6rem 1rem; text-align:center; font-weight:{% if is_best %}700{% else %}400{% endif %}; color:{% if is_best %}#065F46{% else %}inherit{% endif %};">{{ row.val_acc }}%</td>
+              <td style="padding:0.6rem 1rem; text-align:center;">{{ row.n_leaves }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-top:0.8rem; font-size:0.8rem; color:#6B7280;">
+        ⭐ Best validation accuracy. As <code>min_samples_leaf</code> increases, leaf count and train accuracy both drop.
+      </p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% else %}
+<div class="card" style="text-align:center; padding:3rem; color:#6B7280;">
+  <span style="font-size:3rem;">📭</span>
+  <p style="margin-top:1rem; font-size:1.1rem;">No pruning data available. Run the analysis first.</p>
+</div>
+{% endif %}
+
+<script>
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).style.display = 'block';
+  });
+});
+</script>
+{% endblock %}
