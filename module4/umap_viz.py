@@ -24,7 +24,9 @@ from sklearn.preprocessing import StandardScaler
 import config
 
 UMAP_DIR = config.UMAP_DIR
-SAMPLE_CAP = 3_000   # UMAP graph construction scales poorly — 3K is fast and still informative
+# Single fit with n_neighbors=15 (balanced local/global).
+# Only one UMAP.fit_transform() call → ~8-10s on first load, cached forever after.
+SAMPLE_CAP = 1_000
 
 
 def run_umap(df: pd.DataFrame) -> dict:
@@ -33,7 +35,6 @@ def run_umap(df: pd.DataFrame) -> dict:
     feat_cols = [c for c in config.NUMERIC_COLUMNS if c in df.columns]
     data = df[feat_cols + [config.TARGET_COLUMN]].dropna().copy()
 
-    # Subsample
     n_full = len(data)
     if n_full > SAMPLE_CAP:
         data = data.sample(SAMPLE_CAP, random_state=config.RANDOM_STATE)
@@ -45,81 +46,70 @@ def run_umap(df: pd.DataFrame) -> dict:
 
     try:
         import umap as umap_lib
-
         umap_available = True
 
-        # ── 2 configurations to show n_neighbors effect ──────────────────────
-        configs = [
-            {"n_neighbors": 5,  "min_dist": 0.1,  "label": "n_neighbors=5 (local)",     "color": "#2563EB"},
-            {"n_neighbors": 30, "min_dist": 0.1,  "label": "n_neighbors=30 (balanced)", "color": "#10B981"},
-        ]
+        # ── Single embedding (balanced: n_neighbors=15) ───────────────────────
+        N_NEIGHBORS = 15
+        MIN_DIST = 0.1
+        reducer = umap_lib.UMAP(
+            n_neighbors=N_NEIGHBORS,
+            min_dist=MIN_DIST,
+            n_components=2,
+            random_state=config.RANDOM_STATE,
+            verbose=False,
+            low_memory=True,        # faster on small samples
+        )
+        emb = reducer.fit_transform(X)
 
-        fig, axes = plt.subplots(1, 2, figsize=(12, 5))
-        embeddings = []
-        for i, cfg in enumerate(configs):
-            reducer = umap_lib.UMAP(
-                n_neighbors=cfg["n_neighbors"],
-                min_dist=cfg["min_dist"],
-                n_components=2,
-                random_state=config.RANDOM_STATE,
-                verbose=False,
-            )
-            emb = reducer.fit_transform(X)
-            embeddings.append(emb)
-            sc = axes[i].scatter(emb[:, 0], emb[:, 1], c=y, cmap="coolwarm",
-                                 s=6, alpha=0.5)
-            axes[i].set_title(cfg["label"], fontsize=10, fontweight="bold")
-            axes[i].set_xlabel("UMAP-1"); axes[i].set_ylabel("UMAP-2")
-            axes[i].grid(True, alpha=0.2)
-        fig.colorbar(sc, ax=axes[-1], label="Placed (1) / Not Placed (0)")
-        fig.suptitle("UMAP: Effect of n_neighbors on Structure",
-                     fontsize=12, fontweight="bold")
+        # Plot 1 — Coloured by placement outcome
+        fig, ax = plt.subplots(figsize=(8, 6))
+        sc = ax.scatter(emb[:, 0], emb[:, 1], c=y, cmap="coolwarm", s=8, alpha=0.6)
+        ax.set_title(f"UMAP Embedding — Placement Outcome\n"
+                     f"(n_neighbors={N_NEIGHBORS}, min_dist={MIN_DIST}, n={n_sample:,})",
+                     fontsize=11, fontweight="bold")
+        ax.set_xlabel("UMAP-1"); ax.set_ylabel("UMAP-2")
+        ax.grid(True, alpha=0.2)
+        fig.colorbar(sc, ax=ax, label="Placed (1) / Not Placed (0)")
         fig.tight_layout()
         fig.savefig(os.path.join(UMAP_DIR, "umap_neighbors_comparison.png"), dpi=120)
         plt.close(fig)
 
-        # ── Best embedding coloured by 4 features ────────────────────────────
-        emb_best = embeddings[1]
+        # Plot 2 — Same embedding coloured by 4 features
         fig, axes = plt.subplots(2, 2, figsize=(11, 8))
-        highlight_feats = feat_cols[:4]
-        for ax, feat in zip(axes.flatten(), highlight_feats):
+        for ax, feat in zip(axes.flatten(), feat_cols[:4]):
             vals = data[feat].values
-            sc = ax.scatter(emb_best[:, 0], emb_best[:, 1], c=vals, cmap="viridis",
-                            s=6, alpha=0.5)
+            sc2 = ax.scatter(emb[:, 0], emb[:, 1], c=vals, cmap="viridis", s=8, alpha=0.5)
             ax.set_title(feat, fontsize=9, fontweight="bold")
             ax.set_xlabel("UMAP-1", fontsize=8); ax.set_ylabel("UMAP-2", fontsize=8)
-            fig.colorbar(sc, ax=ax)
+            fig.colorbar(sc2, ax=ax)
             ax.grid(True, alpha=0.15)
-        fig.suptitle("UMAP (n_neighbors=30) — Coloured by Each Feature",
-                     fontsize=12, fontweight="bold")
+        fig.suptitle(f"UMAP Embedding — Coloured by Each Feature", fontsize=12, fontweight="bold")
         fig.tight_layout()
         fig.savefig(os.path.join(UMAP_DIR, "umap_feature_colours.png"), dpi=120)
         plt.close(fig)
 
-        # ── UMAP vs PCA 2D side-by-side ─────────────────────────────────────
+        # Plot 3 — PCA vs UMAP side-by-side (PCA is instant)
         from sklearn.decomposition import PCA
         pca2 = PCA(n_components=2, random_state=config.RANDOM_STATE)
         X_pca = pca2.fit_transform(X)
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
-        ax1.scatter(X_pca[:, 0], X_pca[:, 1], c=y, cmap="coolwarm", s=4, alpha=0.35)
+        ax1.scatter(X_pca[:, 0], X_pca[:, 1], c=y, cmap="coolwarm", s=6, alpha=0.45)
         ax1.set_title("PCA 2D Projection", fontsize=11, fontweight="bold")
         ax1.set_xlabel("PC1"); ax1.set_ylabel("PC2")
         ax1.grid(True, alpha=0.2)
-        sc2 = ax2.scatter(emb_best[:, 0], emb_best[:, 1], c=y, cmap="coolwarm", s=4, alpha=0.35)
-        ax2.set_title("UMAP 2D Projection (n_neighbors=30)", fontsize=11, fontweight="bold")
+        sc3 = ax2.scatter(emb[:, 0], emb[:, 1], c=y, cmap="coolwarm", s=6, alpha=0.45)
+        ax2.set_title(f"UMAP 2D Projection (n_neighbors={N_NEIGHBORS})", fontsize=11, fontweight="bold")
         ax2.set_xlabel("UMAP-1"); ax2.set_ylabel("UMAP-2")
         ax2.grid(True, alpha=0.2)
-        fig.colorbar(sc2, ax=ax2, label="Placed")
+        fig.colorbar(sc3, ax=ax2, label="Placed")
         fig.suptitle("PCA vs UMAP — Linear vs Non-Linear Dimensionality Reduction",
                      fontsize=12, fontweight="bold")
         fig.tight_layout()
         fig.savefig(os.path.join(UMAP_DIR, "pca_vs_umap.png"), dpi=120)
         plt.close(fig)
 
-        config_results = [
-            {"label": c["label"], "n_neighbors": c["n_neighbors"], "min_dist": c["min_dist"]}
-            for c in configs
-        ]
+        config_results = [{"label": f"n_neighbors={N_NEIGHBORS} (balanced)",
+                           "n_neighbors": N_NEIGHBORS, "min_dist": MIN_DIST}]
 
     except ImportError:
         umap_available = False

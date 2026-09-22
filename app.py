@@ -510,5 +510,31 @@ def anomaly_detection_page():
 
 
 # ---------------------------------------------------------------------------
+# Background cache pre-warming
+# UMAP uses Numba JIT — first call always takes ~20s regardless of data size.
+# Pre-warm in a daemon thread so it's ready before the user clicks the page.
+# ---------------------------------------------------------------------------
+def _prewarm_cache():
+    import time, threading
+    def _worker():
+        time.sleep(3)          # let Flask fully start first
+        df = _safe_load_csv()
+        if df is None:
+            return
+        slow_keys = [
+            ("umap",            run_umap),
+        ]
+        for key, fn in slow_keys:
+            try:
+                if key not in _cache:
+                    _cache[key] = fn(df)
+            except Exception as e:
+                pass   # never crash the background thread
+    t = threading.Thread(target=_worker, daemon=True)
+    t.start()
+
+
+# ---------------------------------------------------------------------------
 if __name__ == "__main__":
+    _prewarm_cache()
     app.run(debug=True)

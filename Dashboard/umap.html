@@ -45,34 +45,26 @@
 
 <div class="tabs-container">
   <div class="tabs-nav">
-    <button class="tab-btn active" data-target="tab-neighbors">1. n_neighbors Effect</button>
+    <button class="tab-btn active" data-target="tab-neighbors">1. Placement Scatter</button>
     <button class="tab-btn" data-target="tab-features">2. Feature Colours</button>
     <button class="tab-btn" data-target="tab-pca-vs">3. PCA vs UMAP</button>
   </div>
 
-  <!-- Tab 1: n_neighbors comparison -->
+  <!-- Tab 1: Placement scatter -->
   <div id="tab-neighbors" class="tab-pane active">
     <div class="card" style="padding:16px;margin-bottom:16px;">
-      <h3 style="margin:0 0 12px;font-size:1rem;">Effect of n_neighbors on Structure (coloured by Placement)</h3>
+      <h3 style="margin:0 0 12px;font-size:1rem;">UMAP Embedding — Coloured by Placement Outcome</h3>
       <img src="{{ url_for('static', filename='Plot/UMAP/umap_neighbors_comparison.png') }}"
-           alt="UMAP neighbors comparison" style="width:100%;border-radius:6px;border:1px solid var(--border);">
+           alt="UMAP Placement Scatter" style="width:100%;border-radius:6px;border:1px solid var(--border);">
     </div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
-      {% for cfg in data.configs %}
-      <div class="card" style="padding:14px;">
-        <div style="font-weight:700;color:#2563EB;margin-bottom:6px;">{{ cfg.label }}</div>
-        <div style="font-size:0.82rem;color:var(--slate-gray);">n_neighbors = {{ cfg.n_neighbors }}, min_dist = {{ cfg.min_dist }}</div>
-        <div style="font-size:0.78rem;color:var(--slate-gray);margin-top:8px;">
-          {% if cfg.n_neighbors <= 10 %}
-            Small n_neighbors → focuses on <strong>local structure</strong>. Points in nearby groups cluster tightly together, but global shape may distort.
-          {% elif cfg.n_neighbors <= 50 %}
-            Balanced → captures both <strong>local clusters</strong> and <strong>global layout</strong>. Good default for most datasets.
-          {% else %}
-            Large n_neighbors → emphasises <strong>global structure</strong>. Clusters merge; fine-grained local groups are blurred.
-          {% endif %}
-        </div>
-      </div>
-      {% endfor %}
+    <div class="card" style="padding:16px;background:rgba(37,99,235,0.04);border:1px solid rgba(37,99,235,0.15);">
+      <h4 style="margin:0 0 8px;color:#2563EB;">Reading the UMAP Plot</h4>
+      <p style="font-size:0.86rem;color:var(--slate-gray);margin:0;line-height:1.7;">
+        Each point is a student reduced from {{ data.n_features }} features to 2 UMAP dimensions.
+        Points close together share similar feature profiles — UMAP respects local neighbourhood structure, unlike PCA.
+        Colour shows placement: <strong style="color:#EF4444;">red = Not Placed</strong>, <strong style="color:#2563EB;">blue = Placed</strong>.
+        Visible colour clusters mean UMAP has found a real structure that predicts placement.
+      </p>
     </div>
   </div>
 
