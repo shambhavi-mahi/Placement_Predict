@@ -112,7 +112,7 @@
           <span class="topic-num">1</span> Data Ingestion
         </a>
         <a href="{{ url_for('baseline_page') }}" class="menu-btn-sub {% if request.endpoint == 'baseline_page' %}active{% endif %}">
-          <span class="topic-num">2</span> Baseline Model & Serving
+          <span class="topic-num">2</span> Baseline Model &amp; Serving
         </a>
         <a href="{{ url_for('eda_page') }}" class="menu-btn-sub {% if request.endpoint == 'eda_page' %}active{% endif %}">
           <span class="topic-num">3</span> EDA, First Pass
@@ -131,28 +131,19 @@
       </div>
       <div class="sidebar-module-items">
         <a href="{{ url_for('splitting_page') }}" class="menu-btn-sub {% if request.endpoint == 'splitting_page' %}active{% endif %}">
-          <span class="topic-num">5</span> Train/Val/Test Splitting
+          <span class="topic-num">5</span> Train / Val / Test Splitting
         </a>
         <a href="{{ url_for('regression_page') }}" class="menu-btn-sub {% if request.endpoint == 'regression_page' %}active{% endif %}">
-          <span class="topic-num">6</span> Linear Regression Basics
+          <span class="topic-num">6</span> Regression Models
         </a>
         <a href="{{ url_for('feature_engg_page') }}" class="menu-btn-sub {% if request.endpoint == 'feature_engg_page' %}active{% endif %}">
-          <span class="topic-num">7</span> Feature Scaling
-        </a>
-        <a href="{{ url_for('feature_engg_page') }}" class="menu-btn-sub {% if request.endpoint == 'feature_engg_page' and request.args.get('tab') == 'encoding' %}active{% endif %}">
-          <span class="topic-num">8</span> Encoding & Imputation
-        </a>
-        <a href="{{ url_for('regression_page') }}" class="menu-btn-sub">
-          <span class="topic-num">9</span> Logistic Regression
-        </a>
-        <a href="{{ url_for('regression_page') }}" class="menu-btn-sub">
-          <span class="topic-num">10</span> Regularization
+          <span class="topic-num">7</span> Feature Scaling &amp; Encoding
         </a>
         <a href="{{ url_for('pipeline_page') }}" class="menu-btn-sub {% if request.endpoint == 'pipeline_page' %}active{% endif %}">
-          <span class="topic-num">11</span> End-to-End Pipeline
+          <span class="topic-num">8</span> End-to-End Pipeline
         </a>
         <a href="{{ url_for('coefficients_page') }}" class="menu-btn-sub {% if request.endpoint == 'coefficients_page' %}active{% endif %}">
-          <span class="topic-num">12</span> Model Coefficients
+          <span class="topic-num">9</span> Model Coefficients
         </a>
       </div>
     </div>
@@ -165,28 +156,19 @@
       </div>
       <div class="sidebar-module-items">
         <a href="{{ url_for('decision_tree_page') }}" class="menu-btn-sub {% if request.endpoint == 'decision_tree_page' %}active{% endif %}">
-          <span class="topic-num">13</span> Decision Trees
+          <span class="topic-num">10</span> Trees &amp; Ensembles
         </a>
         <a href="{{ url_for('pruning_page') }}" class="menu-btn-sub {% if request.endpoint == 'pruning_page' %}active{% endif %}">
-          <span class="topic-num">14</span> Pruning & Splitting Criteria
-        </a>
-        <a href="{{ url_for('decision_tree_page') }}" class="menu-btn-sub">
-          <span class="topic-num">15</span> Bias-Variance Tradeoff
-        </a>
-        <a href="{{ url_for('decision_tree_page') }}" class="menu-btn-sub">
-          <span class="topic-num">16</span> Random Forests & Bagging
-        </a>
-        <a href="{{ url_for('decision_tree_page') }}" class="menu-btn-sub">
-          <span class="topic-num">17</span> Boosting Basics
+          <span class="topic-num">11</span> Pruning &amp; Splitting Criteria
         </a>
         <a href="{{ url_for('modern_boosting_page') }}" class="menu-btn-sub {% if request.endpoint == 'modern_boosting_page' %}active{% endif %}">
-          <span class="topic-num">18</span> Modern Boosted Trees
+          <span class="topic-num">12</span> Modern Boosted Trees
         </a>
         <a href="{{ url_for('shap_importance_page') }}" class="menu-btn-sub {% if request.endpoint == 'shap_importance_page' %}active{% endif %}">
-          <span class="topic-num">19</span> Feature Importance & SHAP
+          <span class="topic-num">13</span> Feature Importance &amp; SHAP
         </a>
         <a href="{{ url_for('compare_models_page') }}" class="menu-btn-sub {% if request.endpoint == 'compare_models_page' %}active{% endif %}">
-          <span class="topic-num">20</span> Comparing Model Tracks
+          <span class="topic-num">14</span> Comparing All Models
         </a>
       </div>
     </div>
@@ -199,22 +181,22 @@
       </div>
       <div class="sidebar-module-items">
         <a href="{{ url_for('kmeans_page') }}" class="menu-btn-sub {% if request.endpoint == 'kmeans_page' %}active{% endif %}">
-          <span class="topic-num">21</span> K-Means Clustering
+          <span class="topic-num">15</span> K-Means Clustering
         </a>
         <a href="{{ url_for('hierarchical_page') }}" class="menu-btn-sub {% if request.endpoint == 'hierarchical_page' %}active{% endif %}">
-          <span class="topic-num">24</span> Hierarchical Clustering
+          <span class="topic-num">16</span> Hierarchical Clustering
         </a>
         <a href="{{ url_for('dbscan_page') }}" class="menu-btn-sub {% if request.endpoint == 'dbscan_page' %}active{% endif %}">
-          <span class="topic-num">25</span> DBSCAN
+          <span class="topic-num">17</span> DBSCAN
         </a>
         <a href="{{ url_for('pca_page') }}" class="menu-btn-sub {% if request.endpoint == 'pca_page' %}active{% endif %}">
-          <span class="topic-num">26</span> PCA
+          <span class="topic-num">18</span> PCA
         </a>
         <a href="{{ url_for('umap_page') }}" class="menu-btn-sub {% if request.endpoint == 'umap_page' %}active{% endif %}">
-          <span class="topic-num">27</span> UMAP
+          <span class="topic-num">19</span> UMAP
         </a>
         <a href="{{ url_for('anomaly_detection_page') }}" class="menu-btn-sub {% if request.endpoint == 'anomaly_detection_page' %}active{% endif %}">
-          <span class="topic-num">28</span> Anomaly Detection
+          <span class="topic-num">20</span> Anomaly Detection
         </a>
       </div>
     </div>

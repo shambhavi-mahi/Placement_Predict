@@ -8,8 +8,14 @@ from sklearn.metrics import accuracy_score
 from models.feature_engg import _apply_encoding
 import config
 
+SAMPLE_CAP = 10_000
+
 
 def run_modern_boosting(df: pd.DataFrame) -> dict:
+    # Sample BEFORE encoding to avoid slow encoding on 50K rows
+    if len(df) > SAMPLE_CAP:
+        df = df.sample(SAMPLE_CAP, random_state=config.RANDOM_STATE)
+
     enc_df, _, _, _ = _apply_encoding(df)
     drop_cols = ['StudentID', 'IsAnomaly', 'Salary Package', config.TARGET_COLUMN]
     feat_cols = [c for c in enc_df.columns if c not in drop_cols]
@@ -23,23 +29,23 @@ def run_modern_boosting(df: pd.DataFrame) -> dict:
 
     results = []
 
-    # Sklearn Gradient Boosting
-    gb = GradientBoostingClassifier(n_estimators=100, random_state=config.RANDOM_STATE)
+    # Sklearn Gradient Boosting (reduced estimators for speed)
+    gb = GradientBoostingClassifier(n_estimators=50, random_state=config.RANDOM_STATE)
     gb.fit(Xtr, ytr)
     results.append({
         'name': 'Sklearn GradientBoosting',
         'library': 'scikit-learn',
         'train_acc': round(float(accuracy_score(ytr, gb.predict(Xtr))) * 100, 2),
         'val_acc': round(float(accuracy_score(yva, gb.predict(Xva))) * 100, 2),
-        'note': 'Classic sequential boosting. Slow but reliable.',
+        'note': 'Classic sequential boosting. Reliable baseline for modern methods.',
     })
 
     # XGBoost
     try:
         import xgboost as xgb
         xgb_model = xgb.XGBClassifier(
-            n_estimators=100, random_state=config.RANDOM_STATE,
-            eval_metric='logloss', verbosity=0, use_label_encoder=False
+            n_estimators=50, random_state=config.RANDOM_STATE,
+            eval_metric='logloss', verbosity=0, n_jobs=-1
         )
         xgb_model.fit(Xtr, ytr)
         results.append({
@@ -57,7 +63,7 @@ def run_modern_boosting(df: pd.DataFrame) -> dict:
     try:
         import lightgbm as lgb
         lgb_model = lgb.LGBMClassifier(
-            n_estimators=100, random_state=config.RANDOM_STATE, verbose=-1
+            n_estimators=50, random_state=config.RANDOM_STATE, verbose=-1, n_jobs=-1
         )
         lgb_model.fit(Xtr, ytr)
         results.append({

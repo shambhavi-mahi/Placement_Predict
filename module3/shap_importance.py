@@ -1,7 +1,4 @@
-"""Module 3 – Feature Importance and SHAP Values.
-Computes permutation importance as the primary method,
-and SHAP values if the shap library is available.
-"""
+"""Module 3 – Feature Importance and SHAP Values."""
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -15,10 +12,16 @@ import os
 import config
 
 SHAP_DIR = os.path.join(config.PLOTS_DIR, 'SHAP')
+SAMPLE_CAP = 10_000
 
 
 def run_shap_importance(df: pd.DataFrame) -> dict:
     os.makedirs(SHAP_DIR, exist_ok=True)
+
+    # Sample BEFORE encoding
+    if len(df) > SAMPLE_CAP:
+        df = df.sample(SAMPLE_CAP, random_state=config.RANDOM_STATE)
+
     enc_df, _, _, _ = _apply_encoding(df)
     drop_cols = ['StudentID', 'IsAnomaly', 'Salary Package', config.TARGET_COLUMN]
     feat_cols = [c for c in enc_df.columns if c not in drop_cols]
@@ -30,20 +33,25 @@ def run_shap_importance(df: pd.DataFrame) -> dict:
     Xtr, Xva = X[:split], X[split:]
     ytr, yva = y[:split], y[split:]
 
-    rf = RandomForestClassifier(n_estimators=100, random_state=config.RANDOM_STATE)
+    # Fewer trees, parallel
+    rf = RandomForestClassifier(n_estimators=50, random_state=config.RANDOM_STATE, n_jobs=-1)
     rf.fit(Xtr, ytr)
     val_acc = round(float(accuracy_score(yva, rf.predict(Xva))) * 100, 2)
 
-    # 1. Built-in feature importance (mean decrease impurity)
+    # 1. MDI
     mdi = pd.Series(rf.feature_importances_, index=feat_cols).sort_values(ascending=False)
     mdi_data = [{'feature': f, 'importance': round(float(v), 4)} for f, v in mdi.items()]
 
-    # 2. Permutation importance (on validation set)
-    perm = permutation_importance(rf, Xva, yva, n_repeats=10, random_state=config.RANDOM_STATE)
+    # 2. Permutation importance — fewer repeats, cap val set
+    perm_X = Xva[:min(1000, len(Xva))]
+    perm_y = yva[:min(1000, len(yva))]
+    perm = permutation_importance(rf, perm_X, perm_y, n_repeats=5,
+                                  random_state=config.RANDOM_STATE, n_jobs=-1)
     perm_series = pd.Series(perm.importances_mean, index=feat_cols).sort_values(ascending=False)
+    feat_idx = {f: i for i, f in enumerate(feat_cols)}
     perm_data = [
         {'feature': f, 'importance': round(float(v), 4),
-         'std': round(float(perm.importances_std[feat_cols.index(f)]), 4)}
+         'std': round(float(perm.importances_std[feat_idx[f]]), 4)}
         for f, v in perm_series.items()
     ]
 
@@ -58,7 +66,7 @@ def run_shap_importance(df: pd.DataFrame) -> dict:
     fig.savefig(os.path.join(SHAP_DIR, 'mdi_importance.png'), dpi=120)
     plt.close(fig)
 
-    # Permutation importance plot
+    # Permutation plot
     fig, ax = plt.subplots(figsize=(7, max(4, len(perm_data[:10]) * 0.5)))
     top_p = perm_series.head(10)
     ax.barh(top_p.index[::-1], top_p.values[::-1], color='#10B981')
@@ -70,13 +78,12 @@ def run_shap_importance(df: pd.DataFrame) -> dict:
     plt.close(fig)
 
     shap_available = False
+    shap_data = []
     try:
         import shap
-        # Use a small sample for speed
         sample_size = min(200, len(Xva))
         explainer = shap.TreeExplainer(rf)
         shap_values = explainer.shap_values(Xva[:sample_size])
-        # shap_values is list of arrays for binary classification
         sv = shap_values[1] if isinstance(shap_values, list) else shap_values
         shap_mean = np.abs(sv).mean(axis=0)
         shap_series = pd.Series(shap_mean, index=feat_cols).sort_values(ascending=False)
@@ -93,7 +100,7 @@ def run_shap_importance(df: pd.DataFrame) -> dict:
         plt.close(fig)
         shap_available = True
     except Exception:
-        shap_data = []
+        pass
 
     return {
         'val_acc': val_acc,
