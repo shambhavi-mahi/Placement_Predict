@@ -21,6 +21,8 @@ def run_coefficients(df: pd.DataFrame) -> dict:
     target = config.TARGET_COLUMN
     feat_cols = [c for c in config.NUMERIC_COLUMNS if c in df.columns]
     data = df[feat_cols + [target]].dropna().copy()
+    if len(data) > 15_000:
+        data = data.sample(15_000, random_state=config.RANDOM_STATE)
     X = data[feat_cols].values
     y = data[target].values
     n = len(data)
@@ -28,7 +30,7 @@ def run_coefficients(df: pd.DataFrame) -> dict:
     ss = StandardScaler()
     Xtr = ss.fit_transform(X[:split])
     Xva = ss.transform(X[split:])
-    model = LogisticRegression(max_iter=1000, random_state=config.RANDOM_STATE)
+    model = LogisticRegression(max_iter=300, random_state=config.RANDOM_STATE)
     model.fit(Xtr, y[:split])
     val_acc = round(float(accuracy_score(y[split:], model.predict(Xva))) * 100, 2)
 

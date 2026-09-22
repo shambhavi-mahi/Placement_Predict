@@ -6,12 +6,17 @@ import pandas as pd
 import config
 
 
+SAMPLE_CAP = 15_000
+
+
 def run_splitting(df: pd.DataFrame) -> dict:
     """Compute split statistics for the dataset."""
     target = config.TARGET_COLUMN
     feat_cols = [c for c in config.NUMERIC_COLUMNS if c in df.columns]
     data = df[feat_cols + [target]].dropna().copy()
     n = len(data)
+    # Cap for the LR demo only — split stats above still use full data
+    data_lr = data.sample(min(SAMPLE_CAP, n), random_state=config.RANDOM_STATE)
 
     # 60 / 20 / 20 split
     train_end = int(0.6 * n)
@@ -39,25 +44,26 @@ def run_splitting(df: pd.DataFrame) -> dict:
     from sklearn.linear_model import LogisticRegression
     from sklearn.metrics import accuracy_score
 
-    X = data[feat_cols].values
-    y = data[target].values
-    Xtr, Xva = X[:train_end], X[train_end:val_end]
-    ytr, yva = y[:train_end], y[train_end:val_end]
+    n_lr = len(data_lr)
+    tr_end_lr = int(0.6 * n_lr)
+    va_end_lr = int(0.8 * n_lr)
+    X_lr = data_lr[feat_cols].values
+    y_lr = data_lr[target].values
+    Xtr, Xva = X_lr[:tr_end_lr], X_lr[tr_end_lr:va_end_lr]
+    ytr, yva = y_lr[:tr_end_lr], y_lr[tr_end_lr:va_end_lr]
 
     # Correct: fit scaler on train only
     ss_correct = StandardScaler()
-    Xtr_c = ss_correct.fit_transform(Xtr)
-    Xva_c = ss_correct.transform(Xva)
-    lr1 = LogisticRegression(max_iter=500, random_state=config.RANDOM_STATE)
-    lr1.fit(Xtr_c, ytr)
-    acc_correct = round(float(accuracy_score(yva, lr1.predict(Xva_c))) * 100, 2)
+    lr1 = LogisticRegression(max_iter=300, random_state=config.RANDOM_STATE)
+    lr1.fit(ss_correct.fit_transform(Xtr), ytr)
+    acc_correct = round(float(accuracy_score(yva, lr1.predict(ss_correct.transform(Xva)))) * 100, 2)
 
     # Incorrect: fit scaler on all data (leakage)
     ss_leak = StandardScaler()
-    X_all_scaled = ss_leak.fit_transform(X)
-    lr2 = LogisticRegression(max_iter=500, random_state=config.RANDOM_STATE)
-    lr2.fit(X_all_scaled[:train_end], ytr)
-    acc_leak = round(float(accuracy_score(yva, lr2.predict(X_all_scaled[train_end:val_end]))) * 100, 2)
+    X_all_scaled = ss_leak.fit_transform(X_lr)
+    lr2 = LogisticRegression(max_iter=300, random_state=config.RANDOM_STATE)
+    lr2.fit(X_all_scaled[:tr_end_lr], ytr)
+    acc_leak = round(float(accuracy_score(yva, lr2.predict(X_all_scaled[tr_end_lr:va_end_lr]))) * 100, 2)
 
     return {
         'n_total': n,

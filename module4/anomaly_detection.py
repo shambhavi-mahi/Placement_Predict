@@ -30,7 +30,7 @@ from sklearn.metrics import (
 import config
 
 ANOMALY_DIR = config.ANOMALY_DIR
-SAMPLE_CAP = 10_000
+SAMPLE_CAP = 4_000   # LOF is O(n²) — 4K gives fast results while still meaningful
 
 
 def run_anomaly_detection(df: pd.DataFrame) -> dict:
@@ -67,8 +67,9 @@ def run_anomaly_detection(df: pd.DataFrame) -> dict:
 
     # ── LocalOutlierFactor ─────────────────────────────────────────────────
     lof = LocalOutlierFactor(
-        n_neighbors=20,
+        n_neighbors=10,          # fewer neighbors → faster
         contamination=contamination,
+        algorithm='ball_tree',   # faster than brute force
         n_jobs=-1,
     )
     lof_raw = lof.fit_predict(X)

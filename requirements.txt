@@ -34,6 +34,10 @@ pyparsing==3.3.2
 
 python-dateutil==2.9.0.post0
 
+scikit-learn
+
+scipy
+
 seaborn==0.13.2
 
 six==1.17.0
@@ -43,3 +47,11 @@ tzdata==2026.3
 Werkzeug==3.1.8
 
 gunicorn
+
+xgboost
+
+lightgbm
+
+shap
+
+umap-learn
