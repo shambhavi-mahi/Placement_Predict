@@ -20,6 +20,10 @@ COEFFICIENTS_DIR  = os.path.join(BASE_DIR, "Dashboard", "Plot", "Coefficients")
 SHAP_DIR          = os.path.join(BASE_DIR, "Dashboard", "Plot", "SHAP")
 KMEANS_DIR        = os.path.join(BASE_DIR, "Dashboard", "Plot", "KMeans")
 HIERARCHICAL_DIR  = os.path.join(BASE_DIR, "Dashboard", "Plot", "Hierarchical")
+DBSCAN_DIR        = os.path.join(BASE_DIR, "Dashboard", "Plot", "DBSCAN")
+PCA_DIR           = os.path.join(BASE_DIR, "Dashboard", "Plot", "PCA")
+UMAP_DIR          = os.path.join(BASE_DIR, "Dashboard", "Plot", "UMAP")
+ANOMALY_DIR       = os.path.join(BASE_DIR, "Dashboard", "Plot", "Anomaly")
 
 # Reports
 REPORTS_DIR    = os.path.join(BASE_DIR, "Output", "Report")

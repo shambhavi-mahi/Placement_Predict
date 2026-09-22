@@ -7,14 +7,22 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import accuracy_score
 import config
+
+# Cap training rows for speed — results are statistically representative
+SAMPLE_CAP = 10_000
 
 
 def run_pipeline(df: pd.DataFrame) -> dict:
     target = config.TARGET_COLUMN
     feat_cols = [c for c in config.NUMERIC_COLUMNS if c in df.columns]
     data = df[feat_cols + [target]].dropna().copy()
+
+    # Subsample if needed
+    if len(data) > SAMPLE_CAP:
+        data = data.sample(SAMPLE_CAP, random_state=config.RANDOM_STATE)
+
     X = data[feat_cols].values
     y = data[target].values
     n = len(data)
@@ -25,13 +33,13 @@ def run_pipeline(df: pd.DataFrame) -> dict:
     pipelines = {
         'Logistic Regression': Pipeline([
             ('scaler', StandardScaler()),
-            ('model', LogisticRegression(max_iter=1000, random_state=config.RANDOM_STATE))
+            ('model', LogisticRegression(max_iter=500, random_state=config.RANDOM_STATE))
         ]),
         'Random Forest': Pipeline([
-            ('model', RandomForestClassifier(n_estimators=100, random_state=config.RANDOM_STATE))
+            ('model', RandomForestClassifier(n_estimators=50, random_state=config.RANDOM_STATE, n_jobs=-1))
         ]),
         'Gradient Boosting': Pipeline([
-            ('model', GradientBoostingClassifier(n_estimators=100, random_state=config.RANDOM_STATE))
+            ('model', GradientBoostingClassifier(n_estimators=50, random_state=config.RANDOM_STATE))
         ]),
     }
 
@@ -49,7 +57,6 @@ def run_pipeline(df: pd.DataFrame) -> dict:
             'n_steps': len(steps),
         })
 
-    # Pipeline steps description
     step_descriptions = {
         'scaler': 'StandardScaler — normalizes features to zero mean and unit variance',
         'model': 'The ML model — receives preprocessed features and learns decision boundaries',

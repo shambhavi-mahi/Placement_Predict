@@ -15,8 +15,14 @@ from sklearn.metrics import accuracy_score, roc_auc_score, f1_score
 from models.feature_engg import _apply_encoding
 import config
 
+SAMPLE_CAP = 10_000
+
 
 def run_compare_models(df: pd.DataFrame) -> dict:
+    # Sample before encoding for speed
+    if len(df) > SAMPLE_CAP:
+        df = df.sample(SAMPLE_CAP, random_state=config.RANDOM_STATE)
+
     enc_df, _, _, _ = _apply_encoding(df)
     drop_cols = ['StudentID', 'IsAnomaly', 'Salary Package', config.TARGET_COLUMN]
     feat_cols = [c for c in enc_df.columns if c not in drop_cols]
@@ -33,13 +39,13 @@ def run_compare_models(df: pd.DataFrame) -> dict:
     Xva_s = ss.transform(Xva)
 
     models = [
-        ('Logistic Regression', LogisticRegression(max_iter=1000, random_state=config.RANDOM_STATE), True),
-        ('Decision Tree (full)', DecisionTreeClassifier(random_state=config.RANDOM_STATE), False),
+        ('Logistic Regression',    LogisticRegression(max_iter=500, random_state=config.RANDOM_STATE), True),
+        ('Decision Tree (full)',    DecisionTreeClassifier(random_state=config.RANDOM_STATE), False),
         ('Decision Tree (depth=3)', DecisionTreeClassifier(max_depth=3, random_state=config.RANDOM_STATE), False),
-        ('Bagging', BaggingClassifier(random_state=config.RANDOM_STATE), False),
-        ('Random Forest', RandomForestClassifier(n_estimators=100, random_state=config.RANDOM_STATE), False),
-        ('AdaBoost', AdaBoostClassifier(random_state=config.RANDOM_STATE), False),
-        ('Gradient Boosting', GradientBoostingClassifier(n_estimators=100, random_state=config.RANDOM_STATE), False),
+        ('Bagging',                BaggingClassifier(n_estimators=30, random_state=config.RANDOM_STATE, n_jobs=-1), False),
+        ('Random Forest',          RandomForestClassifier(n_estimators=50, random_state=config.RANDOM_STATE, n_jobs=-1), False),
+        ('AdaBoost',               AdaBoostClassifier(n_estimators=50, random_state=config.RANDOM_STATE), False),
+        ('Gradient Boosting',      GradientBoostingClassifier(n_estimators=50, random_state=config.RANDOM_STATE), False),
     ]
 
     results = []
@@ -69,7 +75,6 @@ def run_compare_models(df: pd.DataFrame) -> dict:
             'overfit': gap > 5,
         })
 
-    # Sort by val_acc desc
     results = sorted(results, key=lambda x: x['val_acc'], reverse=True)
     best = results[0]
 

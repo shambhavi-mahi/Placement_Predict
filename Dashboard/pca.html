@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block title %}PCA — PlacementPredict{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>Module 4 · Principal Component Analysis</h2>
+  <p>Rotate the feature space so the first axis captures maximum variance. Compress 10 features into 2–3 components with minimal information loss.</p>
+</div>
+
+{% if data %}
+
+<!-- KPI Row -->
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:22px;">
+  <div class="kpi-card">
+    <div class="kpi-icon blue">📐</div>
+    <div class="kpi-body">
+      <div class="kpi-label">PC1 Variance</div>
+      <div class="kpi-value">{{ data.pc1_variance }}%</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon green">📐</div>
+    <div class="kpi-body">
+      <div class="kpi-label">PC1+PC2 Combined</div>
+      <div class="kpi-value">{{ data.pc1_pc2_variance }}%</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon orange">🎯</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Components for 90%</div>
+      <div class="kpi-value">{{ data.thresholds["90%"] }}</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon purple">🏆</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Top PC1 Feature</div>
+      <div class="kpi-value" style="font-size:1rem;">{{ data.top_pc1_feature }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="tabs-container">
+  <div class="tabs-nav">
+    <button class="tab-btn active" data-target="tab-scree">1. Scree Plot</button>
+    <button class="tab-btn" data-target="tab-loadings">2. Loadings Biplot</button>
+    <button class="tab-btn" data-target="tab-2d">3. 2D Projection</button>
+    <button class="tab-btn" data-target="tab-table">4. Component Table</button>
+  </div>
+
+  <!-- Tab 1: Scree -->
+  <div id="tab-scree" class="tab-pane active">
+    <div class="card" style="padding:16px;margin-bottom:16px;">
+      <h3 style="margin:0 0 12px;font-size:1rem;">Scree Plot &amp; Cumulative Variance</h3>
+      <img src="{{ url_for('static', filename='Plot/PCA/scree_cumulative.png') }}"
+           alt="Scree Plot" style="width:100%;border-radius:6px;border:1px solid var(--border);">
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+      {% for label, n in data.thresholds.items() %}
+      <div class="card" style="padding:16px;text-align:center;">
+        <div style="font-size:1.6rem;font-weight:800;color:#2563EB;">{{ n }}</div>
+        <div style="font-size:0.82rem;color:var(--slate-gray);margin-top:4px;">components for {{ label }} variance</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Tab 2: Loadings -->
+  <div id="tab-loadings" class="tab-pane">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+      <div class="card" style="padding:16px;">
+        <h3 style="margin:0 0 12px;font-size:1rem;">Loadings Biplot</h3>
+        <img src="{{ url_for('static', filename='Plot/PCA/loadings_biplot.png') }}"
+             alt="Loadings Biplot" style="width:100%;border-radius:6px;border:1px solid var(--border);">
+      </div>
+      <div class="card" style="padding:16px;">
+        <h3 style="margin:0 0 14px;font-size:1rem;">Feature Loadings on PC1 &amp; PC2</h3>
+        <table style="width:100%;font-size:0.82rem;border-collapse:collapse;">
+          <thead>
+            <tr style="border-bottom:2px solid var(--border);">
+              <th style="padding:6px 8px;text-align:left;color:var(--slate-gray);font-size:0.7rem;">Feature</th>
+              <th style="padding:6px 8px;text-align:right;color:var(--slate-gray);font-size:0.7rem;">PC1</th>
+              <th style="padding:6px 8px;text-align:right;color:var(--slate-gray);font-size:0.7rem;">PC2</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in data.loading_table %}
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:6px 8px;font-weight:500;">{{ row.feature }}</td>
+              <td style="padding:6px 8px;text-align:right;color:{% if row.pc1 > 0 %}#10B981{% else %}#EF4444{% endif %};font-weight:600;">
+                {{ row.pc1_direction }}{{ row.pc1 | abs }}
+              </td>
+              <td style="padding:6px 8px;text-align:right;color:{% if row.pc2 > 0 %}#10B981{% else %}#EF4444{% endif %};font-weight:600;">
+                {{ row.pc2_direction }}{{ row.pc2 | abs }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p style="font-size:0.78rem;color:var(--slate-gray);margin-top:10px;">
+          Positive loading → higher feature value → higher score along that PC.<br>
+          Arrows pointing the same direction → features are correlated.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 3: 2D Projection -->
+  <div id="tab-2d" class="tab-pane">
+    <div class="card" style="padding:16px;margin-bottom:16px;">
+      <h3 style="margin:0 0 12px;font-size:1rem;">All Students Projected onto PC1/PC2 — Coloured by Placement</h3>
+      <img src="{{ url_for('static', filename='Plot/PCA/pca_2d_placement.png') }}"
+           alt="PCA 2D Projection" style="width:100%;border-radius:6px;border:1px solid var(--border);">
+    </div>
+    <div class="card" style="padding:16px;background:rgba(37,99,235,0.04);border:1px solid rgba(37,99,235,0.15);">
+      <h4 style="margin:0 0 8px;color:#2563EB;">How Much Was Retained?</h4>
+      <p style="font-size:0.86rem;color:var(--slate-gray);margin:0;line-height:1.7;">
+        PC1+PC2 together capture <strong>{{ data.pc1_pc2_variance }}%</strong> of total variance.
+        This backs the 2D plots used in K-Means and Hierarchical Clustering —
+        the pictures preserved <strong>{{ data.pc1_pc2_variance }}%</strong> of the information,
+        not 100%, but enough to see meaningful structure.
+        To capture 90%, you'd need <strong>{{ data.thresholds["90%"] }} components</strong>.
+      </p>
+    </div>
+  </div>
+
+  <!-- Tab 4: Component Table -->
+  <div id="tab-table" class="tab-pane">
+    <div class="card" style="padding:20px;overflow-x:auto;">
+      <h3 style="margin:0 0 16px;font-size:1rem;">Variance Explained per Component (First 10)</h3>
+      <table style="width:100%;font-size:0.875rem;border-collapse:collapse;">
+        <thead>
+          <tr style="background:rgba(37,99,235,0.06);">
+            <th style="padding:10px 14px;text-align:left;font-size:0.72rem;color:var(--slate-gray);text-transform:uppercase;">Component</th>
+            <th style="padding:10px 14px;text-align:right;font-size:0.72rem;color:var(--slate-gray);text-transform:uppercase;">Variance %</th>
+            <th style="padding:10px 14px;text-align:right;font-size:0.72rem;color:var(--slate-gray);text-transform:uppercase;">Cumulative %</th>
+            <th style="padding:10px 14px;text-align:left;font-size:0.72rem;color:var(--slate-gray);text-transform:uppercase;">Bar</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in data.component_table %}
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:10px 14px;font-weight:600;">PC{{ row.pc }}</td>
+            <td style="padding:10px 14px;text-align:right;color:#2563EB;font-weight:600;">{{ row.variance_pct }}%</td>
+            <td style="padding:10px 14px;text-align:right;color:var(--slate-gray);">{{ row.cumulative_pct }}%</td>
+            <td style="padding:10px 14px;min-width:120px;">
+              <div style="background:var(--border);border-radius:4px;height:8px;overflow:hidden;">
+                <div style="background:#2563EB;height:100%;width:{{ row.variance_pct }}%;border-radius:4px;"></div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% else %}
+<div class="card" style="padding:32px;text-align:center;color:var(--slate-gray);">
+  <p>Dataset not loaded.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.target).classList.add('active');
+    });
+  });
+</script>
+{% endblock %}

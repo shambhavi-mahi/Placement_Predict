@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+{% block title %}DBSCAN — PlacementPredict{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>Module 4 · DBSCAN</h2>
+  <p>Density-based clustering — finds clusters of arbitrary shape and explicitly labels outliers as <strong>Noise</strong>. No need to specify K upfront.</p>
+</div>
+
+{% if data %}
+
+<!-- KPI Row -->
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:22px;">
+  <div class="kpi-card">
+    <div class="kpi-icon blue">🔵</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Clusters Found</div>
+      <div class="kpi-value">{{ data.n_clusters }}</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon green">⚙️</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Core Points</div>
+      <div class="kpi-value">{{ data.core_pct }}%</div>
+    </div>
+  </div>
+  <div class="kpi-card" style="border:1px solid rgba(239,68,68,0.3);">
+    <div class="kpi-icon orange">✖️</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Noise Points</div>
+      <div class="kpi-value" style="color:#EF4444;">{{ data.noise_pct }}%</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon purple">📐</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Chosen eps</div>
+      <div class="kpi-value">{{ data.eps }}</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon blue">👥</div>
+    <div class="kpi-body">
+      <div class="kpi-label">min_samples</div>
+      <div class="kpi-value">{{ data.min_samples }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs-container">
+  <div class="tabs-nav">
+    <button class="tab-btn active" data-target="tab-kdist">1. K-Distance Plot</button>
+    <button class="tab-btn" data-target="tab-clusters">2. Cluster Scatter</button>
+    <button class="tab-btn" data-target="tab-sensitivity">3. eps Sensitivity</button>
+    <button class="tab-btn" data-target="tab-overlap">4. Anomaly Overlap</button>
+  </div>
+
+  <!-- Tab 1: K-Distance -->
+  <div id="tab-kdist" class="tab-pane active">
+    <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:20px;align-items:start;">
+      <div class="card" style="padding:16px;">
+        <h3 style="margin:0 0 12px;font-size:1rem;">K-Distance Plot (min_samples={{ data.min_samples }})</h3>
+        <img src="{{ url_for('static', filename='Plot/DBSCAN/k_distance_plot.png') }}"
+             alt="K-Distance Plot" style="width:100%;border-radius:6px;border:1px solid var(--border);">
+      </div>
+      <div class="card" style="padding:18px;">
+        <h4 style="margin:0 0 12px;color:#2563EB;">How to Read This Plot</h4>
+        <p style="font-size:0.85rem;color:var(--slate-gray);line-height:1.7;margin:0 0 10px;">
+          Each point is sorted by its distance to its {{ data.min_samples }}-th nearest neighbour.
+          Points in <strong>dense regions</strong> (left side) have a small k-distance.
+          Points in <strong>sparse regions</strong> (right side) have a large k-distance.
+        </p>
+        <p style="font-size:0.85rem;color:var(--slate-gray);line-height:1.7;margin:0 0 10px;">
+          The <strong style="color:#F59E0B;">elbow</strong> marks the boundary between dense and sparse regions.
+          Setting <code>eps</code> at the elbow captures the dense clusters while labelling the sparse tail as noise.
+        </p>
+        <div style="background:rgba(37,99,235,0.06);border-radius:8px;padding:12px;font-size:0.82rem;">
+          <strong>Suggested eps from elbow:</strong>
+          <span style="font-size:1.1rem;font-weight:700;color:#2563EB;margin-left:6px;">{{ data.suggested_eps }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px;padding:16px;">
+      <h4 style="margin:0 0 12px;font-size:0.95rem;">Three Types of Points</h4>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+        <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:14px;">
+          <div style="font-weight:700;color:#10B981;margin-bottom:6px;">🟢 Core Point</div>
+          <div style="font-size:0.82rem;color:var(--slate-gray);">Has ≥ min_samples neighbours within eps. Anchors and expands clusters.</div>
+        </div>
+        <div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:14px;">
+          <div style="font-weight:700;color:#D97706;margin-bottom:6px;">🟡 Border Point</div>
+          <div style="font-size:0.82rem;color:var(--slate-gray);">Within eps of a core point but not core itself. Part of that cluster, doesn't extend it.</div>
+        </div>
+        <div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:14px;">
+          <div style="font-weight:700;color:#EF4444;margin-bottom:6px;">⚫ Noise Point</div>
+          <div style="font-size:0.82rem;color:var(--slate-gray);">Not a core point, not within eps of one. Labeled –1. Explicitly an outlier.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 2: Scatter -->
+  <div id="tab-clusters" class="tab-pane">
+    <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:20px;align-items:start;">
+      <div class="card" style="padding:16px;">
+        <h3 style="margin:0 0 12px;font-size:1rem;">DBSCAN Clusters vs Noise (PCA 2D view)</h3>
+        <img src="{{ url_for('static', filename='Plot/DBSCAN/dbscan_clusters_pca_2d.png') }}"
+             alt="DBSCAN Scatter" style="width:100%;border-radius:6px;border:1px solid var(--border);">
+      </div>
+      <div class="card" style="padding:16px;">
+        <h3 style="margin:0 0 14px;font-size:1rem;">Cluster Sizes</h3>
+        <table style="width:100%;font-size:0.85rem;border-collapse:collapse;">
+          <thead>
+            <tr style="border-bottom:2px solid var(--border);">
+              <th style="padding:7px 10px;text-align:left;font-size:0.72rem;color:var(--slate-gray);">Cluster</th>
+              <th style="padding:7px 10px;text-align:right;font-size:0.72rem;color:var(--slate-gray);">Count</th>
+              <th style="padding:7px 10px;text-align:right;font-size:0.72rem;color:var(--slate-gray);">%</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in data.cluster_sizes %}
+            <tr style="border-bottom:1px solid var(--border);{% if row.is_noise %}background:rgba(239,68,68,0.04);{% endif %}">
+              <td style="padding:7px 10px;font-weight:{% if row.is_noise %}600{% else %}400{% endif %};color:{% if row.is_noise %}#EF4444{% else %}var(--text){% endif %};">
+                {{ row.cluster }}
+              </td>
+              <td style="padding:7px 10px;text-align:right;">{{ "{:,}".format(row.count) }}</td>
+              <td style="padding:7px 10px;text-align:right;color:var(--slate-gray);">{{ row.pct }}%</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% if data.placement_clustered is not none %}
+        <div style="margin-top:14px;font-size:0.82rem;">
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);">
+            <span style="color:var(--slate-gray);">Placement rate — Clustered</span>
+            <strong style="color:#10B981;">{{ data.placement_clustered }}%</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;">
+            <span style="color:var(--slate-gray);">Placement rate — Noise</span>
+            <strong style="color:#EF4444;">{{ data.placement_noise if data.placement_noise is not none else "—" }}%</strong>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 3: Sensitivity -->
+  <div id="tab-sensitivity" class="tab-pane">
+    <div class="card" style="padding:20px;margin-bottom:16px;">
+      <h3 style="margin:0 0 16px;font-size:1rem;">eps Sensitivity — What Happens If You Choose Wrong</h3>
+      <table style="width:100%;font-size:0.875rem;border-collapse:collapse;">
+        <thead>
+          <tr style="background:rgba(37,99,235,0.06);">
+            <th style="padding:10px 14px;text-align:left;font-size:0.72rem;color:var(--slate-gray);text-transform:uppercase;">eps</th>
+            <th style="padding:10px 14px;text-align:center;font-size:0.72rem;color:var(--slate-gray);text-transform:uppercase;">Clusters</th>
+            <th style="padding:10px 14px;text-align:center;font-size:0.72rem;color:var(--slate-gray);text-transform:uppercase;">Noise Points</th>
+            <th style="padding:10px 14px;text-align:center;font-size:0.72rem;color:var(--slate-gray);text-transform:uppercase;">Noise %</th>
+            <th style="padding:10px 14px;text-align:center;font-size:0.72rem;color:var(--slate-gray);text-transform:uppercase;">Setting</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in data.sensitivity %}
+          <tr style="border-bottom:1px solid var(--border);{% if row.is_chosen %}background:rgba(37,99,235,0.05);{% endif %}">
+            <td style="padding:10px 14px;font-weight:{% if row.is_chosen %}700{% else %}400{% endif %};">{{ row.eps }}</td>
+            <td style="padding:10px 14px;text-align:center;">{{ row.n_clusters }}</td>
+            <td style="padding:10px 14px;text-align:center;">{{ "{:,}".format(row.n_noise) }}</td>
+            <td style="padding:10px 14px;text-align:center;">{{ row.noise_pct }}%</td>
+            <td style="padding:10px 14px;text-align:center;">
+              {% if row.is_chosen %}
+                <span style="background:#2563EB;color:white;padding:2px 8px;border-radius:12px;font-size:0.72rem;font-weight:600;">✓ Chosen</span>
+              {% elif loop.index == 1 %}
+                <span style="background:rgba(239,68,68,0.15);color:#EF4444;padding:2px 8px;border-radius:12px;font-size:0.72rem;">Too Small</span>
+              {% else %}
+                <span style="background:rgba(245,158,11,0.15);color:#D97706;padding:2px 8px;border-radius:12px;font-size:0.72rem;">Too Large</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="card" style="padding:16px;background:rgba(37,99,235,0.04);border:1px solid rgba(37,99,235,0.15);">
+      <h4 style="margin:0 0 8px;color:#2563EB;">eps Too Small vs Too Large</h4>
+      <p style="font-size:0.86rem;color:var(--slate-gray);margin:0;line-height:1.7;">
+        <strong>Too small:</strong> most points can't find enough neighbours within eps, so everything becomes noise — no clusters form.<br>
+        <strong>Too large:</strong> all points are neighbours of each other; everything merges into one giant cluster with zero noise — the algorithm becomes trivial.<br>
+        <strong>Just right:</strong> the elbow eps separates genuinely dense regions (clusters) from sparse regions (noise).
+      </p>
+    </div>
+  </div>
+
+  <!-- Tab 4: Anomaly Overlap -->
+  <div id="tab-overlap" class="tab-pane">
+    {% if data.anomaly_overlap %}
+    <div class="card" style="padding:20px;margin-bottom:16px;">
+      <h3 style="margin:0 0 16px;font-size:1rem;">Does DBSCAN Noise Agree with the Dataset's IsAnomaly Flag?</h3>
+      <p style="font-size:0.86rem;color:var(--slate-gray);margin-bottom:16px;">
+        The <code>IsAnomaly</code> flag was computed using IQR rules — DBSCAN <em>never saw it</em>.
+        Any overlap is a genuine unsupervised discovery, not something the model was tuned toward.
+      </p>
+      <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);">
+        <div class="kpi-card">
+          <div class="kpi-body">
+            <div class="kpi-label">Both Noise & IsAnomaly</div>
+            <div class="kpi-value">{{ "{:,}".format(data.anomaly_overlap.both) }}</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-body">
+            <div class="kpi-label">% of DBSCAN Noise that is IsAnomaly</div>
+            <div class="kpi-value">{{ data.anomaly_overlap.noise_that_is_anomaly }}%</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-body">
+            <div class="kpi-label">% of IsAnomaly caught as Noise</div>
+            <div class="kpi-value">{{ data.anomaly_overlap.anomaly_caught_as_noise }}%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="card" style="padding:28px;text-align:center;color:var(--slate-gray);">
+      <p>No <code>IsAnomaly</code> column found in dataset — overlap analysis not available.</p>
+    </div>
+    {% endif %}
+    <div class="card" style="padding:16px;background:rgba(16,185,129,0.04);border:1px solid rgba(16,185,129,0.2);">
+      <h4 style="margin:0 0 8px;color:#10B981;">DBSCAN vs K-Means vs Hierarchical</h4>
+      <ul style="font-size:0.86rem;color:var(--slate-gray);margin:0;padding-left:16px;line-height:1.8;">
+        <li><strong>K-Means</strong> — requires K upfront, forces all points into clusters, assumes spherical blobs.</li>
+        <li><strong>Hierarchical</strong> — requires K (cut height), forces all points into clusters, can find non-spherical clusters.</li>
+        <li><strong>DBSCAN</strong> — no K needed, explicitly labels outliers as noise, handles arbitrary shapes, but sensitive to eps.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+{% else %}
+<div class="card" style="padding:32px;text-align:center;color:var(--slate-gray);">
+  <p>Dataset not loaded. Please ensure the CSV is available.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.target).classList.add('active');
+    });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% block title %}Anomaly Detection — PlacementPredict{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>Module 4 · Anomaly Detection</h2>
+  <p>Identify students with unusual profiles using <strong>IsolationForest</strong> and <strong>LocalOutlierFactor</strong> — then benchmark against the dataset's own IQR-based anomaly flag.</p>
+</div>
+
+{% if data %}
+
+<!-- KPI Row -->
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:22px;">
+  <div class="kpi-card">
+    <div class="kpi-icon blue">📊</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Sample Used</div>
+      <div class="kpi-value">{{ "{:,}".format(data.n_sample) }}</div>
+    </div>
+  </div>
+  <div class="kpi-card" style="border:1px solid rgba(239,68,68,0.3);">
+    <div class="kpi-icon orange">⚠️</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Contamination Used</div>
+      <div class="kpi-value" style="color:#EF4444;">{{ data.contamination }}%</div>
+    </div>
+  </div>
+  {% if data.flag_stats %}
+  <div class="kpi-card">
+    <div class="kpi-icon green">🏷️</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Dataset IsAnomaly Flag</div>
+      <div class="kpi-value">{{ data.flag_stats.pct }}%</div>
+    </div>
+  </div>
+  {% endif %}
+  <div class="kpi-card">
+    <div class="kpi-icon purple">🔍</div>
+    <div class="kpi-body">
+      <div class="kpi-label">IsoForest Flagged</div>
+      <div class="kpi-value">{{ data.iso_metrics.pct_flagged }}%</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon blue">🔍</div>
+    <div class="kpi-body">
+      <div class="kpi-label">LOF Flagged</div>
+      <div class="kpi-value">{{ data.lof_metrics.pct_flagged }}%</div>
+    </div>
+  </div>
+</div>
+
+<div class="tabs-container">
+  <div class="tabs-nav">
+    <button class="tab-btn active" data-target="tab-scatter">1. Scatter Plot</button>
+    <button class="tab-btn" data-target="tab-metrics">2. Metrics vs Flag</button>
+    <button class="tab-btn" data-target="tab-profile">3. Anomaly Profile</button>
+    <button class="tab-btn" data-target="tab-scores">4. Score Distributions</button>
+  </div>
+
+  <!-- Tab 1: Scatter -->
+  <div id="tab-scatter" class="tab-pane active">
+    <div class="card" style="padding:16px;margin-bottom:16px;">
+      <h3 style="margin:0 0 12px;font-size:1rem;">Normal vs Flagged Students — PCA 2D View</h3>
+      <img src="{{ url_for('static', filename='Plot/Anomaly/anomaly_scatter.png') }}"
+           alt="Anomaly Scatter" style="width:100%;border-radius:6px;border:1px solid var(--border);">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="card" style="padding:16px;background:rgba(37,99,235,0.04);border:1px solid rgba(37,99,235,0.15);">
+        <h4 style="margin:0 0 8px;color:#2563EB;">IsolationForest</h4>
+        <p style="font-size:0.84rem;color:var(--slate-gray);margin:0;line-height:1.7;">
+          Builds <strong>random trees</strong> by repeatedly splitting on random features at random thresholds.
+          Points that are isolated early (in shallow trees) are anomalies — they're easier to separate from the rest because they lie in sparse regions.
+          Fast and scales to large datasets.
+        </p>
+      </div>
+      <div class="card" style="padding:16px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.2);">
+        <h4 style="margin:0 0 8px;color:#D97706;">Local Outlier Factor (LOF)</h4>
+        <p style="font-size:0.84rem;color:var(--slate-gray);margin:0;line-height:1.7;">
+          Compares each point's <strong>local density</strong> to its neighbours' densities.
+          A point surrounded by dense neighbours but lying in a sparse region scores high (anomalous).
+          More sensitive to <em>local</em> anomalies — finds outliers that IsolationForest might miss in locally sparse patches.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 2: Metrics -->
+  <div id="tab-metrics" class="tab-pane">
+    {% if data.has_flag %}
+    <div class="card" style="padding:20px;margin-bottom:16px;overflow-x:auto;">
+      <h3 style="margin:0 0 16px;font-size:1rem;">Performance vs IsAnomaly Flag (IQR-based — never shown to either model)</h3>
+      <table style="width:100%;font-size:0.875rem;border-collapse:collapse;min-width:600px;">
+        <thead>
+          <tr style="background:rgba(37,99,235,0.06);">
+            <th style="padding:10px 14px;text-align:left;font-size:0.72rem;color:var(--slate-gray);text-transform:uppercase;">Method</th>
+            <th style="padding:10px 14px;text-align:right;font-size:0.72rem;color:var(--slate-gray);text-transform:uppercase;">Flagged</th>
+            <th style="padding:10px 14px;text-align:right;font-size:0.72rem;color:var(--slate-gray);text-transform:uppercase;">Precision</th>
+            <th style="padding:10px 14px;text-align:right;font-size:0.72rem;color:var(--slate-gray);text-transform:uppercase;">Recall</th>
+            <th style="padding:10px 14px;text-align:right;font-size:0.72rem;color:var(--slate-gray);text-transform:uppercase;">F1</th>
+            <th style="padding:10px 14px;text-align:right;font-size:0.72rem;color:var(--slate-gray);text-transform:uppercase;">Accuracy</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in [data.iso_metrics, data.lof_metrics] %}
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:10px 14px;font-weight:600;">{{ m.name }}</td>
+            <td style="padding:10px 14px;text-align:right;">{{ "{:,}".format(m.n_flagged) }} ({{ m.pct_flagged }}%)</td>
+            <td style="padding:10px 14px;text-align:right;color:#2563EB;font-weight:600;">{{ m.precision }}%</td>
+            <td style="padding:10px 14px;text-align:right;color:#10B981;font-weight:600;">{{ m.recall }}%</td>
+            <td style="padding:10px 14px;text-align:right;color:#F59E0B;font-weight:600;">{{ m.f1 }}%</td>
+            <td style="padding:10px 14px;text-align:right;color:var(--slate-gray);">{{ m.accuracy }}%</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <!-- Confusion matrix side by side -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      {% for m in [data.iso_metrics, data.lof_metrics] %}
+      <div class="card" style="padding:16px;">
+        <h4 style="margin:0 0 14px;font-size:0.9rem;">{{ m.name }} — Confusion Matrix</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;max-width:260px;">
+          <div style="background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);border-radius:6px;padding:12px;text-align:center;">
+            <div style="font-size:1.4rem;font-weight:800;color:#10B981;">{{ m.tn }}</div>
+            <div style="font-size:0.7rem;color:var(--slate-gray);margin-top:2px;">True Negative</div>
+          </div>
+          <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:12px;text-align:center;">
+            <div style="font-size:1.4rem;font-weight:800;color:#EF4444;">{{ m.fp }}</div>
+            <div style="font-size:0.7rem;color:var(--slate-gray);margin-top:2px;">False Positive</div>
+          </div>
+          <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:6px;padding:12px;text-align:center;">
+            <div style="font-size:1.4rem;font-weight:800;color:#D97706;">{{ m.fn }}</div>
+            <div style="font-size:0.7rem;color:var(--slate-gray);margin-top:2px;">False Negative</div>
+          </div>
+          <div style="background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);border-radius:6px;padding:12px;text-align:center;">
+            <div style="font-size:1.4rem;font-weight:800;color:#10B981;">{{ m.tp }}</div>
+            <div style="font-size:0.7rem;color:var(--slate-gray);margin-top:2px;">True Positive</div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="card" style="padding:28px;text-align:center;color:var(--slate-gray);">
+      <p>No <code>IsAnomaly</code> column — metrics comparison not available.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Tab 3: Profile -->
+  <div id="tab-profile" class="tab-pane">
+    <div class="card" style="padding:20px;overflow-x:auto;">
+      <h3 style="margin:0 0 16px;font-size:1rem;">Normal vs Anomaly Student Profile (IsolationForest)</h3>
+      <p style="font-size:0.85rem;color:var(--slate-gray);margin-bottom:16px;">Sorted by absolute difference — features where anomalous students differ most from normal students.</p>
+      <table style="width:100%;font-size:0.875rem;border-collapse:collapse;">
+        <thead>
+          <tr style="background:rgba(37,99,235,0.06);">
+            <th style="padding:10px 14px;text-align:left;font-size:0.72rem;color:var(--slate-gray);text-transform:uppercase;">Feature</th>
+            <th style="padding:10px 14px;text-align:right;font-size:0.72rem;color:#2563EB;text-transform:uppercase;">Normal Mean</th>
+            <th style="padding:10px 14px;text-align:right;font-size:0.72rem;color:#EF4444;text-transform:uppercase;">Anomaly Mean</th>
+            <th style="padding:10px 14px;text-align:right;font-size:0.72rem;color:var(--slate-gray);text-transform:uppercase;">Difference</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in data.profile_comparison %}
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:10px 14px;font-weight:500;">{{ row.feature }}</td>
+            <td style="padding:10px 14px;text-align:right;color:#2563EB;">{{ row.normal_mean }}</td>
+            <td style="padding:10px 14px;text-align:right;color:#EF4444;">{{ row.anomaly_mean }}</td>
+            <td style="padding:10px 14px;text-align:right;font-weight:600;color:{% if row.diff > 0 %}#EF4444{% else %}#10B981{% endif %};">
+              {{ "+" if row.diff > 0 else "" }}{{ row.diff }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Tab 4: Scores -->
+  <div id="tab-scores" class="tab-pane">
+    <div class="card" style="padding:16px;">
+      <h3 style="margin:0 0 12px;font-size:1rem;">Anomaly Score Distributions</h3>
+      <img src="{{ url_for('static', filename='Plot/Anomaly/score_distributions.png') }}"
+           alt="Score Distributions" style="width:100%;border-radius:6px;border:1px solid var(--border);">
+    </div>
+    <div class="card" style="margin-top:16px;padding:16px;background:rgba(37,99,235,0.04);border:1px solid rgba(37,99,235,0.15);">
+      <h4 style="margin:0 0 8px;color:#2563EB;">Interpreting the Scores</h4>
+      <p style="font-size:0.86rem;color:var(--slate-gray);margin:0;line-height:1.7;">
+        <strong>IsolationForest:</strong> Score = negative average path length across trees. Higher score = isolated earlier = more anomalous. The threshold at <code>contamination={{ data.contamination }}%</code> splits the tail from the bulk.<br><br>
+        <strong>LOF:</strong> Score = ratio of local density of point to density of its neighbours. Score near 1 = normal. Score >> 1 = much less dense than neighbours = anomaly.
+      </p>
+    </div>
+  </div>
+</div>
+
+{% else %}
+<div class="card" style="padding:32px;text-align:center;color:var(--slate-gray);">
+  <p>Dataset not loaded.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.target).classList.add('active');
+    });
+  });
+</script>
+{% endblock %}

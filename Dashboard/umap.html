@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}UMAP — PlacementPredict{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>Module 4 · UMAP</h2>
+  <p>Uniform Manifold Approximation and Projection — non-linear dimensionality reduction that preserves both local and global structure, far better than PCA.</p>
+</div>
+
+{% if data %}
+
+{% if data.umap_available %}
+
+<!-- KPI Row -->
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:22px;">
+  <div class="kpi-card">
+    <div class="kpi-icon blue">🗺️</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Total Students</div>
+      <div class="kpi-value">{{ "{:,}".format(data.n_full) }}</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon green">📊</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Sample Used</div>
+      <div class="kpi-value">{{ "{:,}".format(data.n_sample) }}</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon orange">⚙️</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Configurations Tested</div>
+      <div class="kpi-value">{{ data.configs | length }}</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon purple">🔢</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Features</div>
+      <div class="kpi-value">{{ data.n_features }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="tabs-container">
+  <div class="tabs-nav">
+    <button class="tab-btn active" data-target="tab-neighbors">1. n_neighbors Effect</button>
+    <button class="tab-btn" data-target="tab-features">2. Feature Colours</button>
+    <button class="tab-btn" data-target="tab-pca-vs">3. PCA vs UMAP</button>
+  </div>
+
+  <!-- Tab 1: n_neighbors comparison -->
+  <div id="tab-neighbors" class="tab-pane active">
+    <div class="card" style="padding:16px;margin-bottom:16px;">
+      <h3 style="margin:0 0 12px;font-size:1rem;">Effect of n_neighbors on Structure (coloured by Placement)</h3>
+      <img src="{{ url_for('static', filename='Plot/UMAP/umap_neighbors_comparison.png') }}"
+           alt="UMAP neighbors comparison" style="width:100%;border-radius:6px;border:1px solid var(--border);">
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+      {% for cfg in data.configs %}
+      <div class="card" style="padding:14px;">
+        <div style="font-weight:700;color:#2563EB;margin-bottom:6px;">{{ cfg.label }}</div>
+        <div style="font-size:0.82rem;color:var(--slate-gray);">n_neighbors = {{ cfg.n_neighbors }}, min_dist = {{ cfg.min_dist }}</div>
+        <div style="font-size:0.78rem;color:var(--slate-gray);margin-top:8px;">
+          {% if cfg.n_neighbors <= 10 %}
+            Small n_neighbors → focuses on <strong>local structure</strong>. Points in nearby groups cluster tightly together, but global shape may distort.
+          {% elif cfg.n_neighbors <= 50 %}
+            Balanced → captures both <strong>local clusters</strong> and <strong>global layout</strong>. Good default for most datasets.
+          {% else %}
+            Large n_neighbors → emphasises <strong>global structure</strong>. Clusters merge; fine-grained local groups are blurred.
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Tab 2: Feature colours -->
+  <div id="tab-features" class="tab-pane">
+    <div class="card" style="padding:16px;margin-bottom:16px;">
+      <h3 style="margin:0 0 12px;font-size:1rem;">UMAP Embedding Coloured by Each Feature (n_neighbors=30)</h3>
+      <img src="{{ url_for('static', filename='Plot/UMAP/umap_feature_colours.png') }}"
+           alt="UMAP feature colours" style="width:100%;border-radius:6px;border:1px solid var(--border);">
+    </div>
+    <div class="card" style="padding:16px;background:rgba(37,99,235,0.04);border:1px solid rgba(37,99,235,0.15);">
+      <h4 style="margin:0 0 8px;color:#2563EB;">How to Read These Plots</h4>
+      <p style="font-size:0.86rem;color:var(--slate-gray);margin:0;line-height:1.7;">
+        Regions of the UMAP that have a consistent colour (high or low values of a feature) indicate that UMAP has captured a real structure in the data related to that feature.
+        If a feature's colour appears random across the embedding, that feature isn't driving cluster structure.
+      </p>
+    </div>
+  </div>
+
+  <!-- Tab 3: PCA vs UMAP -->
+  <div id="tab-pca-vs" class="tab-pane">
+    <div class="card" style="padding:16px;margin-bottom:16px;">
+      <h3 style="margin:0 0 12px;font-size:1rem;">PCA vs UMAP Side-by-Side</h3>
+      <img src="{{ url_for('static', filename='Plot/UMAP/pca_vs_umap.png') }}"
+           alt="PCA vs UMAP" style="width:100%;border-radius:6px;border:1px solid var(--border);">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="card" style="padding:16px;background:rgba(16,185,129,0.04);border:1px solid rgba(16,185,129,0.2);">
+        <h4 style="margin:0 0 10px;color:#10B981;">PCA</h4>
+        <ul style="font-size:0.84rem;color:var(--slate-gray);margin:0;padding-left:16px;line-height:1.8;">
+          <li>Linear transformation only</li>
+          <li>Preserves global variance (spread)</li>
+          <li>Fast, deterministic</li>
+          <li>Interpretable (loadings)</li>
+          <li>Can miss non-linear cluster shapes</li>
+        </ul>
+      </div>
+      <div class="card" style="padding:16px;background:rgba(37,99,235,0.04);border:1px solid rgba(37,99,235,0.15);">
+        <h4 style="margin:0 0 10px;color:#2563EB;">UMAP</h4>
+        <ul style="font-size:0.84rem;color:var(--slate-gray);margin:0;padding-left:16px;line-height:1.8;">
+          <li>Non-linear, graph-based</li>
+          <li>Preserves local &amp; global structure</li>
+          <li>Slower, stochastic (random_state needed)</li>
+          <li>Less interpretable axes</li>
+          <li>Reveals complex cluster geometry</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% else %}
+<!-- UMAP not installed -->
+<div class="card" style="padding:36px;text-align:center;border:2px dashed var(--border);">
+  <div style="font-size:2.5rem;margin-bottom:14px;">📦</div>
+  <h3 style="margin:0 0 10px;">umap-learn not installed</h3>
+  <p style="color:var(--slate-gray);font-size:0.9rem;margin-bottom:18px;">Install the UMAP library to enable this page.</p>
+  <code style="display:inline-block;background:var(--surface-2,#F1F5F9);padding:10px 20px;border-radius:8px;font-size:0.95rem;">
+    pip install umap-learn
+  </code>
+  <p style="color:var(--slate-gray);font-size:0.82rem;margin-top:14px;">Then restart the Flask server and refresh this page.</p>
+</div>
+{% endif %}
+
+{% else %}
+<div class="card" style="padding:32px;text-align:center;color:var(--slate-gray);">
+  <p>Dataset not loaded.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.target).classList.add('active');
+    });
+  });
+</script>
+{% endblock %}

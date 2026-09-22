@@ -41,6 +41,10 @@ from module3.shap_importance import run_shap_importance
 from module3.compare_models import run_compare_models
 from module4.kmeans import run_kmeans
 from module4.hierarchical import run_hierarchical
+from module4.dbscan import run_dbscan
+from module4.pca_analysis import run_pca
+from module4.umap_viz import run_umap
+from module4.anomaly_detection import run_anomaly_detection
 
 # Per-request caches (computed once per server session)
 _cache = {}
@@ -475,6 +479,34 @@ def hierarchical_page():
     df = _safe_load_csv()
     data = _cached("hierarchical", run_hierarchical, df) if df is not None else None
     return render_template("hierarchical.html", data=data)
+
+
+@app.route("/dbscan")
+def dbscan_page():
+    df = _safe_load_csv()
+    data = _cached("dbscan", run_dbscan, df) if df is not None else None
+    return render_template("dbscan.html", data=data)
+
+
+@app.route("/pca")
+def pca_page():
+    df = _safe_load_csv()
+    data = _cached("pca", run_pca, df) if df is not None else None
+    return render_template("pca.html", data=data)
+
+
+@app.route("/umap")
+def umap_page():
+    df = _safe_load_csv()
+    data = _cached("umap", run_umap, df) if df is not None else None
+    return render_template("umap.html", data=data)
+
+
+@app.route("/anomaly-detection")
+def anomaly_detection_page():
+    df = _safe_load_csv()
+    data = _cached("anomaly_detection", run_anomaly_detection, df) if df is not None else None
+    return render_template("anomaly_detection.html", data=data)
 
 
 # ---------------------------------------------------------------------------

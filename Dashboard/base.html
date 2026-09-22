@@ -204,6 +204,18 @@
         <a href="{{ url_for('hierarchical_page') }}" class="menu-btn-sub {% if request.endpoint == 'hierarchical_page' %}active{% endif %}">
           <span class="topic-num">24</span> Hierarchical Clustering
         </a>
+        <a href="{{ url_for('dbscan_page') }}" class="menu-btn-sub {% if request.endpoint == 'dbscan_page' %}active{% endif %}">
+          <span class="topic-num">25</span> DBSCAN
+        </a>
+        <a href="{{ url_for('pca_page') }}" class="menu-btn-sub {% if request.endpoint == 'pca_page' %}active{% endif %}">
+          <span class="topic-num">26</span> PCA
+        </a>
+        <a href="{{ url_for('umap_page') }}" class="menu-btn-sub {% if request.endpoint == 'umap_page' %}active{% endif %}">
+          <span class="topic-num">27</span> UMAP
+        </a>
+        <a href="{{ url_for('anomaly_detection_page') }}" class="menu-btn-sub {% if request.endpoint == 'anomaly_detection_page' %}active{% endif %}">
+          <span class="topic-num">28</span> Anomaly Detection
+        </a>
       </div>
     </div>
 
