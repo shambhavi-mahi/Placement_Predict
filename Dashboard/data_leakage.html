@@ -109,49 +109,33 @@
 
   <!-- Tab 2: Pipeline -->
   <div id="tab-pipeline" class="tab-pane">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:16px;">
-      <div class="card" style="padding:20px;">
-        <h3 style="margin:0 0 16px;font-size:1rem;color:#2563EB;">Leakage-Free Pipeline</h3>
-        <div style="background:#0F172A;color:#E2E8F0;border-radius:8px;padding:16px;font-family:monospace;font-size:0.82rem;line-height:1.8;">
-          <span style="color:#94A3B8;"># Encapsulating Scaler inside Pipeline</span><br>
-          <span style="color:#7DD3FC;">from</span> sklearn.pipeline <span style="color:#7DD3FC;">import</span> make_pipeline<br><br>
-          pipe = make_pipeline(<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;StandardScaler(),<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;LogisticRegression()<br>
-          )<br><br>
-          cv_scores = cross_val_score(<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;pipe, X_dev, y_dev, cv=4<br>
-          )
+    <div class="card" style="padding:20px;margin-bottom:16px;">
+      <h3 style="margin:0 0 14px;font-size:1rem;">Why Pipeline Prevents Leakage</h3>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <div style="width:24px;height:24px;border-radius:50%;background:#EF4444;color:white;font-size:0.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✖</div>
+          <div>
+            <div style="font-weight:600;font-size:0.85rem;color:#EF4444;">Wrong (leakage)</div>
+            <div style="font-size:0.82rem;color:var(--slate-gray);">Fit <code>StandardScaler</code> on <strong>all</strong> data, then split. The scaler has seen mean/std of test fold → inflated CV scores.</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <div style="width:24px;height:24px;border-radius:50%;background:#10B981;color:white;font-size:0.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✔</div>
+          <div>
+            <div style="font-weight:600;font-size:0.85rem;color:#10B981;">Correct (pipeline)</div>
+            <div style="font-size:0.82rem;color:var(--slate-gray);">Inside each fold, <code>pipeline.fit(X_train)</code> → scaler learns only from that fold's training rows → <code>pipeline.transform(X_val)</code> uses those stats. Validation fold is never touched during fitting.</div>
+          </div>
         </div>
       </div>
-      <div class="card" style="padding:20px;">
-        <h3 style="margin:0 0 14px;font-size:1rem;">Why Pipeline Prevents Leakage</h3>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <div style="display:flex;align-items:flex-start;gap:10px;">
-            <div style="width:24px;height:24px;border-radius:50%;background:#EF4444;color:white;font-size:0.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✖</div>
-            <div>
-              <div style="font-weight:600;font-size:0.85rem;color:#EF4444;">Wrong (leakage)</div>
-              <div style="font-size:0.82rem;color:var(--slate-gray);">Fit <code>StandardScaler</code> on <strong>all</strong> data, then split. The scaler has seen mean/std of test fold → inflated CV scores.</div>
-            </div>
-          </div>
-          <div style="display:flex;align-items:flex-start;gap:10px;">
-            <div style="width:24px;height:24px;border-radius:50%;background:#10B981;color:white;font-size:0.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✔</div>
-            <div>
-              <div style="font-weight:600;font-size:0.85rem;color:#10B981;">Correct (pipeline)</div>
-              <div style="font-size:0.82rem;color:var(--slate-gray);">Inside each fold, <code>pipeline.fit(X_train)</code> → scaler learns only from that fold's training rows → <code>pipeline.transform(X_val)</code> uses those stats. Validation fold is never touched during fitting.</div>
-            </div>
-          </div>
-        </div>
-        <!-- Pipeline visual -->
-        <div style="margin-top:18px;display:flex;align-items:center;gap:6px;justify-content:center;">
-          <div style="background:#2563EB;color:white;padding:8px 14px;border-radius:8px;font-size:0.82rem;font-weight:600;">Raw Features</div>
-          <div style="color:#94A3B8;font-size:1.1rem;">→</div>
-          <div style="background:#6366F1;color:white;padding:8px 14px;border-radius:8px;font-size:0.82rem;font-weight:600;">StandardScaler</div>
-          <div style="color:#94A3B8;font-size:1.1rem;">→</div>
-          <div style="background:#10B981;color:white;padding:8px 14px;border-radius:8px;font-size:0.82rem;font-weight:600;">LogisticRegression</div>
-          <div style="color:#94A3B8;font-size:1.1rem;">→</div>
-          <div style="background:#F59E0B;color:white;padding:8px 14px;border-radius:8px;font-size:0.82rem;font-weight:600;">Prediction</div>
-        </div>
+      <!-- Pipeline visual -->
+      <div style="display:flex;align-items:center;gap:6px;justify-content:center;">
+        <div style="background:#2563EB;color:white;padding:8px 14px;border-radius:8px;font-size:0.82rem;font-weight:600;">Raw Features</div>
+        <div style="color:#94A3B8;font-size:1.1rem;">→</div>
+        <div style="background:#6366F1;color:white;padding:8px 14px;border-radius:8px;font-size:0.82rem;font-weight:600;">StandardScaler</div>
+        <div style="color:#94A3B8;font-size:1.1rem;">→</div>
+        <div style="background:#10B981;color:white;padding:8px 14px;border-radius:8px;font-size:0.82rem;font-weight:600;">LogisticRegression</div>
+        <div style="color:#94A3B8;font-size:1.1rem;">→</div>
+        <div style="background:#F59E0B;color:white;padding:8px 14px;border-radius:8px;font-size:0.82rem;font-weight:600;">Prediction</div>
       </div>
     </div>
     <div class="card" style="padding:16px;">
@@ -226,19 +210,6 @@
             accidentally put all "Not Placed" samples in one fold, distorting CV estimates.
           </p>
         </div>
-      </div>
-    </div>
-    <div class="card" style="padding:16px;background:#0F172A;border-radius:10px;">
-      <div style="color:#94A3B8;font-family:monospace;font-size:0.82rem;line-height:1.9;">
-        <span style="color:#7DD3FC;">from</span> sklearn.model_selection <span style="color:#7DD3FC;">import</span> StratifiedKFold, cross_val_score<br>
-        <br>
-        skf = StratifiedKFold(n_splits=4, shuffle=<span style="color:#86EFAC;">True</span>, random_state=42)<br>
-        cv_scores = cross_val_score(pipeline, X_dev, y_dev, cv=skf, scoring=<span style="color:#FCA5A5;">'accuracy'</span>)<br>
-        <span style="color:#7DD3FC;">print</span>(f<span style="color:#FCA5A5;">'Mean CV: {cv_scores.mean():.4f} (+/- {cv_scores.std()*2:.4f})'</span>)<br>
-        <br>
-        <span style="color:#94A3B8;"># Retrain on full dev → evaluate vault-locked test</span><br>
-        pipeline.fit(X_dev, y_dev)<br>
-        <span style="color:#7DD3FC;">print</span>(f<span style="color:#FCA5A5;">'Test Accuracy: {pipeline.score(X_test, y_test):.4f}'</span>)
       </div>
     </div>
   </div>
