@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+{% block title %}Data Leakage & Cross-Validation — PlacementPredict{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>Module 5 · Data Leakage &amp; Cross-Validation</h2>
+  <p>Why proper splitting and pipelines are the difference between a trustworthy model and one that only looks good on paper.</p>
+</div>
+
+{% if data %}
+
+<!-- KPI Row -->
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-bottom:22px;">
+  <div class="kpi-card">
+    <div class="kpi-icon blue">📊</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Total Samples</div>
+      <div class="kpi-value">{{ "{:,}".format(data.n_total) }}</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon green">🏋️</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Dev Set (80%)</div>
+      <div class="kpi-value">{{ "{:,}".format(data.n_dev) }}</div>
+    </div>
+  </div>
+  <div class="kpi-card" style="border:1px solid rgba(239,68,68,0.3);">
+    <div class="kpi-icon orange">🔒</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Vault-Locked Test</div>
+      <div class="kpi-value" style="color:#EF4444;">{{ "{:,}".format(data.n_test) }}</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon purple">🎯</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Mean CV Accuracy</div>
+      <div class="kpi-value">{{ data.mean_cv }}%</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon green">✅</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Test Accuracy</div>
+      <div class="kpi-value">{{ data.test_acc }}%</div>
+    </div>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs-container">
+  <div class="tabs-nav">
+    <button class="tab-btn active" data-target="tab-risk">1. True vs Empirical Risk</button>
+    <button class="tab-btn" data-target="tab-pipeline">2. Leakage-Free Pipeline</button>
+    <button class="tab-btn" data-target="tab-cv">3. Stratified K-Fold CV</button>
+    <button class="tab-btn" data-target="tab-leakage">4. Leakage Demo</button>
+  </div>
+
+  <!-- Tab 1: True vs Empirical Risk -->
+  <div id="tab-risk" class="tab-pane active">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:16px;">
+      <div class="card" style="padding:22px;background:rgba(37,99,235,0.04);border:1px solid rgba(37,99,235,0.2);">
+        <h3 style="margin:0 0 14px;color:#2563EB;font-size:1rem;">True Risk (Generalisation Error)</h3>
+        <div style="background:#F1F5F9;border-radius:8px;padding:14px;font-family:monospace;font-size:0.88rem;line-height:1.9;margin-bottom:12px;">
+          R_true(f) = E<sub style="font-size:0.75rem;">{(x,y)~P}</sub>[ L(f(x), y) ]
+        </div>
+        <p style="font-size:0.85rem;color:var(--slate-gray);margin:0;line-height:1.7;">
+          Expected loss over the <strong>unknown true joint distribution</strong> P(X, Y).
+          This is what we ultimately care about — how the model performs on future unseen data.
+          We can never compute it directly; we can only estimate it.
+        </p>
+      </div>
+      <div class="card" style="padding:22px;background:rgba(16,185,129,0.04);border:1px solid rgba(16,185,129,0.2);">
+        <h3 style="margin:0 0 14px;color:#10B981;font-size:1rem;">Empirical Risk (Training Error)</h3>
+        <div style="background:#F1F5F9;border-radius:8px;padding:14px;font-family:monospace;font-size:0.88rem;line-height:1.9;margin-bottom:12px;">
+          R_emp(f) = (1/N) &times; &sum;<sub style="font-size:0.75rem;">i=1..N</sub> L(f(x<sub>i</sub>), y<sub>i</sub>)
+        </div>
+        <p style="font-size:0.85rem;color:var(--slate-gray);margin:0;line-height:1.7;">
+          Average loss computed on the <strong>observed sample</strong> dataset D.
+          A model can drive empirical risk to zero just by memorising training data (overfitting).
+          The validation/test set gives an unbiased estimate of true risk.
+        </p>
+      </div>
+    </div>
+    <div class="card" style="padding:18px;background:rgba(245,158,11,0.05);border:1px solid rgba(245,158,11,0.25);">
+      <h4 style="margin:0 0 10px;color:#D97706;">Why the Gap Matters</h4>
+      <p style="font-size:0.86rem;color:var(--slate-gray);margin:0;line-height:1.7;">
+        The difference <strong>R_true − R_emp</strong> is the generalisation gap. A large gap means overfitting.
+        Regularisation, cross-validation, and sufficient data all work to close this gap.
+        Leakage <em>artificially deflates</em> R_emp, making you think the gap is small when it isn't.
+      </p>
+      <div style="margin-top:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+        <div style="background:white;border-radius:8px;padding:12px;text-align:center;border:1px solid var(--border);">
+          <div style="font-size:1.3rem;font-weight:800;color:#2563EB;">{{ data.mean_cv }}%</div>
+          <div style="font-size:0.75rem;color:var(--slate-gray);margin-top:2px;">Estimated R_true (CV mean)</div>
+        </div>
+        <div style="background:white;border-radius:8px;padding:12px;text-align:center;border:1px solid var(--border);">
+          <div style="font-size:1.3rem;font-weight:800;color:#10B981;">{{ data.test_acc }}%</div>
+          <div style="font-size:0.75rem;color:var(--slate-gray);margin-top:2px;">Vault test accuracy</div>
+        </div>
+        <div style="background:white;border-radius:8px;padding:12px;text-align:center;border:1px solid var(--border);">
+          <div style="font-size:1.3rem;font-weight:800;color:{% if data.gap|abs > 3 %}#EF4444{% else %}#10B981{% endif %};">{{ data.gap }}%</div>
+          <div style="font-size:0.75rem;color:var(--slate-gray);margin-top:2px;">CV–Test Gap</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 2: Pipeline -->
+  <div id="tab-pipeline" class="tab-pane">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:16px;">
+      <div class="card" style="padding:20px;">
+        <h3 style="margin:0 0 16px;font-size:1rem;color:#2563EB;">Leakage-Free Pipeline</h3>
+        <div style="background:#0F172A;color:#E2E8F0;border-radius:8px;padding:16px;font-family:monospace;font-size:0.82rem;line-height:1.8;">
+          <span style="color:#94A3B8;"># Encapsulating Scaler inside Pipeline</span><br>
+          <span style="color:#7DD3FC;">from</span> sklearn.pipeline <span style="color:#7DD3FC;">import</span> make_pipeline<br><br>
+          pipe = make_pipeline(<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;StandardScaler(),<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;LogisticRegression()<br>
+          )<br><br>
+          cv_scores = cross_val_score(<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;pipe, X_dev, y_dev, cv=4<br>
+          )
+        </div>
+      </div>
+      <div class="card" style="padding:20px;">
+        <h3 style="margin:0 0 14px;font-size:1rem;">Why Pipeline Prevents Leakage</h3>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;align-items:flex-start;gap:10px;">
+            <div style="width:24px;height:24px;border-radius:50%;background:#EF4444;color:white;font-size:0.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✖</div>
+            <div>
+              <div style="font-weight:600;font-size:0.85rem;color:#EF4444;">Wrong (leakage)</div>
+              <div style="font-size:0.82rem;color:var(--slate-gray);">Fit <code>StandardScaler</code> on <strong>all</strong> data, then split. The scaler has seen mean/std of test fold → inflated CV scores.</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;">
+            <div style="width:24px;height:24px;border-radius:50%;background:#10B981;color:white;font-size:0.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✔</div>
+            <div>
+              <div style="font-weight:600;font-size:0.85rem;color:#10B981;">Correct (pipeline)</div>
+              <div style="font-size:0.82rem;color:var(--slate-gray);">Inside each fold, <code>pipeline.fit(X_train)</code> → scaler learns only from that fold's training rows → <code>pipeline.transform(X_val)</code> uses those stats. Validation fold is never touched during fitting.</div>
+            </div>
+          </div>
+        </div>
+        <!-- Pipeline visual -->
+        <div style="margin-top:18px;display:flex;align-items:center;gap:6px;justify-content:center;">
+          <div style="background:#2563EB;color:white;padding:8px 14px;border-radius:8px;font-size:0.82rem;font-weight:600;">Raw Features</div>
+          <div style="color:#94A3B8;font-size:1.1rem;">→</div>
+          <div style="background:#6366F1;color:white;padding:8px 14px;border-radius:8px;font-size:0.82rem;font-weight:600;">StandardScaler</div>
+          <div style="color:#94A3B8;font-size:1.1rem;">→</div>
+          <div style="background:#10B981;color:white;padding:8px 14px;border-radius:8px;font-size:0.82rem;font-weight:600;">LogisticRegression</div>
+          <div style="color:#94A3B8;font-size:1.1rem;">→</div>
+          <div style="background:#F59E0B;color:white;padding:8px 14px;border-radius:8px;font-size:0.82rem;font-weight:600;">Prediction</div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="padding:16px;">
+      <h4 style="margin:0 0 10px;font-size:0.9rem;">Features Used</h4>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        {% for f in data.feature_names %}
+        <span style="background:rgba(37,99,235,0.08);color:#2563EB;padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:500;">{{ f }}</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 3: CV Results -->
+  <div id="tab-cv" class="tab-pane">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:16px;">
+      <div class="card" style="padding:20px;">
+        <h3 style="margin:0 0 16px;font-size:1rem;">4-Fold StratifiedKFold Results</h3>
+        <table style="width:100%;font-size:0.875rem;border-collapse:collapse;">
+          <thead>
+            <tr style="background:rgba(37,99,235,0.06);">
+              <th style="padding:10px 14px;text-align:left;font-size:0.72rem;color:var(--slate-gray);text-transform:uppercase;">Fold</th>
+              <th style="padding:10px 14px;text-align:right;font-size:0.72rem;color:var(--slate-gray);text-transform:uppercase;">Accuracy</th>
+              <th style="padding:10px 14px;text-align:left;font-size:0.72rem;color:var(--slate-gray);text-transform:uppercase;">Bar</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in data.fold_results %}
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:10px 14px;font-weight:600;">Fold {{ row.fold }}</td>
+              <td style="padding:10px 14px;text-align:right;color:#2563EB;font-weight:700;">{{ row.accuracy }}%</td>
+              <td style="padding:10px 14px;min-width:100px;">
+                <div style="background:var(--border);border-radius:4px;height:8px;">
+                  <div style="background:#2563EB;height:100%;width:{{ row.accuracy }}%;border-radius:4px;"></div>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+            <tr style="border-top:2px solid var(--border);background:rgba(16,185,129,0.04);">
+              <td style="padding:10px 14px;font-weight:700;">Mean ± 2σ</td>
+              <td style="padding:10px 14px;text-align:right;color:#10B981;font-weight:800;">{{ data.mean_cv }}% ± {{ data.std_cv }}%</td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card" style="padding:20px;">
+        <h3 style="margin:0 0 14px;font-size:1rem;">CV vs Vault Test</h3>
+        <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:16px;">
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:0.85rem;font-weight:600;">Mean CV Accuracy</span>
+              <strong style="color:#2563EB;">{{ data.mean_cv }}%</strong>
+            </div>
+            <div style="background:var(--border);border-radius:6px;height:12px;">
+              <div style="background:#2563EB;height:100%;width:{{ data.mean_cv }}%;border-radius:6px;"></div>
+            </div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:0.85rem;font-weight:600;">Vault Test Accuracy</span>
+              <strong style="color:#10B981;">{{ data.test_acc }}%</strong>
+            </div>
+            <div style="background:var(--border);border-radius:6px;height:12px;">
+              <div style="background:#10B981;height:100%;width:{{ data.test_acc }}%;border-radius:6px;"></div>
+            </div>
+          </div>
+        </div>
+        <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:12px;">
+          <p style="font-size:0.84rem;color:var(--slate-gray);margin:0;line-height:1.7;">
+            <strong>StratifiedKFold</strong> ensures each fold has the same class ratio as the full dataset.
+            This is critical when one class (e.g., "Not Placed") is rarer — random splits might 
+            accidentally put all "Not Placed" samples in one fold, distorting CV estimates.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="padding:16px;background:#0F172A;border-radius:10px;">
+      <div style="color:#94A3B8;font-family:monospace;font-size:0.82rem;line-height:1.9;">
+        <span style="color:#7DD3FC;">from</span> sklearn.model_selection <span style="color:#7DD3FC;">import</span> StratifiedKFold, cross_val_score<br>
+        <br>
+        skf = StratifiedKFold(n_splits=4, shuffle=<span style="color:#86EFAC;">True</span>, random_state=42)<br>
+        cv_scores = cross_val_score(pipeline, X_dev, y_dev, cv=skf, scoring=<span style="color:#FCA5A5;">'accuracy'</span>)<br>
+        <span style="color:#7DD3FC;">print</span>(f<span style="color:#FCA5A5;">'Mean CV: {cv_scores.mean():.4f} (+/- {cv_scores.std()*2:.4f})'</span>)<br>
+        <br>
+        <span style="color:#94A3B8;"># Retrain on full dev → evaluate vault-locked test</span><br>
+        pipeline.fit(X_dev, y_dev)<br>
+        <span style="color:#7DD3FC;">print</span>(f<span style="color:#FCA5A5;">'Test Accuracy: {pipeline.score(X_test, y_test):.4f}'</span>)
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 4: Leakage Demo -->
+  <div id="tab-leakage" class="tab-pane">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:16px;">
+      <div class="card" style="padding:20px;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.03);">
+        <h3 style="margin:0 0 14px;color:#EF4444;font-size:1rem;">❌ With Leakage</h3>
+        <p style="font-size:0.85rem;color:var(--slate-gray);margin-bottom:14px;line-height:1.7;">
+          Fit <code>StandardScaler</code> on the <strong>entire dataset</strong> (including test), then split.
+          The scaler has seen test set statistics → test accuracy is inflated.
+        </p>
+        <div style="font-size:2rem;font-weight:800;color:#EF4444;text-align:center;padding:14px 0;">
+          {{ data.leakage_demo.leaked_acc }}%
+        </div>
+        <div style="text-align:center;font-size:0.8rem;color:var(--slate-gray);">Inflated test accuracy</div>
+      </div>
+      <div class="card" style="padding:20px;border:1px solid rgba(16,185,129,0.3);background:rgba(16,185,129,0.03);">
+        <h3 style="margin:0 0 14px;color:#10B981;font-size:1rem;">✔ Without Leakage (Pipeline)</h3>
+        <p style="font-size:0.85rem;color:var(--slate-gray);margin-bottom:14px;line-height:1.7;">
+          Fit <code>StandardScaler</code> <strong>only on training data</strong> inside the pipeline.
+          Test data is never seen during fitting → honest estimate.
+        </p>
+        <div style="font-size:2rem;font-weight:800;color:#10B981;text-align:center;padding:14px 0;">
+          {{ data.leakage_demo.clean_acc }}%
+        </div>
+        <div style="text-align:center;font-size:0.8rem;color:var(--slate-gray);">True test accuracy</div>
+      </div>
+    </div>
+    <div class="card" style="padding:18px;background:rgba(239,68,68,0.04);border:1px solid rgba(239,68,68,0.2);">
+      <h4 style="margin:0 0 8px;color:#EF4444;">Inflation: {{ data.leakage_demo.inflation }}%</h4>
+      <p style="font-size:0.86rem;color:var(--slate-gray);margin:0;line-height:1.7;">
+        Data leakage artificially <strong>inflated accuracy by {{ data.leakage_demo.inflation }}%</strong>.
+        In production, the model would underperform compared to development expectations.
+        This is why the scaler (and any preprocessing step) must always be inside the pipeline — 
+        <code>pipeline.fit(X_train)</code> fits the scaler on training data only; 
+        <code>pipeline.transform(X_test)</code> then applies the training statistics to the test set.
+      </p>
+    </div>
+  </div>
+</div>
+
+{% else %}
+<div class="card" style="padding:32px;text-align:center;color:var(--slate-gray);">
+  <p>Dataset not loaded.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.target).classList.add('active');
+    });
+  });
+</script>
+{% endblock %}

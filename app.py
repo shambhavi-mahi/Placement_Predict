@@ -45,6 +45,7 @@ from module4.dbscan import run_dbscan
 from module4.pca_analysis import run_pca
 from module4.umap_viz import run_umap
 from module4.anomaly_detection import run_anomaly_detection
+from module5.data_leakage import run_data_leakage
 
 # Per-request caches (computed once per server session)
 _cache = {}
@@ -507,6 +508,13 @@ def anomaly_detection_page():
     df = _safe_load_csv()
     data = _cached("anomaly_detection", run_anomaly_detection, df) if df is not None else None
     return render_template("anomaly_detection.html", data=data)
+
+
+@app.route("/data-leakage")
+def data_leakage_page():
+    df = _safe_load_csv()
+    data = _cached("data_leakage", run_data_leakage, df) if df is not None else None
+    return render_template("data_leakage.html", data=data)
 
 
 # ---------------------------------------------------------------------------

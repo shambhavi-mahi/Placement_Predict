@@ -201,6 +201,19 @@
       </div>
     </div>
 
+    <!-- ── Module 5: Advanced Topics ─────────────── -->
+    <div class="sidebar-module-group" id="mod5">
+      <div class="sidebar-module-header" onclick="toggleModule('mod5')">
+        <span><span class="module-label">Module 5</span> · Advanced Topics</span>
+        <span class="sidebar-module-chevron">▼</span>
+      </div>
+      <div class="sidebar-module-items">
+        <a href="{{ url_for('data_leakage_page') }}" class="menu-btn-sub {% if request.endpoint == 'data_leakage_page' %}active{% endif %}">
+          <span class="topic-num">21</span> Data Leakage &amp; CV
+        </a>
+      </div>
+    </div>
+
     <!-- Sidebar brand footer -->
     <div class="sidebar-brand-card">
       <span class="sbc-icon">🎓</span>

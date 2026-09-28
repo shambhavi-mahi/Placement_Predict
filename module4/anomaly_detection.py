@@ -164,6 +164,23 @@ def run_anomaly_detection(df: pd.DataFrame) -> dict:
             "pct": round(n_flagged_iqr / n_sample * 100, 1),
         }
 
+    # ── Toy example: [1, 2, 3, 4, 5, 50] ─────────────────────────────────
+    toy_X = np.array([1, 2, 3, 4, 5, 50]).reshape(-1, 1)
+    toy_clf = IsolationForest(n_estimators=100, contamination=0.17, random_state=42)
+    toy_clf.fit(toy_X)
+    toy_scores = toy_clf.decision_function(toy_X)
+    toy_labels = toy_clf.predict(toy_X)
+    toy_rows = [
+        {
+            "x": int(x),
+            "score": round(float(sc), 3),
+            "label": int(lb),
+            "label_str": "Anomaly ✖" if lb == -1 else "Normal ✔",
+            "is_anomaly": lb == -1,
+        }
+        for x, sc, lb in zip(toy_X.ravel(), toy_scores, toy_labels)
+    ]
+
     return {
         "n_full": n_full,
         "n_sample": n_sample,
@@ -174,4 +191,5 @@ def run_anomaly_detection(df: pd.DataFrame) -> dict:
         "iso_metrics": iso_metrics,
         "lof_metrics": lof_metrics,
         "profile_comparison": profile_comparison,
+        "toy_example": toy_rows,
     }
