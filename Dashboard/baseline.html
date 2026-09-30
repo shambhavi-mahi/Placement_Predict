@@ -36,19 +36,24 @@
   </div>
 
   <div class="kpi-card">
-    <div class="kpi-icon" style="background:linear-gradient(135deg,#2563EB,#1D4ED8);">🧠</div>
-    <div class="kpi-label">Smart Model Accuracy</div>
-    <div class="kpi-value">{% if baseline.smart_acc %}{{ baseline.smart_acc }}%{% else %}N/A{% endif %}</div>
-    <div style="font-size:0.78rem;color:#64748B;">Logistic Regression</div>
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#3B82F6,#2563EB);">📌</div>
+    <div class="kpi-label">Precision</div>
+    <div class="kpi-value">{{ baseline.precision }}%</div>
+    <div style="font-size:0.78rem;color:#64748B;">Correct positive predictions</div>
   </div>
 
   <div class="kpi-card">
-    <div class="kpi-icon" style="background:linear-gradient(135deg,#8B5CF6,#7C3AED);">📈</div>
-    <div class="kpi-label">Improvement Gap</div>
-    <div class="kpi-value" style="color:{% if baseline.gap and baseline.gap > 0 %}#10B981{% else %}#EF4444{% endif %};">
-      {% if baseline.gap %}+{{ baseline.gap }}%{% else %}N/A{% endif %}
-    </div>
-    <div style="font-size:0.78rem;color:#64748B;">Smart − Baseline</div>
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#EC4899,#DB2777);">🔍</div>
+    <div class="kpi-label">Recall</div>
+    <div class="kpi-value">{{ baseline.recall }}%</div>
+    <div style="font-size:0.78rem;color:#64748B;">Actual positives identified</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#8B5CF6,#7C3AED);">⚖️</div>
+    <div class="kpi-label">F1 Score</div>
+    <div class="kpi-value">{{ baseline.f1 }}%</div>
+    <div style="font-size:0.78rem;color:#64748B;">Harmonic mean</div>
   </div>
 
 </div>

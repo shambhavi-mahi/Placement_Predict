@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Huber Regression — PlacementPredict{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:1.5rem;">
+  <h1 style="font-size:1.6rem;font-weight:700;color:#1E293B;margin:0 0 0.3rem;">
+    Module 5 · Huber Regression
+  </h1>
+  <p style="color:#64748B;margin:0;font-size:0.95rem;">
+    Robust regression that is less sensitive to extreme outliers than standard Ordinary Least Squares.
+  </p>
+</div>
+
+{% if data %}
+<div class="kpi-grid" style="margin-bottom:1.5rem;">
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#94A3B8,#64748B);">📊</div>
+    <div class="kpi-label">Samples</div>
+    <div class="kpi-value">{{ data.n_samples }}</div>
+    <div style="font-size:0.78rem;color:#64748B;">Total data points</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#EF4444,#DC2626);">⚠️</div>
+    <div class="kpi-label">Injected Outliers</div>
+    <div class="kpi-value">{{ data.n_outliers }}</div>
+    <div style="font-size:0.78rem;color:#64748B;">Artificial data errors</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#F59E0B,#D97706);">📉</div>
+    <div class="kpi-label">OLS MAE (Clean)</div>
+    <div class="kpi-value">{{ data.ols_mae }}</div>
+    <div style="font-size:0.78rem;color:#64748B;">Linear Regression error</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#10B981,#059669);">🛡️</div>
+    <div class="kpi-label">Huber MAE (Clean)</div>
+    <div class="kpi-value">{{ data.huber_mae }}</div>
+    <div style="font-size:0.78rem;color:#64748B;">Robust error</div>
+  </div>
+</div>
+
+<div class="card" style="padding:1.5rem;margin-bottom:1.5rem;">
+  <h3 style="font-size:1.1rem;font-weight:700;margin-top:0;">OLS vs Huber on Corrupted Data</h3>
+  <img src="{{ url_for('static', filename='Plot/Huber/huber_vs_ols.png') }}" style="max-width:100%;border-radius:8px;border:1px solid #E2E8F0;margin-top:1rem;">
+  
+  <div style="margin-top:1rem;padding:1rem;background:rgba(16,185,129,0.05);border-left:4px solid #10B981;border-radius:0 8px 8px 0;">
+    <p style="margin:0;font-size:0.9rem;color:#334155;line-height:1.6;">
+      <strong>Why this works:</strong> Standard Linear Regression (OLS) minimizes <em>squared errors</em>, which means extreme outliers pull the line heavily towards them. Huber Regression uses an absolute error loss for large deviations, ignoring their extreme pull while still fitting the main trend cleanly. 
+      Result: Huber MAE improves by <strong>{{ data.improvement }}</strong> over OLS on the underlying clean data.
+    </p>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

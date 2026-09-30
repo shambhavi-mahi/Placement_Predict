@@ -46,6 +46,8 @@ from module4.pca_analysis import run_pca
 from module4.umap_viz import run_umap
 from module4.anomaly_detection import run_anomaly_detection
 from module5.data_leakage import run_data_leakage
+from module5.f_beta import run_f_beta
+from module5.huber_regression import run_huber_regression
 
 # Per-request caches (computed once per server session)
 _cache = {}
@@ -515,6 +517,20 @@ def data_leakage_page():
     df = _safe_load_csv()
     data = _cached("data_leakage", run_data_leakage, df) if df is not None else None
     return render_template("data_leakage.html", data=data)
+
+
+@app.route("/f-beta")
+def f_beta_page():
+    df = _safe_load_csv()
+    data = _cached("f_beta", run_f_beta, df) if df is not None else None
+    return render_template("f_beta.html", data=data)
+
+
+@app.route("/huber-regression")
+def huber_regression_page():
+    df = _safe_load_csv()
+    data = _cached("huber_regression", run_huber_regression, df) if df is not None else None
+    return render_template("huber.html", data=data)
 
 
 # ---------------------------------------------------------------------------

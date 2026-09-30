@@ -146,7 +146,7 @@ web: gunicorn app:app
 
 ## 👤 Author
 
-**Shambhavi Mahi**  
+**Shambhavi**  
 GitHub: [@shambhavi-mahi](https://github.com/shambhavi-mahi)
 
 ---
