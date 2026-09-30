@@ -16,44 +16,56 @@
 
   <div class="kpi-card">
     <div class="kpi-icon" style="background:linear-gradient(135deg,#10B981,#059669);">🎓</div>
-    <div class="kpi-label">Placed</div>
-    <div class="kpi-value">{{ baseline.placed_pct }}%</div>
-    <div style="font-size:0.78rem;color:#64748B;">{{ baseline.placed_count }} students</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Placed</div>
+      <div class="kpi-value">{{ baseline.placed_pct }}%</div>
+      <div style="font-size:0.78rem;color:#64748B;">{{ baseline.placed_count }} students</div>
+    </div>
   </div>
 
   <div class="kpi-card">
     <div class="kpi-icon" style="background:linear-gradient(135deg,#EF4444,#DC2626);">❌</div>
-    <div class="kpi-label">Not Placed</div>
-    <div class="kpi-value">{{ baseline.not_placed_pct }}%</div>
-    <div style="font-size:0.78rem;color:#64748B;">{{ baseline.not_placed_count }} students</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Not Placed</div>
+      <div class="kpi-value">{{ baseline.not_placed_pct }}%</div>
+      <div style="font-size:0.78rem;color:#64748B;">{{ baseline.not_placed_count }} students</div>
+    </div>
   </div>
 
   <div class="kpi-card">
     <div class="kpi-icon" style="background:linear-gradient(135deg,#F59E0B,#D97706);">🎯</div>
-    <div class="kpi-label">Baseline Accuracy</div>
-    <div class="kpi-value">{{ baseline.baseline_acc }}%</div>
-    <div style="font-size:0.78rem;color:#64748B;">Majority-class predictor</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Baseline Accuracy</div>
+      <div class="kpi-value">{{ baseline.baseline_acc }}%</div>
+      <div style="font-size:0.78rem;color:#64748B;">Majority-class predictor</div>
+    </div>
   </div>
 
   <div class="kpi-card">
     <div class="kpi-icon" style="background:linear-gradient(135deg,#3B82F6,#2563EB);">📌</div>
-    <div class="kpi-label">Precision</div>
-    <div class="kpi-value">{{ baseline.precision }}%</div>
-    <div style="font-size:0.78rem;color:#64748B;">Correct positive predictions</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Precision</div>
+      <div class="kpi-value">{{ baseline.precision }}%</div>
+      <div style="font-size:0.78rem;color:#64748B;">Correct positive predictions</div>
+    </div>
   </div>
 
   <div class="kpi-card">
     <div class="kpi-icon" style="background:linear-gradient(135deg,#EC4899,#DB2777);">🔍</div>
-    <div class="kpi-label">Recall</div>
-    <div class="kpi-value">{{ baseline.recall }}%</div>
-    <div style="font-size:0.78rem;color:#64748B;">Actual positives identified</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Recall</div>
+      <div class="kpi-value">{{ baseline.recall }}%</div>
+      <div style="font-size:0.78rem;color:#64748B;">Actual positives identified</div>
+    </div>
   </div>
 
   <div class="kpi-card">
     <div class="kpi-icon" style="background:linear-gradient(135deg,#8B5CF6,#7C3AED);">⚖️</div>
-    <div class="kpi-label">F1 Score</div>
-    <div class="kpi-value">{{ baseline.f1 }}%</div>
-    <div style="font-size:0.78rem;color:#64748B;">Harmonic mean</div>
+    <div class="kpi-body">
+      <div class="kpi-label">F1 Score</div>
+      <div class="kpi-value">{{ baseline.f1 }}%</div>
+      <div style="font-size:0.78rem;color:#64748B;">Harmonic mean</div>
+    </div>
   </div>
 
 </div>

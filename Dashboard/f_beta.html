@@ -16,32 +16,43 @@
 <div class="kpi-grid" style="margin-bottom:1.5rem;">
   <div class="kpi-card">
     <div class="kpi-icon" style="background:linear-gradient(135deg,#3B82F6,#2563EB);">📌</div>
-    <div class="kpi-label">Precision</div>
-    <div class="kpi-value">{{ data.precision }}%</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Precision</div>
+      <div class="kpi-value">{{ data.precision }}%</div>
+    </div>
   </div>
   <div class="kpi-card">
     <div class="kpi-icon" style="background:linear-gradient(135deg,#EC4899,#DB2777);">🔍</div>
-    <div class="kpi-label">Recall</div>
-    <div class="kpi-value">{{ data.recall }}%</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Recall</div>
+      <div class="kpi-value">{{ data.recall }}%</div>
+    </div>
   </div>
   <div class="kpi-card">
     <div class="kpi-icon" style="background:linear-gradient(135deg,#F59E0B,#D97706);">⚖️</div>
-    <div class="kpi-label">F1 Score (&beta;=1)</div>
-    <div class="kpi-value">{{ data.f1 }}%</div>
-    <div style="font-size:0.78rem;color:#64748B;">Balanced weight</div>
+    <div class="kpi-body">
+      <div class="kpi-label">F1 Score (&beta;=1)</div>
+      <div class="kpi-value">{{ data.f1 }}%</div>
+      <div style="font-size:0.78rem;color:#64748B;">Balanced weight</div>
+    </div>
   </div>
   <div class="kpi-card">
     <div class="kpi-icon" style="background:linear-gradient(135deg,#10B981,#059669);">🚨</div>
-    <div class="kpi-label">F2 Score (&beta;=2)</div>
-    <div class="kpi-value">{{ data.f2 }}%</div>
-    <div style="font-size:0.78rem;color:#64748B;">Favors Recall</div>
+    <div class="kpi-body">
+      <div class="kpi-label">F2 Score (&beta;=2)</div>
+      <div class="kpi-value">{{ data.f2 }}%</div>
+      <div style="font-size:0.78rem;color:#64748B;">Favors Recall</div>
+    </div>
   </div>
   <div class="kpi-card">
     <div class="kpi-icon" style="background:linear-gradient(135deg,#8B5CF6,#7C3AED);">🛡️</div>
-    <div class="kpi-label">F0.5 Score (&beta;=0.5)</div>
-    <div class="kpi-value">{{ data.f05 }}%</div>
-    <div style="font-size:0.78rem;color:#64748B;">Favors Precision</div>
+    <div class="kpi-body">
+      <div class="kpi-label">F0.5 Score (&beta;=0.5)</div>
+      <div class="kpi-value">{{ data.f05 }}%</div>
+      <div style="font-size:0.78rem;color:#64748B;">Favors Precision</div>
+    </div>
   </div>
+
 </div>
 
 <div style="display:grid;grid-template-columns:1fr;gap:1.5rem;margin-bottom:1.5rem;">

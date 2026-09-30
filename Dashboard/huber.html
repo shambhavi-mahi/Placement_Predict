@@ -15,27 +15,35 @@
 <div class="kpi-grid" style="margin-bottom:1.5rem;">
   <div class="kpi-card">
     <div class="kpi-icon" style="background:linear-gradient(135deg,#94A3B8,#64748B);">📊</div>
-    <div class="kpi-label">Samples</div>
-    <div class="kpi-value">{{ data.n_samples }}</div>
-    <div style="font-size:0.78rem;color:#64748B;">Total data points</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Samples</div>
+      <div class="kpi-value">{{ data.n_samples }}</div>
+      <div style="font-size:0.78rem;color:#64748B;">Total data points</div>
+    </div>
   </div>
   <div class="kpi-card">
     <div class="kpi-icon" style="background:linear-gradient(135deg,#EF4444,#DC2626);">⚠️</div>
-    <div class="kpi-label">Injected Outliers</div>
-    <div class="kpi-value">{{ data.n_outliers }}</div>
-    <div style="font-size:0.78rem;color:#64748B;">Artificial data errors</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Injected Outliers</div>
+      <div class="kpi-value">{{ data.n_outliers }}</div>
+      <div style="font-size:0.78rem;color:#64748B;">Artificial data errors</div>
+    </div>
   </div>
   <div class="kpi-card">
     <div class="kpi-icon" style="background:linear-gradient(135deg,#F59E0B,#D97706);">📉</div>
-    <div class="kpi-label">OLS MAE (Clean)</div>
-    <div class="kpi-value">{{ data.ols_mae }}</div>
-    <div style="font-size:0.78rem;color:#64748B;">Linear Regression error</div>
+    <div class="kpi-body">
+      <div class="kpi-label">OLS MAE (Clean)</div>
+      <div class="kpi-value">{{ data.ols_mae }}</div>
+      <div style="font-size:0.78rem;color:#64748B;">Linear Regression error</div>
+    </div>
   </div>
   <div class="kpi-card">
     <div class="kpi-icon" style="background:linear-gradient(135deg,#10B981,#059669);">🛡️</div>
-    <div class="kpi-label">Huber MAE (Clean)</div>
-    <div class="kpi-value">{{ data.huber_mae }}</div>
-    <div style="font-size:0.78rem;color:#64748B;">Robust error</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Huber MAE (Clean)</div>
+      <div class="kpi-value">{{ data.huber_mae }}</div>
+      <div style="font-size:0.78rem;color:#64748B;">Robust error</div>
+    </div>
   </div>
 </div>
 
