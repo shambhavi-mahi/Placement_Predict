@@ -57,6 +57,7 @@ from module5.grid_search_vs_random_search import run_grid_search_vs_random_searc
 from module5.learning_and_validation_curves import run_learning_and_validation_curves
 from module5.bayesian_optimization import run_bayesian_optimization
 from module5.calibration_and_statistical_significance import run_calibration_and_statistical_significance
+from module6.probability_calibration import run_probability_calibration
 
 # Per-request caches (computed once per server session)
 _cache = {}
@@ -603,6 +604,15 @@ def calibration_and_statistical_significance_page():
     df = _safe_load_csv()
     data = _cached("calibration_and_statistical_significance", run_calibration_and_statistical_significance, df) if df is not None else None
     return render_template("calibration_and_statistical_significance.html", data=data)
+
+
+# ── Module 6 ────────────────────────────────────────────────────────────────
+
+@app.route("/probability-calibration")
+def probability_calibration_page():
+    df = _safe_load_csv()
+    data = _cached("probability_calibration", run_probability_calibration, df) if df is not None else None
+    return render_template("probability_calibration.html", data=data)
 
 
 # ---------------------------------------------------------------------------

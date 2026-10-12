@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Probability Calibration — PlacementPredict{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:1.5rem;">
+  <h1 style="font-size:1.6rem;font-weight:700;color:#1E293B;margin:0 0 0.3rem;">
+    Module 6 · Probability Calibration
+  </h1>
+  <p style="color:#64748B;margin:0;font-size:0.95rem;">
+    Transform raw classifier outputs into reliable, true posterior probabilities using Platt Scaling (Sigmoid) and Isotonic Regression.
+  </p>
+</div>
+
+{% if data %}
+<div class="kpi-grid" style="margin-bottom:1.5rem;">
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#10B981,#059669);">🎯</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Calibrated Brier Score</div>
+      <div class="kpi-value">{{ data.brier_isotonic }}</div>
+      <div style="font-size:0.78rem;color:#64748B;">vs {{ data.brier_uncal }} uncalibrated</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#3B82F6,#2563EB);">📉</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Brier Error Drop</div>
+      <div class="kpi-value">-{{ data.brier_improvement }}%</div>
+      <div style="font-size:0.78rem;color:#64748B;">Calibration error reduction</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#F59E0B,#D97706);">📐</div>
+    <div class="kpi-body">
+      <div class="kpi-label">ECE Reduction</div>
+      <div class="kpi-value">{{ data.ece_isotonic }}%</div>
+      <div style="font-size:0.78rem;color:#64748B;">Down from {{ data.ece_uncal }}%</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#8B5CF6,#7C3AED);">⭐</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Optimal Method</div>
+      <div class="kpi-value" style="font-size:1.15rem;">{{ data.recommended_method }}</div>
+      <div style="font-size:0.78rem;color:#64748B;">Recommended for N={{ data.n_samples }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="padding:1.5rem;margin-bottom:1.5rem;">
+  <h3 style="font-size:1.1rem;font-weight:700;margin-top:0;">Reliability Curves &amp; Probability Distributions</h3>
+  <img src="{{ url_for('static', filename='Plot/ProbabilityCalibration/calibration_plots.png') }}" style="max-width:100%;border-radius:8px;border:1px solid #E2E8F0;" alt="Calibration Plots">
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;">
+  <div class="card" style="padding:1.5rem;">
+    <h3 style="font-size:1.1rem;font-weight:700;margin-top:0;">Calibration Loss Metrics Table</h3>
+    <table style="width:100%;font-size:0.9rem;border-collapse:collapse;margin-bottom:1rem;">
+      <thead>
+        <tr style="background:rgba(37,99,235,0.06);text-align:left;">
+          <th style="padding:10px;">Method</th>
+          <th style="padding:10px;color:#2563EB;">Brier Score ↓</th>
+          <th style="padding:10px;color:#D97706;">Log Loss ↓</th>
+          <th style="padding:10px;color:#059669;">ECE (%) ↓</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in data.metrics_table %}
+        <tr style="border-bottom:1px solid #E2E8F0;{% if loop.last %}background:rgba(16,185,129,0.06);font-weight:600;{% endif %}">
+          <td style="padding:10px;">
+            <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:{{ row.color }};margin-right:6px;"></span>
+            {{ row.name }}
+          </td>
+          <td style="padding:10px;">{{ row.brier }}</td>
+          <td style="padding:10px;">{{ row.log_loss }}</td>
+          <td style="padding:10px;color:#059669;">{{ row.ece }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div style="padding:1rem;background:#F8FAFC;border-radius:8px;border-left:4px solid #2563EB;font-size:0.83rem;color:#475569;line-height:1.6;">
+      <strong>Why Brier Score Matters:</strong> The Brier Score measures the mean squared error between predicted probabilities and actual 0/1 outcomes. A lower score reflects higher probabilistic accuracy.
+    </div>
+  </div>
+
+  <div class="card" style="padding:1.5rem;">
+    <h3 style="font-size:1.1rem;font-weight:700;margin-top:0;">Comparing Calibration Algorithms</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;font-size:0.85rem;color:#475569;line-height:1.6;">
+      <div style="padding:10px 14px;background:#F8FAFC;border-radius:6px;border-left:3px solid #EF4444;">
+        <strong style="color:#B91C1C;">Why Random Forests Are Uncalibrated:</strong> Averaging decision tree votes rarely outputs 0.0 or 1.0 because extreme variance pushes probabilities toward the sample prior mean (the "bagging bias").
+      </div>
+
+      <div style="padding:10px 14px;background:rgba(37,99,235,0.05);border-radius:6px;border-left:3px solid #2563EB;">
+        <strong style="color:#1E40AF;">Platt Scaling (Sigmoid):</strong> Fits a logistic regression model $P(y=1|f) = \frac{1}{1 + \exp(Af + B)}$ over validation scores. Excellent for small datasets (&lt;1,000 samples) where non-parametric approaches might overfit.
+      </div>
+
+      <div style="padding:10px 14px;background:rgba(16,185,129,0.06);border-radius:6px;border-left:3px solid #10B981;">
+        <strong style="color:#065F46;">Isotonic Regression:</strong> Fits a non-parametric, monotonic step-function. Can correct arbitrary distortion shapes without assuming a sigmoid curve. Highly recommended for datasets with &ge;1,000 samples.
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

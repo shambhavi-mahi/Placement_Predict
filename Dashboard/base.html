@@ -247,6 +247,19 @@
       </div>
     </div>
 
+    <!-- ── Module 6: Model Calibration ─────────────── -->
+    <div class="sidebar-module-group" id="mod6">
+      <div class="sidebar-module-header" onclick="toggleModule('mod6')">
+        <span><span class="module-label">Module 6</span> · Calibration</span>
+        <span class="sidebar-module-chevron">▼</span>
+      </div>
+      <div class="sidebar-module-items">
+        <a href="{{ url_for('probability_calibration_page') }}" class="menu-btn-sub {% if request.endpoint == 'probability_calibration_page' %}active{% endif %}">
+          <span class="topic-num">40</span> Probability Calibration
+        </a>
+      </div>
+    </div>
+
     <!-- Sidebar brand footer -->
     <div class="sidebar-brand-card">
       <span class="sbc-icon">🎓</span>
@@ -331,7 +344,7 @@
   // Restore sidebar state, auto-expand active module & lock scroll position
   (function() {
     const sidebar = document.getElementById('appSidebar') || document.querySelector('.sidebar');
-    const groups = ['mod1', 'mod2', 'mod3', 'mod4', 'mod5'];
+    const groups = ['mod1', 'mod2', 'mod3', 'mod4', 'mod5', 'mod6'];
     let state = {};
     try { state = JSON.parse(localStorage.getItem('pp-sidebar') || '{}'); } catch(e) {}
 
