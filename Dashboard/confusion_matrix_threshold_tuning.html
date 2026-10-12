@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Confusion Matrix & Threshold Tuning — PlacementPredict{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:1.5rem;">
+  <h1 style="font-size:1.6rem;font-weight:700;color:#1E293B;margin:0 0 0.3rem;">
+    Module 5 · Topic 33: Confusion Matrix &amp; Threshold Tuning
+  </h1>
+  <p style="color:#64748B;margin:0;font-size:0.95rem;">
+    Tune decision thresholds to optimize business cost-benefit utility rather than blindly sticking to the default 0.5 cutoff.
+  </p>
+</div>
+
+{% if data %}
+<div class="kpi-grid" style="margin-bottom:1.5rem;">
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#10B981,#059669);">🎯</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Optimal Threshold</div>
+      <div class="kpi-value">{{ data.best_threshold }}</div>
+      <div style="font-size:0.78rem;color:#64748B;">Maximizes net utility</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#3B82F6,#2563EB);">💰</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Optimal Utility</div>
+      <div class="kpi-value">{{ data.best_utility }}</div>
+      <div style="font-size:0.78rem;color:#64748B;">vs {{ data.default_utility }} at 0.5</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#8B5CF6,#7C3AED);">📈</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Threshold Tuning Gain</div>
+      <div class="kpi-value">{{ data.utility_gain }}</div>
+      <div style="font-size:0.78rem;color:#64748B;">Economic uplift</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#F59E0B,#D97706);">⚖️</div>
+    <div class="kpi-body">
+      <div class="kpi-label">At Optimum (P / R)</div>
+      <div class="kpi-value">{{ data.best_row.precision }}% / {{ data.best_row.recall }}%</div>
+      <div style="font-size:0.78rem;color:#64748B;">F1 = {{ data.best_row.f1 }}%</div>
+    </div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1.2fr 0.8fr;gap:1.5rem;margin-bottom:1.5rem;">
+  <div class="card" style="padding:1.5rem;">
+    <h3 style="font-size:1.1rem;font-weight:700;margin-top:0;">Threshold vs Utility Curve</h3>
+    <img src="{{ url_for('static', filename='Plot/Curves/threshold_curve.png') }}" style="max-width:100%;border-radius:8px;border:1px solid #E2E8F0;" alt="Threshold Curve">
+  </div>
+
+  <div class="card" style="padding:1.5rem;">
+    <h3 style="font-size:1.1rem;font-weight:700;margin-top:0;">Comparing Cutoffs</h3>
+    
+    <div style="margin-bottom:1.2rem;padding:1rem;background:#F8FAFC;border-radius:8px;border-left:4px solid #64748B;">
+      <div style="font-weight:700;font-size:0.85rem;color:#1E293B;margin-bottom:4px;">Default Cutoff (T = 0.5)</div>
+      <div style="font-size:0.8rem;color:#64748B;">
+        TP: {{ data.default_row.tp }} | FP: {{ data.default_row.fp }} | FN: {{ data.default_row.fn }} | TN: {{ data.default_row.tn }}<br>
+        Precision: {{ data.default_row.precision }}% | Recall: {{ data.default_row.recall }}%<br>
+        <strong>Net Utility: {{ data.default_utility }}</strong>
+      </div>
+    </div>
+
+    <div style="padding:1rem;background:rgba(16,185,129,0.06);border-radius:8px;border-left:4px solid #10B981;">
+      <div style="font-weight:700;font-size:0.85rem;color:#065F46;margin-bottom:4px;">Optimized Cutoff (T = {{ data.best_threshold }})</div>
+      <div style="font-size:0.8rem;color:#047857;">
+        TP: {{ data.best_row.tp }} | FP: {{ data.best_row.fp }} | FN: {{ data.best_row.fn }} | TN: {{ data.best_row.tn }}<br>
+        Precision: {{ data.best_row.precision }}% | Recall: {{ data.best_row.recall }}%<br>
+        <strong>Net Utility: {{ data.best_utility }}</strong>
+      </div>
+    </div>
+
+    <div style="margin-top:1.2rem;font-size:0.82rem;color:#64748B;line-height:1.5;">
+      💡 <em>Business Rule:</em> Missing a good placement candidate (False Negative) costs more than conducting an extra interview (False Positive). Shifting the threshold captures more true positives and boosts economic returns.
+    </div>
+  </div>
+</div>
+
+<div class="card" style="padding:1.5rem;margin-bottom:1.5rem;">
+  <h3 style="font-size:1.1rem;font-weight:700;margin-top:0;">Full Threshold Grid &amp; Confusion Matrix Stats</h3>
+  <table style="width:100%;font-size:0.85rem;border-collapse:collapse;">
+    <thead>
+      <tr style="background:rgba(37,99,235,0.06);text-align:left;">
+        <th style="padding:8px 12px;">Threshold</th>
+        <th style="padding:8px 12px;">TP</th>
+        <th style="padding:8px 12px;">FP</th>
+        <th style="padding:8px 12px;">TN</th>
+        <th style="padding:8px 12px;">FN</th>
+        <th style="padding:8px 12px;">Precision</th>
+        <th style="padding:8px 12px;">Recall</th>
+        <th style="padding:8px 12px;">F1</th>
+        <th style="padding:8px 12px;">Net Utility ($)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in data.table_rows %}
+      <tr style="border-bottom:1px solid #E2E8F0;{% if r.threshold == data.best_threshold %}background:rgba(16,185,129,0.08);font-weight:600;{% endif %}">
+        <td style="padding:8px 12px;">{{ r.threshold }} {% if r.threshold == data.best_threshold %}⭐{% endif %}</td>
+        <td style="padding:8px 12px;color:#059669;">{{ r.tp }}</td>
+        <td style="padding:8px 12px;color:#DC2626;">{{ r.fp }}</td>
+        <td style="padding:8px 12px;color:#059669;">{{ r.tn }}</td>
+        <td style="padding:8px 12px;color:#DC2626;">{{ r.fn }}</td>
+        <td style="padding:8px 12px;">{{ r.precision }}%</td>
+        <td style="padding:8px 12px;">{{ r.recall }}%</td>
+        <td style="padding:8px 12px;">{{ r.f1 }}%</td>
+        <td style="padding:8px 12px;font-weight:700;">${{ r.net_value }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}ROC and Precision-Recall Curves — PlacementPredict{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:1.5rem;">
+  <h1 style="font-size:1.6rem;font-weight:700;color:#1E293B;margin:0 0 0.3rem;">
+    Module 5 · Topic 34: ROC &amp; Precision-Recall Curves
+  </h1>
+  <p style="color:#64748B;margin:0;font-size:0.95rem;">
+    Evaluate discrimination ability threshold-independently with Receiver Operating Characteristic and Precision-Recall analysis.
+  </p>
+</div>
+
+{% if data %}
+<div class="kpi-grid" style="margin-bottom:1.5rem;">
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#3B82F6,#2563EB);">📈</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Best ROC-AUC</div>
+      <div class="kpi-value">{{ data.best_roc_auc }}</div>
+      <div style="font-size:0.78rem;color:#64748B;">{{ data.best_roc_model }}</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#10B981,#059669);">🎯</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Best PR-AUC (AP)</div>
+      <div class="kpi-value">{{ data.best_pr_auc }}</div>
+      <div style="font-size:0.78rem;color:#64748B;">{{ data.best_pr_model }}</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#F59E0B,#D97706);">⚖️</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Baseline Prevalence</div>
+      <div class="kpi-value">{{ data.base_rate }}%</div>
+      <div style="font-size:0.78rem;color:#64748B;">Positive class fraction</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#8B5CF6,#7C3AED);">🔬</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Test Evaluation Set</div>
+      <div class="kpi-value">{{ data.n_test }}</div>
+      <div style="font-size:0.78rem;color:#64748B;">Held-out students</div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="padding:1.5rem;margin-bottom:1.5rem;">
+  <h3 style="font-size:1.1rem;font-weight:700;margin-top:0;">ROC Curve vs Precision-Recall Curve Comparison</h3>
+  <img src="{{ url_for('static', filename='Plot/Curves/roc_pr_comparison.png') }}" style="max-width:100%;border-radius:8px;border:1px solid #E2E8F0;" alt="ROC and PR Curves">
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;">
+  <div class="card" style="padding:1.5rem;">
+    <h3 style="font-size:1.1rem;font-weight:700;margin-top:0;">Model Performance Summary</h3>
+    <table style="width:100%;font-size:0.9rem;border-collapse:collapse;">
+      <thead>
+        <tr style="background:rgba(37,99,235,0.06);text-align:left;">
+          <th style="padding:10px;">Model</th>
+          <th style="padding:10px;color:#2563EB;">ROC-AUC</th>
+          <th style="padding:10px;color:#059669;">PR-AUC (Avg Precision)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in data.models %}
+        <tr style="border-bottom:1px solid #E2E8F0;">
+          <td style="padding:10px;font-weight:600;">
+            <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:{{ m.color }};margin-right:6px;"></span>
+            {{ m.name }}
+          </td>
+          <td style="padding:10px;font-weight:600;color:#2563EB;">{{ m.roc_auc }}</td>
+          <td style="padding:10px;font-weight:600;color:#059669;">{{ m.pr_auc }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card" style="padding:1.5rem;">
+    <h3 style="font-size:1.1rem;font-weight:700;margin-top:0;">ROC vs PR: When to Use Which?</h3>
+    <div style="display:flex;flex-direction:column;gap:10px;font-size:0.85rem;color:#475569;line-height:1.6;">
+      <div style="padding:8px 12px;background:#F8FAFC;border-radius:6px;border-left:3px solid #2563EB;">
+        <strong style="color:#1E293B;">ROC-AUC:</strong> Measures ranking quality across both positive and negative classes equally. Insensitive to class prevalence. Good when both classes are equally important.
+      </div>
+      <div style="padding:8px 12px;background:rgba(16,185,129,0.06);border-radius:6px;border-left:3px solid #10B981;">
+        <strong style="color:#065F46;">PR-AUC:</strong> Focuses strictly on True Positives vs False Positives. Highly recommended when the positive class is rare or when false alarms carry severe business penalties.
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

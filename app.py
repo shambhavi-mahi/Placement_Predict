@@ -48,6 +48,15 @@ from module4.anomaly_detection import run_anomaly_detection
 from module5.data_leakage import run_data_leakage
 from module5.f_beta import run_f_beta
 from module5.huber_regression import run_huber_regression
+from module5.cross_validation import run_cross_validation
+from module5.nested_cross_validation import run_nested_cross_validation
+from module5.confusion_matrix_threshold_tuning import run_confusion_matrix_threshold_tuning
+from module5.roc_and_pr_curves import run_roc_and_pr_curves
+from module5.regression_metrics_and_robustness import run_regression_metrics_and_robustness
+from module5.grid_search_vs_random_search import run_grid_search_vs_random_search
+from module5.learning_and_validation_curves import run_learning_and_validation_curves
+from module5.bayesian_optimization import run_bayesian_optimization
+from module5.calibration_and_statistical_significance import run_calibration_and_statistical_significance
 
 # Per-request caches (computed once per server session)
 _cache = {}
@@ -531,6 +540,69 @@ def huber_regression_page():
     df = _safe_load_csv()
     data = _cached("huber_regression", run_huber_regression, df) if df is not None else None
     return render_template("huber.html", data=data)
+
+
+@app.route("/cross-validation")
+def cross_validation_page():
+    df = _safe_load_csv()
+    data = _cached("cross_validation", run_cross_validation, df) if df is not None else None
+    return render_template("cross_validation.html", data=data)
+
+
+@app.route("/nested-cross-validation")
+def nested_cross_validation_page():
+    df = _safe_load_csv()
+    data = _cached("nested_cross_validation", run_nested_cross_validation, df) if df is not None else None
+    return render_template("nested_cross_validation.html", data=data)
+
+
+@app.route("/confusion-matrix-threshold-tuning")
+def confusion_matrix_threshold_tuning_page():
+    df = _safe_load_csv()
+    data = _cached("confusion_matrix_threshold_tuning", run_confusion_matrix_threshold_tuning, df) if df is not None else None
+    return render_template("confusion_matrix_threshold_tuning.html", data=data)
+
+
+@app.route("/roc-and-pr-curves")
+def roc_and_pr_curves_page():
+    df = _safe_load_csv()
+    data = _cached("roc_and_pr_curves", run_roc_and_pr_curves, df) if df is not None else None
+    return render_template("roc_and_pr_curves.html", data=data)
+
+
+@app.route("/regression-metrics-and-robustness")
+def regression_metrics_and_robustness_page():
+    df = _safe_load_csv()
+    data = _cached("regression_metrics_and_robustness", run_regression_metrics_and_robustness, df) if df is not None else None
+    return render_template("regression_metrics_and_robustness.html", data=data)
+
+
+@app.route("/grid-search-vs-random-search")
+def grid_search_vs_random_search_page():
+    df = _safe_load_csv()
+    data = _cached("grid_search_vs_random_search", run_grid_search_vs_random_search, df) if df is not None else None
+    return render_template("grid_search_vs_random_search.html", data=data)
+
+
+@app.route("/learning-and-validation-curves")
+def learning_and_validation_curves_page():
+    df = _safe_load_csv()
+    data = _cached("learning_and_validation_curves", run_learning_and_validation_curves, df) if df is not None else None
+    return render_template("learning_and_validation_curves.html", data=data)
+
+
+@app.route("/bayesian-optimization")
+def bayesian_optimization_page():
+    df = _safe_load_csv()
+    data = _cached("bayesian_optimization", run_bayesian_optimization, df) if df is not None else None
+    return render_template("bayesian_optimization.html", data=data)
+
+
+@app.route("/calibration-and-statistical-significance")
+def calibration_and_statistical_significance_page():
+    df = _safe_load_csv()
+    data = _cached("calibration_and_statistical_significance", run_calibration_and_statistical_significance, df) if df is not None else None
+    return render_template("calibration_and_statistical_significance.html", data=data)
 
 
 # ---------------------------------------------------------------------------

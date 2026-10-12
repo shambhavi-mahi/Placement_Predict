@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Nested Cross-Validation — PlacementPredict{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:1.5rem;">
+  <h1 style="font-size:1.6rem;font-weight:700;color:#1E293B;margin:0 0 0.3rem;">
+    Module 5 · Topic 32: Nested Cross-Validation
+  </h1>
+  <p style="color:#64748B;margin:0;font-size:0.95rem;">
+    Decouple hyperparameter tuning (inner loop) from model performance evaluation (outer loop) to eliminate optimization optimism bias.
+  </p>
+</div>
+
+{% if data %}
+<div class="kpi-grid" style="margin-bottom:1.5rem;">
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#10B981,#059669);">🛡️</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Nested CV (Unbiased)</div>
+      <div class="kpi-value">{{ data.nested_mean }}%</div>
+      <div style="font-size:0.78rem;color:#64748B;">± {{ data.nested_std }}% (Outer test)</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#F59E0B,#D97706);">⚠️</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Standard CV (Optimistic)</div>
+      <div class="kpi-value">{{ data.non_nested_score }}%</div>
+      <div style="font-size:0.78rem;color:#64748B;">Tuning + Eval combined</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#EF4444,#DC2626);">📉</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Optimism Gap</div>
+      <div class="kpi-value">{{ data.optimism_gap }}%</div>
+      <div style="font-size:0.78rem;color:#64748B;">Overestimation error</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#2563EB,#1D4ED8);">⚙️</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Architecture</div>
+      <div class="kpi-value">{{ data.outer_folds }}x{{ data.inner_folds }}</div>
+      <div style="font-size:0.78rem;color:#64748B;">Outer x Inner splits</div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="padding:1.5rem;margin-bottom:1.5rem;">
+  <h3 style="font-size:1.1rem;font-weight:700;margin-top:0;">Outer Folds Breakdown</h3>
+  <table style="width:100%;font-size:0.9rem;border-collapse:collapse;margin-bottom:1rem;">
+    <thead>
+      <tr style="background:rgba(37,99,235,0.06);text-align:left;">
+        <th style="padding:10px;">Outer Fold</th>
+        <th style="padding:10px;">Best Inner Param (C)</th>
+        <th style="padding:10px;color:#D97706;">Inner CV Score</th>
+        <th style="padding:10px;color:#059669;">Outer Unbiased Score</th>
+        <th style="padding:10px;">Gap</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in data.fold_rows %}
+      <tr style="border-bottom:1px solid #E2E8F0;">
+        <td style="padding:10px;"><strong>Fold {{ row.outer_fold }}</strong></td>
+        <td style="padding:10px;"><code>C = {{ row.best_c }}</code></td>
+        <td style="padding:10px;">{{ row.inner_cv_acc }}%</td>
+        <td style="padding:10px;font-weight:600;color:#059669;">{{ row.outer_test_acc }}%</td>
+        <td style="padding:10px;color:{% if row.difference < 0 %}#EF4444{% else %}#10B981{% endif %};">
+          {{ row.difference }}%
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Visual Workflow Diagram -->
+  <div style="margin-top:1.5rem;padding:1.2rem;background:#F8FAFC;border-radius:8px;border:1px solid #E2E8F0;">
+    <h4 style="margin:0 0 10px;font-size:0.95rem;color:#1E293B;">Nested CV Workflow</h4>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;">
+      <div style="background:#2563EB;color:white;padding:10px 14px;border-radius:8px;font-size:0.85rem;font-weight:600;">
+        Outer Loop (4 Folds)<br><span style="font-size:0.75rem;opacity:0.9;">Estimates Generalization Error</span>
+      </div>
+      <div style="color:#64748B;font-size:1.4rem;">➔</div>
+      <div style="background:#F59E0B;color:white;padding:10px 14px;border-radius:8px;font-size:0.85rem;font-weight:600;">
+        Inner Loop (3 Folds)<br><span style="font-size:0.75rem;opacity:0.9;">Tunes Hyperparameters (C)</span>
+      </div>
+      <div style="color:#64748B;font-size:1.4rem;">➔</div>
+      <div style="background:#10B981;color:white;padding:10px 14px;border-radius:8px;font-size:0.85rem;font-weight:600;">
+        True Unbiased Performance<br><span style="font-size:0.75rem;opacity:0.9;">No Leakage Between Tuning &amp; Testing</span>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

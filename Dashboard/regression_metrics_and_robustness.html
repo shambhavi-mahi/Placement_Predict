@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Regression Metrics and Robustness — PlacementPredict{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:1.5rem;">
+  <h1 style="font-size:1.6rem;font-weight:700;color:#1E293B;margin:0 0 0.3rem;">
+    Module 5 · Topic 35: Regression Metrics &amp; Robustness
+  </h1>
+  <p style="color:#64748B;margin:0;font-size:0.95rem;">
+    Understand MAE, MSE, RMSE, R², and Median Absolute Error, and observe how robust estimators survive extreme outlier corruption.
+  </p>
+</div>
+
+{% if data and not data.error %}
+<div class="kpi-grid" style="margin-bottom:1.5rem;">
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#10B981,#059669);">🛡️</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Best Robust Model</div>
+      <div class="kpi-value">{{ data.best_model }}</div>
+      <div style="font-size:0.78rem;color:#64748B;">Lowest generalization error</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#3B82F6,#2563EB);">📉</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Lowest Test MAE</div>
+      <div class="kpi-value">{{ data.best_mae }}</div>
+      <div style="font-size:0.78rem;color:#64748B;">L1 loss on clean test</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#8B5CF6,#7C3AED);">📊</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Best Test R²</div>
+      <div class="kpi-value">{{ data.best_r2 }}</div>
+      <div style="font-size:0.78rem;color:#64748B;">Variance explained</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#EF4444,#DC2626);">⚠️</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Outlier Injection</div>
+      <div class="kpi-value">{{ data.n_outliers_injected }}</div>
+      <div style="font-size:0.78rem;color:#64748B;">5% 5x-inflated salaries</div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="padding:1.5rem;margin-bottom:1.5rem;">
+  <h3 style="font-size:1.1rem;font-weight:700;margin-top:0;">Metric Comparison Under Outlier Attack</h3>
+  <img src="{{ url_for('static', filename='Plot/RegMetrics/metrics_comparison.png') }}" style="max-width:100%;border-radius:8px;border:1px solid #E2E8F0;" alt="Regression Metrics Chart">
+</div>
+
+<div class="card" style="padding:1.5rem;margin-bottom:1.5rem;">
+  <h3 style="font-size:1.1rem;font-weight:700;margin-top:0;">Comprehensive Metrics Table</h3>
+  <table style="width:100%;font-size:0.9rem;border-collapse:collapse;">
+    <thead>
+      <tr style="background:rgba(37,99,235,0.06);text-align:left;">
+        <th style="padding:10px;">Model</th>
+        <th style="padding:10px;color:#2563EB;">MAE (Mean Absolute)</th>
+        <th style="padding:10px;color:#DC2626;">RMSE (Root Mean Sq)</th>
+        <th style="padding:10px;color:#059669;">R² Score</th>
+        <th style="padding:10px;color:#7C3AED;">MedAE (Median Absolute)</th>
+        <th style="padding:10px;">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in data.results %}
+      <tr style="border-bottom:1px solid #E2E8F0;{% if r.name == data.best_model %}background:rgba(16,185,129,0.06);font-weight:600;{% endif %}">
+        <td style="padding:10px;">{{ r.name }}</td>
+        <td style="padding:10px;color:#2563EB;">{{ r.mae }}</td>
+        <td style="padding:10px;color:#DC2626;">{{ r.rmse }}</td>
+        <td style="padding:10px;color:#059669;">{{ r.r2 }}</td>
+        <td style="padding:10px;color:#7C3AED;">{{ r.medae }}</td>
+        <td style="padding:10px;">
+          {% if r.is_robust %}
+            <span style="background:rgba(16,185,129,0.15);color:#059669;padding:2px 8px;border-radius:12px;font-size:0.75rem;">Robust</span>
+          {% else %}
+            <span style="background:rgba(239,68,68,0.15);color:#DC2626;padding:2px 8px;border-radius:12px;font-size:0.75rem;">Sensitive</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div style="margin-top:1.5rem;padding:1rem;background:#F8FAFC;border-radius:8px;border-left:4px solid #2563EB;">
+    <h4 style="margin:0 0 6px;font-size:0.85rem;color:#1E293B;">Key Mathematical Difference: L1 vs L2 vs MedAE</h4>
+    <p style="margin:0;font-size:0.82rem;color:#64748B;line-height:1.6;">
+      <strong>MSE/RMSE (L2):</strong> Squares residuals, so single huge outliers disproportionately drag the regression line.<br>
+      <strong>MAE (L1):</strong> Penalizes linear distances, significantly less sensitive to extremes.<br>
+      <strong>MedAE:</strong> Takes the median of errors, completely ignoring extreme outlier tails.
+    </p>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

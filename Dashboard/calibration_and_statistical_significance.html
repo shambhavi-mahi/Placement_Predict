@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Calibration & Statistical Significance — PlacementPredict{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:1.5rem;">
+  <h1 style="font-size:1.6rem;font-weight:700;color:#1E293B;margin:0 0 0.3rem;">
+    Module 5 · Topic 39: Calibration &amp; Statistical Significance
+  </h1>
+  <p style="color:#64748B;margin:0;font-size:0.95rem;">
+    Calibrate model probabilities using Platt Scaling and Isotonic Regression, and test whether differences between classifiers are statistically significant.
+  </p>
+</div>
+
+{% if data %}
+<div class="kpi-grid" style="margin-bottom:1.5rem;">
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#10B981,#059669);">🎯</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Best Brier Score</div>
+      <div class="kpi-value">{{ data.brier_isotonic }}</div>
+      <div style="font-size:0.78rem;color:#64748B;">Isotonic (vs {{ data.brier_uncal }} raw)</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#3B82F6,#2563EB);">📉</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Brier Improvement</div>
+      <div class="kpi-value">{{ data.brier_improvement }}%</div>
+      <div style="font-size:0.78rem;color:#64748B;">Calibration error reduction</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#8B5CF6,#7C3AED);">🔬</div>
+    <div class="kpi-body">
+      <div class="kpi-label">McNemar p-value</div>
+      <div class="kpi-value">{{ data.mcnemar_pval }}</div>
+      <div style="font-size:0.78rem;color:#64748B;">&chi;² = {{ data.mcnemar_stat }}</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,{% if data.is_significant %}#10B981,#059669{% else %}#F59E0B,#D97706{% endif %});">⚖️</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Significance Verdict</div>
+      <div class="kpi-value" style="font-size:1.15rem;font-weight:700;">
+        {% if data.is_significant %}Significant (p &lt; 0.05){% else %}Not Significant{% endif %}
+      </div>
+      <div style="font-size:0.78rem;color:#64748B;">LR ({{ data.lr_acc }}%) vs RF ({{ data.rf_acc }}%)</div>
+    </div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;">
+  <!-- Left: Reliability Diagram -->
+  <div class="card" style="padding:1.5rem;">
+    <h3 style="font-size:1.1rem;font-weight:700;margin-top:0;">Reliability Curve (Calibration)</h3>
+    <img src="{{ url_for('static', filename='Plot/Calibration/reliability_curve.png') }}" style="max-width:100%;border-radius:8px;border:1px solid #E2E8F0;" alt="Calibration Curve">
+    <div style="margin-top:1rem;font-size:0.83rem;color:#64748B;line-height:1.5;">
+      A well-calibrated model lies directly on the diagonal: if the model outputs 0.8, exactly 80% of those candidates should be placed.
+    </div>
+  </div>
+
+  <!-- Right: McNemar's Contingency Matrix -->
+  <div class="card" style="padding:1.5rem;">
+    <h3 style="font-size:1.1rem;font-weight:700;margin-top:0;">McNemar's Test Contingency Table</h3>
+    <p style="font-size:0.85rem;color:#64748B;margin:0 0 1rem;">
+      Compares prediction disagreements on paired test examples between Logistic Regression and Random Forest.
+    </p>
+
+    <div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:6px;max-width:320px;margin:0 auto 1.2rem;">
+      <div></div>
+      <div style="text-align:center;font-size:0.75rem;font-weight:700;color:#64748B;">RF Correct</div>
+      <div style="text-align:center;font-size:0.75rem;font-weight:700;color:#64748B;">RF Wrong</div>
+
+      <div style="font-size:0.75rem;font-weight:700;color:#64748B;display:flex;align-items:center;">LR Correct</div>
+      <div style="background:#F1F5F9;border:1px solid #CBD5E1;border-radius:6px;padding:12px;text-align:center;">
+        <div style="font-size:1.2rem;font-weight:700;color:#1E293B;">{{ data.mcnemar_both_correct }}</div>
+        <div style="font-size:0.7rem;color:#64748B;">Both Right</div>
+      </div>
+      <div style="background:rgba(239,68,68,0.08);border:1px solid #FCA5A5;border-radius:6px;padding:12px;text-align:center;">
+        <div style="font-size:1.2rem;font-weight:700;color:#DC2626;">{{ data.mcnemar_b }}</div>
+        <div style="font-size:0.7rem;color:#DC2626;">LR Right / RF Wrong (b)</div>
+      </div>
+
+      <div style="font-size:0.75rem;font-weight:700;color:#64748B;display:flex;align-items:center;">LR Wrong</div>
+      <div style="background:rgba(16,185,129,0.08);border:1px solid #86EFAC;border-radius:6px;padding:12px;text-align:center;">
+        <div style="font-size:1.2rem;font-weight:700;color:#059669;">{{ data.mcnemar_c }}</div>
+        <div style="font-size:0.7rem;color:#059669;">RF Right / LR Wrong (c)</div>
+      </div>
+      <div style="background:#F1F5F9;border:1px solid #CBD5E1;border-radius:6px;padding:12px;text-align:center;">
+        <div style="font-size:1.2rem;font-weight:700;color:#1E293B;">{{ data.mcnemar_both_wrong }}</div>
+        <div style="font-size:0.7rem;color:#64748B;">Both Wrong</div>
+      </div>
+    </div>
+
+    <div style="padding:1rem;background:#F8FAFC;border-radius:8px;border-left:4px solid {% if data.is_significant %}#10B981{% else %}#F59E0B{% endif %};font-size:0.83rem;color:#334155;line-height:1.6;">
+      <strong>Statistical Conclusion:</strong>
+      {% if data.is_significant %}
+        Because p-value = {{ data.mcnemar_pval }} &lt; 0.05, we reject the null hypothesis of equal performance. The difference between the two models is statistically significant, not merely test sample noise.
+      {% else %}
+        Because p-value = {{ data.mcnemar_pval }} &ge; 0.05, we fail to reject the null hypothesis. The difference in accuracy may be attributed to sample variance.
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

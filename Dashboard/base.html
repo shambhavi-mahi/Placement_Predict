@@ -204,7 +204,7 @@
     <!-- ── Module 5: Advanced Topics ─────────────── -->
     <div class="sidebar-module-group" id="mod5">
       <div class="sidebar-module-header" onclick="toggleModule('mod5')">
-        <span><span class="module-label">Module 5</span> · Advanced Topics</span>
+        <span><span class="module-label">Module 5</span> · Evaluation &amp; Tuning</span>
         <span class="sidebar-module-chevron">▼</span>
       </div>
       <div class="sidebar-module-items">
@@ -216,6 +216,33 @@
         </a>
         <a href="{{ url_for('huber_regression_page') }}" class="menu-btn-sub {% if request.endpoint == 'huber_regression_page' %}active{% endif %}">
           <span class="topic-num">23</span> Huber Regression
+        </a>
+        <a href="{{ url_for('cross_validation_page') }}" class="menu-btn-sub {% if request.endpoint == 'cross_validation_page' %}active{% endif %}">
+          <span class="topic-num">31</span> Cross-Validation
+        </a>
+        <a href="{{ url_for('nested_cross_validation_page') }}" class="menu-btn-sub {% if request.endpoint == 'nested_cross_validation_page' %}active{% endif %}">
+          <span class="topic-num">32</span> Nested CV
+        </a>
+        <a href="{{ url_for('confusion_matrix_threshold_tuning_page') }}" class="menu-btn-sub {% if request.endpoint == 'confusion_matrix_threshold_tuning_page' %}active{% endif %}">
+          <span class="topic-num">33</span> Threshold Tuning
+        </a>
+        <a href="{{ url_for('roc_and_pr_curves_page') }}" class="menu-btn-sub {% if request.endpoint == 'roc_and_pr_curves_page' %}active{% endif %}">
+          <span class="topic-num">34</span> ROC &amp; PR Curves
+        </a>
+        <a href="{{ url_for('regression_metrics_and_robustness_page') }}" class="menu-btn-sub {% if request.endpoint == 'regression_metrics_and_robustness_page' %}active{% endif %}">
+          <span class="topic-num">35</span> Regression Metrics
+        </a>
+        <a href="{{ url_for('grid_search_vs_random_search_page') }}" class="menu-btn-sub {% if request.endpoint == 'grid_search_vs_random_search_page' %}active{% endif %}">
+          <span class="topic-num">36</span> Grid vs Random Search
+        </a>
+        <a href="{{ url_for('learning_and_validation_curves_page') }}" class="menu-btn-sub {% if request.endpoint == 'learning_and_validation_curves_page' %}active{% endif %}">
+          <span class="topic-num">37</span> Learning Curves
+        </a>
+        <a href="{{ url_for('bayesian_optimization_page') }}" class="menu-btn-sub {% if request.endpoint == 'bayesian_optimization_page' %}active{% endif %}">
+          <span class="topic-num">38</span> Bayesian Opt
+        </a>
+        <a href="{{ url_for('calibration_and_statistical_significance_page') }}" class="menu-btn-sub {% if request.endpoint == 'calibration_and_statistical_significance_page' %}active{% endif %}">
+          <span class="topic-num">39</span> Calibration &amp; Test
         </a>
       </div>
     </div>

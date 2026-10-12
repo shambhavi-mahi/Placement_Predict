@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Bayesian Optimization — PlacementPredict{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:1.5rem;">
+  <h1 style="font-size:1.6rem;font-weight:700;color:#1E293B;margin:0 0 0.3rem;">
+    Module 5 · Topic 38: Bayesian Optimization
+  </h1>
+  <p style="color:#64748B;margin:0;font-size:0.95rem;">
+    Learn how Gaussian Process surrogate models and acquisition functions intelligently balance exploration vs exploitation in hyperparameter spaces.
+  </p>
+</div>
+
+{% if data %}
+<div class="kpi-grid" style="margin-bottom:1.5rem;">
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#3B82F6,#2563EB);">🤖</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Bayes Opt Best Score</div>
+      <div class="kpi-value">{{ data.best_bayes_score }}%</div>
+      <div style="font-size:0.78rem;color:#64748B;">Surrogate GP guided</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#F59E0B,#D97706);">🎲</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Random Search Best</div>
+      <div class="kpi-value">{{ data.best_rand_score }}%</div>
+      <div style="font-size:0.78rem;color:#64748B;">Equal 8-step budget</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#10B981,#059669);">🎯</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Optimal Hyperparameter</div>
+      <div class="kpi-value">C = {{ data.optimal_c }}</div>
+      <div style="font-size:0.78rem;color:#64748B;">log10(C) = {{ data.optimal_log_c }}</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#8B5CF6,#7C3AED);">📐</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Acquisition Function</div>
+      <div class="kpi-value" style="font-size:1.2rem;">UCB (&kappa;=1.96)</div>
+      <div style="font-size:0.78rem;color:#64748B;">Upper Confidence Bound</div>
+    </div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1.1fr 0.9fr;gap:1.5rem;margin-bottom:1.5rem;">
+  <div class="card" style="padding:1.5rem;">
+    <h3 style="font-size:1.1rem;font-weight:700;margin-top:0;">Sequential Convergence Trajectory</h3>
+    <img src="{{ url_for('static', filename='Plot/Bayes/bayes_opt_convergence.png') }}" style="max-width:100%;border-radius:8px;border:1px solid #E2E8F0;" alt="Convergence Curve">
+  </div>
+
+  <div class="card" style="padding:1.5rem;">
+    <h3 style="font-size:1.1rem;font-weight:700;margin-top:0;">How Bayesian Optimization Works</h3>
+    <div style="display:flex;flex-direction:column;gap:10px;font-size:0.85rem;color:#475569;line-height:1.6;">
+      <div style="padding:10px;background:#F8FAFC;border-radius:6px;border-left:3px solid #2563EB;">
+        <strong style="color:#1E293B;">1. Gaussian Process (Surrogate Model):</strong> Fits a smooth probabilistic prior over the objective function, outputting both a predicted performance ($\mu$) and epistemic uncertainty ($\sigma$).
+      </div>
+      <div style="padding:10px;background:rgba(245,158,11,0.06);border-radius:6px;border-left:3px solid #F59E0B;">
+        <strong style="color:#B45309;">2. Acquisition Function (UCB):</strong> Combines $\mu(x) + \kappa \cdot \sigma(x)$. It queries points where predicted mean is high (<em>Exploitation</em>) OR where uncertainty is high (<em>Exploration</em>).
+      </div>
+      <div style="padding:10px;background:rgba(16,185,129,0.06);border-radius:6px;border-left:3px solid #10B981;">
+        <strong style="color:#065F46;">3. Sample Efficiency:</strong> Requires drastically fewer expensive model evaluations than Grid or Random Search to find near-optimal configurations.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="padding:1.5rem;margin-bottom:1.5rem;">
+  <h3 style="font-size:1.1rem;font-weight:700;margin-top:0;">Step-by-Step Acquisition Log</h3>
+  <table style="width:100%;font-size:0.85rem;border-collapse:collapse;">
+    <thead>
+      <tr style="background:rgba(37,99,235,0.06);text-align:left;">
+        <th style="padding:8px 12px;">Step</th>
+        <th style="padding:8px 12px;">Candidate C</th>
+        <th style="padding:8px 12px;">Surrogate &mu; (Pred)</th>
+        <th style="padding:8px 12px;">Surrogate &sigma; (Uncertainty)</th>
+        <th style="padding:8px 12px;">Observed Accuracy</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for it in data.iterations %}
+      <tr style="border-bottom:1px solid #E2E8F0;">
+        <td style="padding:8px 12px;"><strong>Step {{ it.iter }}</strong></td>
+        <td style="padding:8px 12px;font-family:monospace;">{{ it.actual_c }} (10^{{ it.log_c }})</td>
+        <td style="padding:8px 12px;color:#2563EB;">{{ it.predicted_mean }}%</td>
+        <td style="padding:8px 12px;color:#D97706;">± {{ it.uncertainty_sigma }}%</td>
+        <td style="padding:8px 12px;font-weight:700;color:#059669;">{{ it.score }}%</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}

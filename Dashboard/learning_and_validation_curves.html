@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Learning & Validation Curves — PlacementPredict{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:1.5rem;">
+  <h1 style="font-size:1.6rem;font-weight:700;color:#1E293B;margin:0 0 0.3rem;">
+    Module 5 · Topic 37: Learning &amp; Validation Curves
+  </h1>
+  <p style="color:#64748B;margin:0;font-size:0.95rem;">
+    Diagnose High Bias (underfitting) versus High Variance (overfitting) by tracking sample size scaling and hyperparameter capacity curves.
+  </p>
+</div>
+
+{% if data %}
+<div class="kpi-grid" style="margin-bottom:1.5rem;">
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#10B981,#059669);">🎯</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Optimal Tree Depth</div>
+      <div class="kpi-value">{{ data.optimal_depth }}</div>
+      <div style="font-size:0.78rem;color:#64748B;">Peak validation accuracy</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#3B82F6,#2563EB);">📊</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Optimal Val Score</div>
+      <div class="kpi-value">{{ data.optimal_val_acc }}%</div>
+      <div style="font-size:0.78rem;color:#64748B;">At depth = {{ data.optimal_depth }}</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#F59E0B,#D97706);">📉</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Train-Val Gap</div>
+      <div class="kpi-value">{{ data.generalization_gap }}%</div>
+      <div style="font-size:0.78rem;color:#64748B;">At max sample size</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#8B5CF6,#7C3AED);">🩺</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Model Diagnosis</div>
+      <div class="kpi-value" style="font-size:1.1rem;font-weight:700;">{{ data.diagnosis }}</div>
+      <div style="font-size:0.78rem;color:#64748B;">Generalization state</div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="padding:1.5rem;margin-bottom:1.5rem;">
+  <h3 style="font-size:1.1rem;font-weight:700;margin-top:0;">Diagnostic Curves</h3>
+  <img src="{{ url_for('static', filename='Plot/Curves/learning_validation_curves.png') }}" style="max-width:100%;border-radius:8px;border:1px solid #E2E8F0;" alt="Diagnostic Curves">
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;">
+  <div class="card" style="padding:1.5rem;">
+    <h3 style="font-size:1rem;font-weight:700;margin-top:0;color:#2563EB;">📖 Reading the Learning Curve</h3>
+    <ul style="font-size:0.85rem;color:#475569;line-height:1.7;padding-left:1.2rem;margin:0;">
+      <li><strong>High Bias (Underfitting):</strong> Train score is low and Validation score plateaus early at a similar low number. Adding more data will NOT help. (Solution: More complex model, more features).</li>
+      <li><strong>High Variance (Overfitting):</strong> Huge gap between high train score and lower validation score. Validation score continues creeping upward. (Solution: Add more data, apply regularizer/pruning).</li>
+    </ul>
+  </div>
+
+  <div class="card" style="padding:1.5rem;">
+    <h3 style="font-size:1rem;font-weight:700;margin-top:0;color:#D97706;">📖 Reading the Validation Curve</h3>
+    <ul style="font-size:0.85rem;color:#475569;line-height:1.7;padding-left:1.2rem;margin:0;">
+      <li><strong>Left side (Low Depth):</strong> Underfitting zone where model lacks capacity to capture relationships. Both train and validation scores are mediocre.</li>
+      <li><strong>Sweet spot (Depth = {{ data.optimal_depth }}):</strong> Validation score peaks. Optimal balance between bias and variance.</li>
+      <li><strong>Right side (High Depth):</strong> Overfitting zone. Train accuracy approaches 100%, but validation accuracy drops off due to memorization.</li>
+    </ul>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

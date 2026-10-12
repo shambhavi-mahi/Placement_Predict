@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Grid Search vs Random Search — PlacementPredict{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:1.5rem;">
+  <h1 style="font-size:1.6rem;font-weight:700;color:#1E293B;margin:0 0 0.3rem;">
+    Module 5 · Topic 36: Grid Search vs Random Search
+  </h1>
+  <p style="color:#64748B;margin:0;font-size:0.95rem;">
+    Contrast exhaustive Cartesian grid exploration against random sampling across hyperparameter distributions.
+  </p>
+</div>
+
+{% if data %}
+<div class="kpi-grid" style="margin-bottom:1.5rem;">
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#10B981,#059669);">⚡</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Random Search Speedup</div>
+      <div class="kpi-value">{{ data.speedup }}x</div>
+      <div style="font-size:0.78rem;color:#64748B;">{{ data.rand_time }}s vs {{ data.grid_time }}s</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#3B82F6,#2563EB);">🎯</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Random Search Score</div>
+      <div class="kpi-value">{{ data.rand_score }}%</div>
+      <div style="font-size:0.78rem;color:#64748B;">Diff: {{ data.score_diff }}% vs Grid</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#F59E0B,#D97706);">🔍</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Grid Search Score</div>
+      <div class="kpi-value">{{ data.grid_score }}%</div>
+      <div style="font-size:0.78rem;color:#64748B;">Exhaustive 12 combos</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:linear-gradient(135deg,#8B5CF6,#7C3AED);">🔄</div>
+    <div class="kpi-body">
+      <div class="kpi-label">Total Fits Required</div>
+      <div class="kpi-value">{{ data.rand_fits }} vs {{ data.grid_fits }}</div>
+      <div style="font-size:0.78rem;color:#64748B;">Random vs Grid model fits</div>
+    </div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;">
+  <div class="card" style="padding:1.5rem;">
+    <h3 style="font-size:1.1rem;font-weight:700;margin-top:0;">Search Strategy Comparison</h3>
+    <table style="width:100%;font-size:0.9rem;border-collapse:collapse;margin-bottom:1.2rem;">
+      <thead>
+        <tr style="background:rgba(37,99,235,0.06);text-align:left;">
+          <th style="padding:10px;">Strategy</th>
+          <th style="padding:10px;">Best CV Score</th>
+          <th style="padding:10px;">Runtime</th>
+          <th style="padding:10px;">Best Parameters</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid #E2E8F0;">
+          <td style="padding:10px;font-weight:600;color:#2563EB;">Grid Search</td>
+          <td style="padding:10px;">{{ data.grid_score }}%</td>
+          <td style="padding:10px;">{{ data.grid_time }}s</td>
+          <td style="padding:10px;font-family:monospace;font-size:0.78rem;">{{ data.grid_params }}</td>
+        </tr>
+        <tr style="border-bottom:1px solid #E2E8F0;background:rgba(16,185,129,0.06);">
+          <td style="padding:10px;font-weight:600;color:#059669;">Random Search</td>
+          <td style="padding:10px;font-weight:700;color:#059669;">{{ data.rand_score }}%</td>
+          <td style="padding:10px;font-weight:700;color:#059669;">{{ data.rand_time }}s</td>
+          <td style="padding:10px;font-family:monospace;font-size:0.78rem;">{{ data.rand_params }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="padding:1rem;background:#F8FAFC;border-radius:8px;border-left:4px solid #10B981;">
+      <h4 style="margin:0 0 6px;font-size:0.85rem;color:#1E293B;">Why Random Search Dominates in Practice</h4>
+      <p style="margin:0;font-size:0.82rem;color:#64748B;line-height:1.6;">
+        <em>Bergstra &amp; Bengio (2012)</em> proved that in high-dimensional spaces, only a few hyperparameters have significant impact. Grid search wastes time exploring uninformative parameter variations, whereas Random search covers distinct points along the important dimensions in fewer iterations.
+      </p>
+    </div>
+  </div>
+
+  <div class="card" style="padding:1.5rem;">
+    <h3 style="font-size:1.1rem;font-weight:700;margin-top:0;">Optimization Speed &amp; Accuracy</h3>
+    <img src="{{ url_for('static', filename='Plot/Search/search_comparison.png') }}" style="max-width:100%;border-radius:8px;border:1px solid #E2E8F0;" alt="Search Comparison">
+  </div>
+</div>
+{% endif %}
+{% endblock %}
