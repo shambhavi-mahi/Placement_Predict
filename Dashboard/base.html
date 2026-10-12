@@ -91,7 +91,7 @@
 <div class="layout">
 
   <!-- Left Sidebar -->
-  <aside class="sidebar">
+  <aside class="sidebar" id="appSidebar">
 
     <a href="{{ url_for('home') }}" class="menu-btn {% if request.endpoint == 'home' %}active{% endif %}" style="margin-bottom:4px;">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -316,6 +316,10 @@
     if (!el) return;
     const isCollapsed = el.classList.contains('collapsed');
     el.classList.toggle('collapsed', !isCollapsed);
+    const items = el.querySelector('.sidebar-module-items');
+    if (items) {
+      items.style.maxHeight = isCollapsed ? items.scrollHeight + 'px' : '0px';
+    }
     // persist state
     try {
       const state = JSON.parse(localStorage.getItem('pp-sidebar') || '{}');
@@ -324,9 +328,10 @@
     } catch(e) {}
   }
 
-  // Restore sidebar state & auto-expand active module
+  // Restore sidebar state, auto-expand active module & lock scroll position
   (function() {
-    const groups = ['mod1','mod2','mod3','mod4'];
+    const sidebar = document.getElementById('appSidebar') || document.querySelector('.sidebar');
+    const groups = ['mod1', 'mod2', 'mod3', 'mod4', 'mod5'];
     let state = {};
     try { state = JSON.parse(localStorage.getItem('pp-sidebar') || '{}'); } catch(e) {}
 
@@ -335,16 +340,55 @@
       if (!el) return;
       const hasActive = el.querySelector('.active');
       const savedCollapsed = state[id];
-      // Expand if has active link, otherwise respect saved state
+
+      // Auto-expand if active link is inside, otherwise respect user state
       if (hasActive) {
         el.classList.remove('collapsed');
       } else if (savedCollapsed === true) {
         el.classList.add('collapsed');
       }
-      // Set max-height for transition
+
       const items = el.querySelector('.sidebar-module-items');
-      if (items) items.style.maxHeight = items.scrollHeight + 'px';
+      if (items) {
+        if (!el.classList.contains('collapsed')) {
+          items.style.maxHeight = items.scrollHeight + 'px';
+        } else {
+          items.style.maxHeight = '0px';
+        }
+      }
     });
+
+    if (sidebar) {
+      // 1. Immediately restore saved scroll position
+      const savedScroll = sessionStorage.getItem('pp_sidebar_scroll');
+      if (savedScroll !== null) {
+        sidebar.scrollTop = parseInt(savedScroll, 10);
+      }
+
+      // 2. Ensure the active topic is comfortably in view
+      const activeLink = sidebar.querySelector('.menu-btn-sub.active, .menu-btn.active');
+      if (activeLink) {
+        requestAnimationFrame(() => {
+          activeLink.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'auto' });
+          sessionStorage.setItem('pp_sidebar_scroll', sidebar.scrollTop);
+        });
+      }
+
+      // 3. Keep updating saved scroll position as user scrolls or clicks
+      sidebar.addEventListener('scroll', function() {
+        sessionStorage.setItem('pp_sidebar_scroll', sidebar.scrollTop);
+      }, { passive: true });
+
+      sidebar.addEventListener('click', function(e) {
+        if (e.target.closest('a')) {
+          sessionStorage.setItem('pp_sidebar_scroll', sidebar.scrollTop);
+        }
+      });
+
+      window.addEventListener('beforeunload', function() {
+        sessionStorage.setItem('pp_sidebar_scroll', sidebar.scrollTop);
+      });
+    }
   })();
 
   // Init Lucide icons (if any i[data-lucide] exist)
